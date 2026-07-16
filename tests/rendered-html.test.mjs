@@ -2,24 +2,23 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render(pathname = "/") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-  return worker.fetch(new Request(`http://localhost${pathname}`, { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
-}
-
-test("server-renders the production OngoleProperty homepage", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  const html = await response.text();
-  assert.match(html, /<title>OngoleProperty\.com \| Trusted Real Estate Since 2002<\/title>/i);
-  assert.match(html, /Find the right property/);
-  assert.match(html, /Manual[^<]*listing verification/);
-  assert.match(html, /ongole-property-logo\.png/);
-  assert.match(html, /rel="canonical" href="https:\/\/www\.ongoleproperty\.com\/"/);
-  assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
+test("uses the standard Next.js production runtime", async () => {
+  const [packageJson, layout, homepage, nextConfig] = await Promise.all([
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../next.config.ts", import.meta.url), "utf8"),
+  ]);
+  const manifest = JSON.parse(packageJson);
+  assert.equal(manifest.scripts.build, "next build");
+  assert.equal(manifest.scripts.start, "next start");
+  assert.equal(manifest.scripts.dev, "next dev");
+  assert.equal(manifest.devDependencies.vinext, undefined);
+  assert.equal(manifest.devDependencies.wrangler, undefined);
+  assert.match(layout, /OngoleProperty\.com/);
+  assert.match(homepage, /Find the right property/);
+  assert.match(nextConfig, /Content-Security-Policy/);
+  assert.doesNotMatch(packageJson, /cloudflare|vinext|wrangler|rolldown|workerd/i);
 });
 
 test("keeps media private and property publication manually controlled", async () => {

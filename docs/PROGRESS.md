@@ -7,7 +7,7 @@ This checklist reflects the repository itself. “Completed” means implemented
 ## ✅ Completed
 
 - Repository and all supplied Word requirements audited. The latest pasted brief controls where older documents conflict: Supabase PostgreSQL replaces MongoDB, multiple-admin RBAC replaces single-admin scope, packages stay hidden, and publication remains manually approved.
-- Existing Next.js 16 + Vinext + TypeScript site preserved: supplied branding, logo, responsive header/footer, homepage, search UI, listing cards, public content pages and responsive layouts.
+- Existing Next.js 16 + TypeScript site preserved: supplied branding, logo, responsive header/footer, homepage, search UI, listing cards, public content pages and responsive layouts.
 - Public listing and property-detail route structure, canonical metadata, Open Graph basics and property JSON-LD foundation.
 - Supabase server client and environment validation; no fake success responses when services are unconfigured.
 - Supabase core migration: profiles, RBAC, reference data, properties, media, status history, enquiries, agents, PG, memberships, payments, SEO overrides, URL history, flags/settings, notifications, audit and analytics.
@@ -45,5 +45,5 @@ This checklist reflects the repository itself. “Completed” means implemented
 tsc --noEmit                         PASS
 eslint .                             PASS
 node --test tests/**/*.test.mjs      PASS (2/2)
-vinext build                         PASS
+next build                           PASS
 ```
