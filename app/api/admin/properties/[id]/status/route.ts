@@ -1,0 +1,6 @@
+import { NextRequest,NextResponse } from "next/server";
+import { z } from "zod";
+import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { requestData } from "@/src/lib/request";
+const schema=z.object({action:z.enum(["approve","publish","reject","request_changes","archive","mark_sold"]),reason:z.string().trim().max(2000).optional()});
+export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}) { const {id}=await params; const parsed=schema.safeParse(await requestData(request)); if(!parsed.success) return NextResponse.json({error:"Invalid review action."},{status:400}); const supabase=await createSupabaseServerClient(); const {data:auth}=await supabase.auth.getUser(); if(!auth.user) return NextResponse.json({error:"Authentication required."},{status:401}); const {data:allowed}=await supabase.rpc("has_permission",{required_permission:"properties.manage"}); if(!allowed) return NextResponse.json({error:"Permission denied."},{status:403}); const {error}=await supabase.rpc("review_property",{target_property:id,review_action:parsed.data.action,review_reason:parsed.data.reason||null}); if(error) return NextResponse.json({error:"The property status could not be changed.",code:error.code},{status:409}); return NextResponse.redirect(new URL(`/admin/properties/${id}`,request.url),303); }

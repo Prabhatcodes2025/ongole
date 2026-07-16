@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { env } from "@/src/lib/env";
+import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "My dashboard", robots: { index: false, follow: false } };
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ created?: string }> }) {
+  if (!env.isSupabaseConfigured) return <main id="main" className="portal-page"><div className="shell"><div className="config-warning"><h1>Dashboard configuration pending</h1><p>Add the Supabase public URL and anonymous key to the environment, then apply the included migrations. The public website remains available without fake account data.</p></div></div></main>;
+  const supabase = await createSupabaseServerClient(); const { data: auth } = await supabase.auth.getUser(); if (!auth.user) redirect("/login?returnTo=/dashboard");
+  const [{ data: profile }, { data: properties }, { data: isAdmin }, query] = await Promise.all([supabase.from("profiles").select("full_name,reference_no,account_type,status").eq("id",auth.user.id).single(), supabase.from("properties").select("id,reference_no,title,status,updated_at,slug").eq("owner_id",auth.user.id).order("updated_at",{ ascending:false }), supabase.rpc("has_permission",{ required_permission:"properties.read" }), searchParams]);
+  return <main id="main" className="portal-page"><div className="shell"><div className="portal-title"><div><p className="eyebrow">Member dashboard</p><h1>Welcome, {profile?.full_name || auth.user.email}</h1><p>{profile?.reference_no} · {profile?.account_type} · {profile?.status}</p></div><div className="portal-actions">{isAdmin && <Link className="button button-light" href="/admin">Admin panel</Link>}<Link className="button" href="/post-property">Add property</Link><form action="/api/auth/logout" method="post"><button className="text-button" type="submit">Sign out</button></form></div></div>{query.created && <div className="success-notice">Draft {query.created} was created. Add media and submit it for review when complete.</div>}<section className="portal-section"><div className="section-heading compact"><div><p className="eyebrow">Your listings</p><h2>Property drafts &amp; submissions</h2></div></div>{properties?.length ? <div className="portal-list">{properties.map((property) => <article key={property.id}><div><span className={`status status-${property.status}`}>{property.status.replaceAll("_"," ")}</span><h3>{property.title}</h3><p>{property.reference_no} · Updated {new Date(property.updated_at).toLocaleDateString("en-IN")}</p></div><Link href={`/dashboard/properties/${property.id}`}>Manage →</Link></article>)}</div> : <div className="empty-state"><h2>No property drafts</h2><p>Create a draft to start the manual review workflow.</p><Link className="button" href="/post-property">Post a property</Link></div>}</section></div></main>;
+}

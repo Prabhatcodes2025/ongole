@@ -1,0 +1,3 @@
+import { NextRequest,NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}) { const {id}=await params; const supabase=await createSupabaseServerClient(); const {data:auth}=await supabase.auth.getUser(); if(!auth.user) return NextResponse.json({error:"Authentication required."},{status:401}); const {error}=await supabase.rpc("submit_property_for_review",{target_property:id}); if(error) return NextResponse.json({error:"The property is incomplete or cannot be submitted from its current status."},{status:409}); return NextResponse.redirect(new URL(`/dashboard/properties/${id}`,request.url),303); }
