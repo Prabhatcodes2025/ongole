@@ -1,0 +1,11 @@
+"use client";
+
+import Script from "next/script";
+import { useState } from "react";
+
+export function EnquiryForm({propertyReference,propertyTitle,captchaSiteKey}:{propertyReference:string;propertyTitle:string;captchaSiteKey?:string}) {
+  const [state,setState]=useState<{status:"idle"|"loading"|"success"|"error";message?:string}>({status:"idle"});
+  return <form id="enquiry" className="enquiry-form" onSubmit={async(event)=>{event.preventDefault();setState({status:"loading"});const form=event.currentTarget;try{const response=await fetch("/api/enquiries",{method:"POST",body:new FormData(form),headers:{Accept:"application/json"}});const result=await response.json() as {error?:string;reference?:string};if(!response.ok)throw new Error(result.error||"Unable to send enquiry.");form.reset();setState({status:"success",message:result.reference?`Enquiry sent. Reference: ${result.reference}`:"Enquiry sent successfully."})}catch(error){setState({status:"error",message:error instanceof Error?error.message:"Unable to send enquiry."})}}}>
+    <input type="hidden" name="propertyReference" value={propertyReference}/><label className="honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off"/></label><label>Name<input required name="name" autoComplete="name" minLength={2} maxLength={100}/></label><label>Mobile Number<input required name="mobile" type="tel" inputMode="numeric" autoComplete="tel" pattern="[6-9][0-9]{9}"/></label><label>Email Address <span>(optional)</span><input name="email" type="email" autoComplete="email"/></label><label>Message<textarea required name="message" rows={4} minLength={5} maxLength={2000} defaultValue={`I am interested in ${propertyTitle} (${propertyReference}). Please contact me.`}/></label>{captchaSiteKey&&<><Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer/><div className="cf-turnstile" data-sitekey={captchaSiteKey}/></>}<button className="button" type="submit" disabled={state.status==="loading"}>{state.status==="loading"?"Sending…":"Send enquiry"}</button><p className={`form-response ${state.status}`} aria-live="polite">{state.message}</p>
+  </form>;
+}

@@ -1,7 +1,7 @@
 import { env } from "@/src/lib/env";
 
 export async function verifyCaptcha(token: string | null, remoteIp?: string | null) {
-  if (!env.captchaSecret) return !env.isProduction;
+  if (!env.captchaSecret) return true;
   if (!token) return false;
   const body = new URLSearchParams({ secret: env.captchaSecret, response: token });
   if (remoteIp) body.set("remoteip", remoteIp);

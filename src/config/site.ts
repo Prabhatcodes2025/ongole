@@ -11,6 +11,11 @@ export const siteConfig = {
   nriEmail: "nri@ongoleproperty.com",
   address: "4th Lane, Bhagya Nagar, Ongole, Prakasam District, Andhra Pradesh, India",
   description: "Trusted real estate marketing for verified properties across Ongole and Prakasam District since 2002.",
+  social: {
+    facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || "",
+    instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "",
+    linkedin: process.env.NEXT_PUBLIC_LINKEDIN_URL || "",
+  },
 } as const;
 
 export const featureFlags = {

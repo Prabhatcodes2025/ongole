@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/src/lib/env";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import {checkRateLimit} from "@/src/lib/security/rate-limit";
+import {requestIp} from "@/src/lib/request";
 
 const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 const ALLOWED_INPUT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -11,6 +13,7 @@ function dashboardUrl(request: NextRequest, propertyId: string, result: string) 
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const rate=await checkRateLimit(`upload:${requestIp(request)}`,20,60*60_000);if(!rate.allowed)return NextResponse.json({error:"Upload limit reached. Try again later."},{status:429});
   if (!env.isSupabaseConfigured) return NextResponse.json({ error: "Supabase storage is not configured." }, { status: 503 });
   const origin = request.headers.get("origin");
   if (origin && origin !== request.nextUrl.origin) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
@@ -46,6 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (uploadError) throw uploadError;
     const { error: recordError } = await supabase.from("property_media").insert({ id: mediaId, property_id: id, storage_path: path, original_filename: file.name.slice(0, 255), mime_type: "image/webp", byte_size: processed.byteLength, width: output.width, height: output.height, processing_status: "ready", is_cover: (count ?? 0) === 0, sort_order: count ?? 0, variants: { display: { path, width: output.width, height: output.height, format: "webp" } } });
     if (recordError) { await supabase.storage.from("property-media").remove([path]); throw recordError; }
+    await supabase.rpc("record_audit_event",{event_action:"media.upload",event_type:"property_media",event_reference:id,event_new:{media_id:mediaId,storage_path:path}});
     return NextResponse.redirect(dashboardUrl(request, id, "uploaded"), 303);
   } catch (error) {
     console.error("Property image processing failed", { propertyId: id, error });

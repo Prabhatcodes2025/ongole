@@ -1,42 +1,28 @@
+import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import { BadgeCheck, Building2, MapPinned, Network, SearchCheck, UserRoundCheck } from "lucide-react";
+import { AdSlot } from "@/src/components/ad-slot";
+import { HeroSlider } from "@/src/components/hero-slider";
 import { PropertyCard } from "@/src/components/property-card";
-import { PropertySearch } from "@/src/components/property-search";
-import { sampleProperties } from "@/src/data/properties";
+import { EmptyState } from "@/src/components/public-states";
+import { SectionHeading } from "@/src/components/section-heading";
+import { getFeaturedProperties } from "@/src/lib/properties/public";
+import {getPublicPropertyCatalog} from "@/src/lib/masters/public";
 
-export default function Home() {
-  return (
-    <main id="main">
-      <section className="hero">
-        <div className="hero-sky"><span className="hero-orb" /><span className="hero-tower tower-one" /><span className="hero-tower tower-two" /><span className="hero-house" /></div>
-        <div className="shell hero-content">
-          <p className="eyebrow">Ongole&apos;s trusted property partner since 2002</p>
-          <h1>Find the right property.<br /><em>Move with confidence.</em></h1>
-          <p className="hero-copy">Verified homes, plots, commercial spaces, agricultural land and rentals—supported by local expertise and professional legal guidance.</p>
-          <PropertySearch />
-          <div className="hero-proof"><span><strong>24+</strong> years serving Prakasam</span><span><strong>Manual</strong> listing verification</span><span><strong>Local</strong> legal backend support</span></div>
-        </div>
-      </section>
+export const revalidate=300;
+export const metadata:Metadata={title:"OngoleProperty.com | Trusted Real Estate Since 2002",description:"Discover reviewed homes, plots, commercial spaces, rentals and agricultural land across Ongole and Prakasam District.",alternates:{canonical:"/"}};
 
-      <section className="section shell">
-        <div className="section-heading"><div><p className="eyebrow">Carefully reviewed</p><h2>Featured opportunities in Ongole</h2></div><Link className="arrow-link" href="/properties">View all properties →</Link></div>
-        <div className="property-grid">{sampleProperties.map((property) => <PropertyCard key={property.id} property={property} />)}</div>
-      </section>
+const reasons=[{Icon:BadgeCheck,title:"Verified property listings",copy:"Only manually published records enter the public catalogue."},{Icon:UserRoundCheck,title:"Verified property owners",copy:"Owner identity and listing authority can be reviewed before publication."},{Icon:Network,title:"Corporate real estate network",copy:"Local property marketing backed by Kosana Associates LLP."},{Icon:SearchCheck,title:"Easy property search",copy:"Search by purpose, category, type, location, price and practical details."},{Icon:MapPinned,title:"Trusted local platform",copy:"Focused on Ongole and the wider Prakasam District since 2002."}];
 
-      <section className="trust-band"><div className="shell split-section"><div><p className="eyebrow">A property platform with roots</p><h2>Technology for discovery.<br />People for the decisions.</h2></div><div className="trust-copy"><p>We combine a professional digital marketplace with two decades of local market knowledge. Every listing stays under manual approval, and sensitive owner details remain protected unless visibility is explicitly authorised.</p><Link className="button button-light" href="/about">Why clients trust us</Link></div></div></section>
-
-      <section className="section shell">
-        <div className="section-heading"><div><p className="eyebrow">Explore by need</p><h2>Property services for every stage</h2></div></div>
-        <div className="service-grid">
-          <Link href="/properties?category=residential"><span>01</span><h3>Residential</h3><p>Apartments, villas, independent homes and open plots.</p></Link>
-          <Link href="/properties?category=commercial"><span>02</span><h3>Commercial</h3><p>Offices, shops, showrooms, warehouses and industrial spaces.</p></Link>
-          <Link href="/properties?category=agricultural"><span>03</span><h3>Agricultural</h3><p>Farm lands, horticulture land and long-term investments.</p></Link>
-          <Link href="/paying-guest"><span>04</span><h3>Paying Guest</h3><p>Men&apos;s, women&apos;s, family and co-living accommodation.</p></Link>
-        </div>
-      </section>
-
-      <section className="section process-section"><div className="shell"><p className="eyebrow">A clearer path to property</p><h2>From search to supported transaction</h2><ol className="process-list"><li><b>01</b><span><strong>Discover</strong>Search verified listings with practical filters.</span></li><li><b>02</b><span><strong>Enquire</strong>Tell our team what you need without exposing private owner data.</span></li><li><b>03</b><span><strong>Visit &amp; verify</strong>Coordinate visits and review property information.</span></li><li><b>04</b><span><strong>Proceed confidently</strong>Get documentation and transaction support.</span></li></ol></div></section>
-
-      <section className="section shell cta-panel"><div><p className="eyebrow">Have a property to market?</p><h2>Reach genuine buyers with a professionally reviewed listing.</h2></div><div><Link className="button" href="/post-property">Post your property free</Link><a className="arrow-link" href="https://wa.me/919988767689">Speak on WhatsApp →</a></div></section>
-    </main>
-  );
-}
+export default async function Home(){const [featured,catalog]=await Promise.all([getFeaturedProperties(6),getPublicPropertyCatalog()]);return <main id="main">
+  <HeroSlider catalog={catalog}/>
+  <div className="shell"><AdSlot title="Hero banner advertisement" placeholder className="ad-hero"/></div>
+  <section className="section shell"><SectionHeading eyebrow="Why choose OngoleProperty" title="A clearer, safer way to discover local property"/><div className="reason-grid">{reasons.map(({Icon,title,copy})=><article key={title}><Icon aria-hidden="true"/><h3>{title}</h3><p>{copy}</p></article>)}</div></section>
+  <section className="section section-tinted"><div className="shell"><SectionHeading eyebrow="Carefully reviewed" title="Featured and latest properties" action={<Link className="arrow-link" href="/properties">View all properties →</Link>}/>{featured.length?<div className="property-grid">{featured.map((property)=><PropertyCard key={property.id} property={property}/>)}</div>:<EmptyState title="No public properties yet" message="Approved listings will appear here as soon as they are published."/>}</div></section>
+  <div className="shell"><AdSlot title="Flash advertisement" placeholder className="ad-flash"/><AdSlot title="Scrolling advertisement" placeholder className="ad-scroll"/></div>
+  <section className="section trust-band"><div className="shell split-section"><div><p className="eyebrow">Local professionals, wider reach</p><h2>Connect with a reviewed real estate network.</h2></div><div className="trust-copy"><p>Agents can declare their working towns, experience and specialisations. Public profiles appear only after administrative verification.</p><Link className="button button-light" href="/register?accountType=agent">Register as Real Estate Agent</Link></div></div></section>
+  <section className="section shell pg-intro"><div><p className="eyebrow">Accommodation in Ongole</p><h2>Paying guest and co-living, ready for future listings.</h2><p>The PG discovery module is being prepared with the same review and privacy standards as property listings.</p><div className="button-row"><Link className="button" href="/paying-guest?category=mens">Men&apos;s PG</Link><Link className="button button-outline" href="/paying-guest?category=womens">Women&apos;s PG</Link><Link className="button button-outline" href="/paying-guest?category=co_living">Co-Living</Link></div></div><div className="pg-visual"><Building2 size={84} aria-hidden="true"/><span>Coming soon</span></div></section>
+  <section className="section testimonials"><div className="shell"><SectionHeading eyebrow="Customer experiences" title="Feedback will be published with consent"/><div className="testimonial-grid">{["Property buyer","Property owner","Local investor"].map((role)=><article key={role}><Image src="/ongole-property-logo.png" alt="" width={54} height={54}/><div><p>Placeholder testimonial — verified customer feedback will appear here only after review and consent.</p><strong>{role}</strong><span>Content awaiting approval</span></div></article>)}</div></div></section>
+  <section className="section shell cta-panel"><div><p className="eyebrow">Ready for the next step?</p><h2>Discover, list or discuss property with a local team.</h2></div><div className="cta-actions"><Link className="button" href="/post-property">Post Property</Link><Link className="button button-outline" href="/register">Register</Link><Link className="arrow-link" href="/contact">Contact Us →</Link></div></section>
+</main>}

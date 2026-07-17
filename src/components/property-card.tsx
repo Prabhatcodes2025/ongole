@@ -1,20 +1,14 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { Property } from "@/src/data/properties";
+import { Bath, BedDouble, CheckCircle2, MapPin, Maximize2 } from "lucide-react";
+import { formatArea } from "@/src/lib/area-conversion";
+import { formatPrice, propertyPurposeLabel } from "@/src/lib/format";
+import type { PublicProperty } from "@/src/types/property";
 
-export function PropertyCard({ property }: { property: Property }) {
-  return (
-    <article className="property-card">
-      <Link href={`/property/${property.slug}`} className={`property-visual ${property.color}`} aria-label={`View ${property.title}`}>
-        <span className="visual-sun" /><span className="visual-building" /><span className="visual-ground" />
-        <div className="badge-row">{property.verified && <span className="badge">Verified</span>}{property.featured && <span className="badge badge-warm">Featured</span>}</div>
-      </Link>
-      <div className="property-content">
-        <p className="property-meta">{property.type} · {property.purpose}</p>
-        <h3><Link href={`/property/${property.slug}`}>{property.title}</Link></h3>
-        <p className="location">{property.locality}, {property.city}</p>
-        <div className="price-row"><strong>{property.price}</strong><span>{property.area}</span></div>
-        <ul>{property.highlights.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
-      </div>
-    </article>
-  );
+export function PropertyCard({ property, view="grid" }: { property:PublicProperty;view?:"grid"|"list" }) {
+  const cover=property.media[0]; const details=[property.bedrooms?{Icon:BedDouble,text:`${property.bedrooms} bed`}:null,property.bathrooms?{Icon:Bath,text:`${property.bathrooms} bath`}:null,{Icon:Maximize2,text:formatArea(property.areaValue,property.areaUnit)}].filter(Boolean) as {Icon:typeof BedDouble;text:string}[];
+  return <article className={`property-card property-card-${view}`}>
+    <Link href={`/property/${property.slug}`} className={`property-visual category-${property.categorySlug}`} aria-label={`View ${property.title}`}>{cover?<Image src={cover.url} alt={cover.alt} fill sizes={view==="list"?"(max-width: 720px) 100vw, 360px":"(max-width: 720px) 100vw, (max-width: 1100px) 50vw, 33vw"}/>:<div className="property-fallback" role="img" aria-label={`${property.propertyType} image not available`}><span>{property.propertyType}</span></div>}<div className="badge-row">{property.isVerified&&<span className="badge"><CheckCircle2 size={12}/>Verified</span>}{property.isFeatured&&<span className="badge badge-warm">Featured</span>}{property.isDemo&&<span className="badge badge-neutral">Demo</span>}</div></Link>
+    <div className="property-content"><p className="property-meta">{property.propertyType} · {propertyPurposeLabel(property)}</p><h3><Link href={`/property/${property.slug}`}>{property.title}</Link></h3><p className="location"><MapPin size={15} aria-hidden="true"/>{property.locality}, {property.city}</p><div className="price-row"><strong>{formatPrice(property.price,property.transactionType)}</strong><span>{formatArea(property.areaValue,property.areaUnit)}</span></div><ul className="property-facts">{details.map(({Icon,text})=><li key={text}><Icon size={14} aria-hidden="true"/>{text}</li>)}</ul>{property.highlights.length>0&&<ul className="property-highlights">{property.highlights.slice(0,4).map((item)=><li key={item}>{item}</li>)}</ul>}<div className="card-footer"><div>{property.tags.slice(0,2).map((tag)=><span key={tag}>{tag}</span>)}</div><Link className="button button-small" href={`/property/${property.slug}`}>View details</Link></div></div>
+  </article>;
 }

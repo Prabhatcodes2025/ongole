@@ -124,7 +124,7 @@ create table public.properties (
   longitude numeric(9,6),
   price_inr numeric(14,2) check (price_inr is null or price_inr >= 0),
   area_value numeric(14,4) check (area_value is null or area_value > 0),
-  area_unit text check (area_unit in ('sq_ft','sq_yd','sq_m','acre','cent','gunta','hectare')),
+  area_unit text check (area_unit in ('gadi','sq_ft','sq_yd','sq_m','acre','cent','gunta','hectare')),
   details jsonb not null default '{}'::jsonb,
   is_verified boolean not null default false,
   is_featured boolean not null default false,

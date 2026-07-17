@@ -7,6 +7,10 @@ export const env = {
   supabaseAnonKey: publicAnonKey,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   captchaSecret: process.env.CAPTCHA_SECRET_KEY,
+  captchaSiteKey: process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY,
+  redisUrl: process.env.REDIS_URL,
+  redisToken: process.env.REDIS_TOKEN,
+  smtp: { host:process.env.SMTP_HOST,port:Number(process.env.SMTP_PORT||587),user:process.env.SMTP_USER,password:process.env.SMTP_PASSWORD,from:process.env.SMTP_FROM_EMAIL,admin:process.env.ADMIN_NOTIFICATION_EMAIL },
   isSupabaseConfigured: Boolean(publicUrl && publicAnonKey),
   isProduction: process.env.NODE_ENV === "production",
 } as const;

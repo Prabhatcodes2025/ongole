@@ -27,7 +27,15 @@ select r.id,p.id from public.roles r cross join public.permissions p where r.cod
 on conflict do nothing;
 
 insert into public.property_categories(name,slug,sort_order) values
-('Residential','residential',10),('Commercial','commercial',20),('Agricultural & Farm Land','agricultural-farm-land',30),('Industrial','industrial',40),('Rental & Lease','rental-lease',50)
+('Residential','residential',10),('Commercial','commercial',20),('Agricultural & Farm Land','agricultural',30),('Industrial','industrial',40),('Rental & Lease','rental-lease',50)
+on conflict (slug) do nothing;
+
+insert into public.property_types(category_id,name,slug)
+select c.id,v.name,v.slug from public.property_categories c cross join (values
+('residential','Independent House','independent-house'),('residential','Apartment / Flat','apartment-flat'),('residential','Villa','villa'),('residential','Open Plot','open-plot'),
+('commercial','Shop','shop'),('commercial','Office','office'),('commercial','Shopping Complex','shopping-complex'),('commercial','Commercial Open Plot','commercial-open-plot'),
+('agricultural','Agricultural Land','agricultural-land'),('agricultural','Farm Land','farm-land')
+) as v(category_slug,name,slug) where c.slug=v.category_slug
 on conflict (slug) do nothing;
 
 insert into public.feature_flags(key,enabled,configuration) values

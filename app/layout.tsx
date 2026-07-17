@@ -20,5 +20,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en-IN"><body className={`${geist.variable} ${lora.variable}`}><SiteHeader />{children}<SiteFooter /></body></html>;
+  const structuredData=[{"@context":"https://schema.org","@type":"Organization",name:siteConfig.name,legalName:siteConfig.legalName,url:siteConfig.url,logo:`${siteConfig.url}/ongole-property-logo.png`,email:siteConfig.email,telephone:siteConfig.phone,address:{"@type":"PostalAddress",streetAddress:"4th Lane, Bhagya Nagar",addressLocality:"Ongole",addressRegion:"Andhra Pradesh",postalCode:"523001",addressCountry:"IN"}},{"@context":"https://schema.org","@type":"WebSite",name:siteConfig.name,url:siteConfig.url,potentialAction:{"@type":"SearchAction",target:`${siteConfig.url}/properties?q={search_term_string}`,"query-input":"required name=search_term_string"}}];
+  return <html lang="en-IN"><body className={`${geist.variable} ${lora.variable}`}><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structuredData).replace(/</g,"\\u003c")}}/><SiteHeader />{children}<SiteFooter /></body></html>;
 }

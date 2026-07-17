@@ -1,0 +1,4 @@
+import { AlertTriangle, Building2 } from "lucide-react";
+export function EmptyState({title="No properties found",message="Try changing or clearing one or more filters."}:{title?:string;message?:string}){return <div className="empty-state" role="status"><Building2 aria-hidden="true"/><h2>{title}</h2><p>{message}</p></div>}
+export function ErrorState({message}:{message:string}){return <div className="error-state" role="alert"><AlertTriangle aria-hidden="true"/><h2>We could not load this section</h2><p>{message}</p></div>}
+export function PropertySkeletons({count=3}:{count?:number}){return <div className="property-grid" aria-label="Loading properties" aria-busy="true">{Array.from({length:count},(_,index)=><div className="property-skeleton" key={index}><span/><div><i/><i/><i/></div></div>)}</div>}
