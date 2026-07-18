@@ -1,17 +1,7 @@
-import { NextResponse } from "next/server";
-import { env } from "@/src/lib/env";
-import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import {NextRequest,NextResponse} from "next/server";
+import {env} from "@/src/lib/env";
+import {createSupabaseServerClient} from "@/src/lib/supabase/server";
+import {logEvent} from "@/src/lib/observability/logger";
 
-export const dynamic = "force-dynamic";
-
-export async function GET() {
-  if (!env.isSupabaseConfigured) return NextResponse.json({ status: "degraded", database: "not_configured" }, { status: 503, headers: { "Cache-Control": "no-store" } });
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.from("feature_flags").select("key", { head: true, count: "exact" }).limit(1);
-    if (error) throw error;
-    return NextResponse.json({ status: "ok", database: "reachable", checkedAt: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } });
-  } catch {
-    return NextResponse.json({ status: "degraded", database: "unreachable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
-  }
-}
+export const dynamic="force-dynamic";
+export async function GET(request:NextRequest){const requestId=request.headers.get("x-request-id")||crypto.randomUUID();const services={database:env.isSupabaseConfigured?"checking":"not_configured",smtp:env.smtp.host&&env.smtp.from?"configured":"disabled",redis:env.redisUrl&&env.redisToken?"configured":"fallback",captcha:env.captchaSecret&&env.captchaSiteKey?"configured":"disabled",maps:env.googleMapsKey?"configured":"disabled",analytics:env.gaMeasurementId?"configured":"disabled",errorReporting:env.sentryDsn?"configured":"logs_only"};if(!env.isSupabaseConfigured)return NextResponse.json({status:"degraded",requestId,services},{status:503,headers:{"Cache-Control":"no-store"}});try{const supabase=await createSupabaseServerClient();const{error}=await supabase.from("feature_flags").select("key",{head:true,count:"exact"}).limit(1);if(error)throw error;return NextResponse.json({status:"ok",requestId,services:{...services,database:"reachable"},checkedAt:new Date().toISOString()},{headers:{"Cache-Control":"no-store"}})}catch(error){logEvent("error","health.database_unreachable",{requestId,error:error instanceof Error?error.message:"unknown"});return NextResponse.json({status:"degraded",requestId,services:{...services,database:"unreachable"}},{status:503,headers:{"Cache-Control":"no-store"}})}}

@@ -53,3 +53,11 @@ Public pages query only approved, published, non-deleted Supabase records. When 
 The latest migrations add normalized area filtering, anonymous column restrictions, protected premium map access, dynamic master data, operational CRM, owner lifecycle actions and transactional admin controls.
 
 See `docs/SPRINT-1.md` and `docs/SPRINT-2.md` for completion checklists, configuration blockers and manual production verification steps.
+
+## Sprint 3 production readiness
+
+Sprint 3 implements the complete client homepage audit, local `Gadi = square feet / 72` conversion, master-backed location suggestions, approved campaign advertisements, search analytics/indexing, expanded SEO metadata, request IDs, structured health reporting, GA4 and production runbooks.
+
+Apply `supabase/migrations/202607180001_sprint3_production_readiness.sql` after the Sprint 2 migration. Empty advertisement positions never render; campaigns must be approved, inside their schedule and use an image hosted in the configured Supabase project.
+
+See `docs/SPRINT-3.md` for the compliance checklist and `docs/PRODUCTION-RUNBOOK.md` for deployment, database, backup, restore, monitoring and disaster-recovery procedures.

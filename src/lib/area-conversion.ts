@@ -1,7 +1,7 @@
 import type { AreaUnit } from "@/src/types/property";
 
 export const SQUARE_FEET_PER_UNIT: Record<AreaUnit, number> = {
-  gadi: 9,
+  gadi: 72,
   sq_ft: 1,
   sq_yd: 9,
   sq_m: 10.763910416709722,
@@ -39,3 +39,5 @@ export function areaEquivalents(value: number, unit: AreaUnit) {
 export function formatArea(value: number, unit: AreaUnit, maximumFractionDigits = 2) {
   return `${new Intl.NumberFormat("en-IN", { maximumFractionDigits }).format(value)} ${AREA_UNIT_LABELS[unit]}`;
 }
+
+export function formatLocalArea(value:number,unit:AreaUnit){const formatted=formatArea(value,unit);if(unit!=="sq_ft")return formatted;const gadi=convertArea(value,"sq_ft","gadi");return `${formatted} (${new Intl.NumberFormat("en-IN",{maximumFractionDigits:2}).format(gadi)} Gadi)`}

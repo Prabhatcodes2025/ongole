@@ -2,29 +2,23 @@
 
 import Link from "next/link";
 import { ChevronDown, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { propertyCategories, propertyTypeLabels } from "@/src/config/property-catalog";
 
-function propertyGroups(purpose: "sale" | "rent") {
-  return propertyCategories.map((category) => ({ label: category.label, items: category.types.map((type) => ({ label: propertyTypeLabels[type], href: `/properties?purpose=${purpose}&category=${category.value}&type=${type}` })) }));
-}
+function propertyGroups(purpose:"sale"|"rent"){return propertyCategories.map((category)=>({label:category.label,items:category.types.map((type)=>({label:propertyTypeLabels[type],href:`/properties?purpose=${purpose}&category=${category.value}&type=${type}`}))}))}
+const menus=[{label:"Home",href:"/"},{label:"About Us",href:"/about"},{label:"Properties for Sale",href:"/properties?purpose=sale",groups:propertyGroups("sale")},{label:"Properties for Rent / Lease",href:"/properties?purpose=rent",groups:propertyGroups("rent")},{label:"Paying Guest",href:"/paying-guest",groups:[{label:"Accommodation",items:[{label:"Men's PG",href:"/paying-guest?category=mens"},{label:"Women's PG",href:"/paying-guest?category=womens"},{label:"Co-Living",href:"/paying-guest?category=co_living"}]}]},{label:"Real Estate Agents",href:"/agents"},{label:"Advertise With Us",href:"/advertise-with-us"},{label:"Contact Us",href:"/contact"}];
 
-const menus = [
-  { label:"Home", href:"/" }, { label:"About Us", href:"/about" },
-  { label:"Properties for Sale", href:"/properties?purpose=sale", groups:propertyGroups("sale") },
-  { label:"Properties for Rent / Lease", href:"/properties?purpose=rent", groups:propertyGroups("rent") },
-  { label:"Paying Guest", href:"/paying-guest", groups:[{ label:"Accommodation", items:[{label:"Men's PG",href:"/paying-guest?category=mens"},{label:"Women's PG",href:"/paying-guest?category=womens"},{label:"Co-Living",href:"/paying-guest?category=co_living"}] }] },
-  { label:"Real Estate Agents", href:"/agents" }, { label:"Advertise With Us", href:"/advertise-with-us" }, { label:"Contact Us", href:"/contact" },
-];
-
-export function PublicNavigation() {
-  const [open,setOpen] = useState(false);
-  useEffect(() => { document.body.classList.toggle("menu-open", open); return () => document.body.classList.remove("menu-open"); }, [open]);
-  useEffect(() => { const close=(event:KeyboardEvent)=>event.key==="Escape"&&setOpen(false); document.addEventListener("keydown",close); return()=>document.removeEventListener("keydown",close); },[]);
+export function PublicNavigation(){
+  const [mobileOpen,setMobileOpen]=useState(false),[desktopMenu,setDesktopMenu]=useState<string|null>(null),[mobileMenu,setMobileMenu]=useState<string|null>(null);const leaveTimer=useRef<number|null>(null);
+  const closeAll=()=>{setDesktopMenu(null);setMobileMenu(null);setMobileOpen(false)};
+  useEffect(()=>{document.body.classList.toggle("menu-open",mobileOpen);return()=>document.body.classList.remove("menu-open")},[mobileOpen]);
+  useEffect(()=>{const close=(event:KeyboardEvent)=>{if(event.key==="Escape")closeAll()};document.addEventListener("keydown",close);return()=>document.removeEventListener("keydown",close)},[]);
+  const enter=(label:string)=>{if(leaveTimer.current)window.clearTimeout(leaveTimer.current);setDesktopMenu(label)};
+  const leave=()=>{leaveTimer.current=window.setTimeout(()=>setDesktopMenu(null),120)};
   return <>
-    <nav className="desktop-nav" aria-label="Primary navigation">{menus.map((item) => item.groups ? <details className="nav-dropdown" key={item.label}><summary>{item.label}<ChevronDown size={14} aria-hidden="true" /></summary><div className="mega-menu"><Link className="mega-all" href={item.href}>View all {item.label.toLowerCase()}</Link>{item.groups.map((group)=><section key={group.label}><h3>{group.label}</h3>{group.items.map((child)=><Link key={child.href} href={child.href}>{child.label}</Link>)}</section>)}</div></details> : <Link key={item.href} href={item.href}>{item.label}</Link>)}</nav>
-    <button className="menu-toggle" type="button" aria-label={open?"Close navigation":"Open navigation"} aria-expanded={open} aria-controls="mobile-navigation" onClick={()=>setOpen((value)=>!value)}>{open?<X/>:<Menu/>}</button>
-    <div className={`mobile-nav-backdrop ${open?"is-open":""}`} onClick={()=>setOpen(false)} aria-hidden="true" />
-    <nav id="mobile-navigation" className={`mobile-nav ${open?"is-open":""}`} aria-label="Mobile navigation" aria-hidden={!open} onClick={(event)=>{if((event.target as HTMLElement).closest("a"))setOpen(false)}}>{menus.map((item)=>item.groups?<details key={item.label}><summary>{item.label}<ChevronDown size={16}/></summary><Link className="mobile-all" href={item.href}>View all</Link>{item.groups.map((group)=><div className="mobile-group" key={group.label}><strong>{group.label}</strong>{group.items.map((child)=><Link key={child.href} href={child.href}>{child.label}</Link>)}</div>)}</details>:<Link key={item.href} href={item.href}>{item.label}</Link>)}<div className="mobile-nav-actions"><Link href="/login">Sign in</Link><Link className="button" href="/post-property">Post property</Link></div></nav>
+    <nav className="desktop-nav" aria-label="Primary navigation">{menus.map((item)=>item.groups?<div className={`nav-dropdown ${desktopMenu===item.label?"is-open":""}`} key={item.label} onMouseEnter={()=>enter(item.label)} onMouseLeave={leave}><button type="button" aria-expanded={desktopMenu===item.label} aria-haspopup="true" onClick={()=>setDesktopMenu((value)=>value===item.label?null:item.label)}>{item.label}<ChevronDown size={14} aria-hidden="true"/></button><div className="mega-menu" hidden={desktopMenu!==item.label} onKeyDown={(event)=>event.key==="Escape"&&setDesktopMenu(null)}><Link className="mega-all" href={item.href} onClick={closeAll}>View all {item.label.toLowerCase()}</Link>{item.groups.map((group)=><section key={group.label}><h3>{group.label}</h3>{group.items.map((child)=><Link key={child.href} href={child.href} onClick={closeAll}>{child.label}</Link>)}</section>)}</div></div>:<Link key={item.href} href={item.href} onClick={closeAll}>{item.label}</Link>)}</nav>
+    <button className="menu-toggle" type="button" aria-label={mobileOpen?"Close navigation":"Open navigation"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={()=>setMobileOpen((value)=>!value)}>{mobileOpen?<X/>:<Menu/>}</button>
+    <div className={`mobile-nav-backdrop ${mobileOpen?"is-open":""}`} onClick={closeAll} aria-hidden="true"/>
+    <nav id="mobile-navigation" className={`mobile-nav ${mobileOpen?"is-open":""}`} aria-label="Mobile navigation" aria-hidden={!mobileOpen}>{menus.map((item)=>item.groups?<div className="mobile-menu" key={item.label}><button type="button" aria-expanded={mobileMenu===item.label} onClick={()=>setMobileMenu((value)=>value===item.label?null:item.label)}>{item.label}<ChevronDown size={16}/></button>{mobileMenu===item.label&&<div><Link className="mobile-all" href={item.href} onClick={closeAll}>View all</Link>{item.groups.map((group)=><div className="mobile-group" key={group.label}><strong>{group.label}</strong>{group.items.map((child)=><Link key={child.href} href={child.href} onClick={closeAll}>{child.label}</Link>)}</div>)}</div>}</div>:<Link key={item.href} href={item.href} onClick={closeAll}>{item.label}</Link>)}<div className="mobile-nav-actions"><Link href="/login" onClick={closeAll}>Sign in</Link><Link className="button" href="/post-property" onClick={closeAll}>Post property</Link></div></nav>
   </>;
 }

@@ -20,8 +20,20 @@ Last audited: 17 July 2026
 - [ ] Create the first super admin and verify the production workflow using real accounts and email delivery.
 - [ ] Repeat responsive browser QA when localhost access is permitted by the browser environment.
 
+## Sprint 3 completed in code
+
+- [x] All 16 client homepage audit items, including layout density, dropdown behavior, hero controls, numeric budgets, local autocomplete, conditional ads and footer-ad removal.
+- [x] Local 72-square-feet-per-Gadi conversion and consistent card highlight ordering.
+- [x] Property detail information architecture and responsive/accessibility polish.
+- [x] Production migration for advertisements, micro-market locations and trigram search indexes.
+- [x] GA4/Search Console/Bing integration, search analytics, request IDs, health reporting, structured logs and error boundaries.
+- [x] Backup, restore and disaster-recovery runbook.
+- [ ] Deploy this revision, apply the Sprint 3 migration and complete the final live browser/provider validation matrix.
+
+Current live blocker (18 July 2026): `https://ongole.vercel.app/api/health` reports `database: not_configured`.
+
 ## Sprint 3 / excluded work
 
 - [ ] Paying Guest operations, memberships/payments, Docker/VPS automation, mobile applications and AI features.
 
-See `docs/SPRINT-1.md` and `docs/SPRINT-2.md` for detailed completion and production verification checklists.
+See `docs/SPRINT-1.md`, `docs/SPRINT-2.md` and `docs/SPRINT-3.md` for detailed completion and production verification checklists.

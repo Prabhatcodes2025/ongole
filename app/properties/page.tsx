@@ -1,21 +1,18 @@
-import type { Metadata } from "next";
+import type {Metadata} from "next";
 import Link from "next/link";
-import { Suspense } from "react";
-import { ListingResults } from "@/src/components/listing-results";
-import { Pagination } from "@/src/components/pagination";
-import { PropertyFilterForm } from "@/src/components/property-filter-form";
-import { PropertySearch } from "@/src/components/property-search";
-import { EmptyState, ErrorState, PropertySkeletons } from "@/src/components/public-states";
-import { SortControl } from "@/src/components/sort-control";
-import { activeFilterEntries, parsePropertyFilters } from "@/src/lib/properties/filters";
-import { listPublicProperties } from "@/src/lib/properties/public";
+import {Suspense} from "react";
+import {ListingResults} from "@/src/components/listing-results";
+import {Pagination} from "@/src/components/pagination";
+import {PropertyFilterForm} from "@/src/components/property-filter-form";
+import {PropertySearch} from "@/src/components/property-search";
+import {EmptyState,ErrorState,PropertySkeletons} from "@/src/components/public-states";
+import {SortControl} from "@/src/components/sort-control";
+import {SearchAnalytics} from "@/src/components/search-analytics";
+import {activeFilterEntries,parsePropertyFilters} from "@/src/lib/properties/filters";
+import {listPublicProperties} from "@/src/lib/properties/public";
 import {getPublicPropertyCatalog} from "@/src/lib/masters/public";
 
-export const revalidate=300;
-type Params=Record<string,string|string[]|undefined>;
+export const revalidate=300;type Params=Record<string,string|string[]|undefined>;
 function urlParams(query:Params){const result=new URLSearchParams();Object.entries(query).forEach(([key,value])=>Array.isArray(value)?value.forEach((item)=>result.append(key,item)):value&&result.set(key,value));return result}
 export async function generateMetadata({searchParams}:{searchParams:Promise<Params>}):Promise<Metadata>{const filters=parsePropertyFilters(await searchParams);const qualifiers=[filters.purpose&&`${filters.purpose} properties`,filters.category,filters.location&&`in ${filters.location}`].filter(Boolean).join(" ");const title=qualifiers?`${qualifiers.replace(/^./,(value)=>value.toUpperCase())} | Ongole Property Listings`:"Properties in Ongole & Prakasam";return{title,description:`Search approved ${qualifiers||"residential, commercial and agricultural properties"} across Ongole and Prakasam District.`,alternates:{canonical:"/properties"},robots:{index:true,follow:true},openGraph:{title,url:"/properties",type:"website"},twitter:{card:"summary_large_image",title}}}
-
-export default async function PropertiesPage({searchParams}:{searchParams:Promise<Params>}){const raw=await searchParams;const filters=parsePropertyFilters(raw);const [result,catalog]=await Promise.all([listPublicProperties(filters),getPublicPropertyCatalog()]);const params=urlParams(raw);const selected=activeFilterEntries(filters);
-  return <main id="main"><section className="inner-hero listing-hero"><div className="shell"><p className="eyebrow">Verified property discovery</p><h1>Properties in Ongole &amp; Prakasam</h1><p>Search approved residential, commercial and agricultural opportunities with practical filters and protected owner privacy.</p><PropertySearch compact catalog={catalog}/></div></section>
-  <section className="section shell listing-shell">{result.source==="demo"&&<p className="demo-notice">Preview mode: Supabase is not configured, so clearly marked demonstration listings are shown.</p>}<PropertyFilterForm filters={filters} catalog={catalog}/><div className="listing-content"><div className="results-toolbar"><div><strong>{result.total}</strong> {result.total===1?"property":"properties"} found</div><Suspense fallback={null}><SortControl value={filters.sort}/></Suspense></div>{selected.length>0&&<div className="active-filters" aria-label="Selected filters">{selected.map(([key,value])=>{const next=new URLSearchParams(params);next.delete(key);next.delete("page");return <Link key={key} href={`/properties?${next}`}>{key}: {Array.isArray(value)?value.join(", "):String(value)} <span aria-hidden="true">×</span></Link>})}<Link className="clear-chip" href="/properties">Clear all</Link></div>}{result.error?<ErrorState message={result.error}/>:result.properties.length?<><Suspense fallback={<PropertySkeletons count={filters.pageSize}/>}><ListingResults properties={result.properties}/></Suspense><Pagination page={result.page} total={result.total} pageSize={result.pageSize} params={params}/></>:<EmptyState/>}</div></section></main>}
+export default async function PropertiesPage({searchParams}:{searchParams:Promise<Params>}){const raw=await searchParams,filters=parsePropertyFilters(raw),[result,catalog]=await Promise.all([listPublicProperties(filters),getPublicPropertyCatalog()]),params=urlParams(raw),selected=activeFilterEntries(filters);return <main id="main"><SearchAnalytics query={raw} resultCount={result.total}/><section className="inner-hero listing-hero"><div className="shell"><p className="eyebrow">Verified property discovery</p><h1>Properties in Ongole &amp; Prakasam</h1><p>Search approved residential, commercial and agricultural opportunities with practical filters and protected owner privacy.</p><PropertySearch compact catalog={catalog}/></div></section><section className="section shell listing-shell">{result.source==="demo"&&<p className="demo-notice">Preview mode: Supabase is not configured, so clearly marked demonstration listings are shown.</p>}<PropertyFilterForm filters={filters} catalog={catalog}/><div className="listing-content"><div className="results-toolbar"><div><strong>{result.total}</strong> {result.total===1?"property":"properties"} found</div><Suspense fallback={null}><SortControl value={filters.sort}/></Suspense></div>{selected.length>0&&<div className="active-filters" aria-label="Selected filters">{selected.map(([key,value])=>{const next=new URLSearchParams(params);next.delete(key);next.delete("page");return <Link key={key} href={`/properties?${next}`}>{key}: {Array.isArray(value)?value.join(", "):String(value)} <span aria-hidden="true">×</span></Link>})}<Link className="clear-chip" href="/properties">Clear all</Link></div>}{result.error?<ErrorState message={result.error}/>:result.properties.length?<><Suspense fallback={<PropertySkeletons count={filters.pageSize}/>}><ListingResults properties={result.properties}/></Suspense><Pagination page={result.page} total={result.total} pageSize={result.pageSize} params={params}/></>:<EmptyState/>}</div></section></main>}
