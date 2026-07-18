@@ -3,12 +3,19 @@
 ## Deployment
 
 1. Run `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`.
-2. Apply Supabase migrations in filename order through `202607180002_post_sprint3_acceptance.sql`, then run the idempotent `supabase/seed.sql`.
+2. Apply Supabase migrations in filename order through `202607180003_auth_session_rbac_hotfix.sql`, then run the idempotent `supabase/seed.sql`.
 3. Configure Vercel variables from `.env.example`; never place secrets in `NEXT_PUBLIC_*` variables.
 4. Deploy with standard Next.js settings: `pnpm build`, default output and Node.js 22.
 5. Verify `/api/health` reports `database: schema_ready`, then verify `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
 
 `NEXT_PUBLIC_SITE_URL` is currently `https://ongole.vercel.app`. When the custom domain is connected, update this variable and the matching Supabase Auth Site URL/redirect allow-list, then redeploy. No source change is required.
+
+Supabase Authentication > URL Configuration:
+
+- Site URL: `https://ongole.vercel.app`
+- Redirect URLs: `https://ongole.vercel.app/auth/callback`, `https://ongole.vercel.app/**`, `http://localhost:3000/auth/callback`, and `http://localhost:3000/**`
+
+After deployment, sign in as the intended administrator and open `/api/auth/context`. The response must contain the `super_admin` role and the expected permission codes. If roles are empty, assign `super_admin` using the documented SQL bootstrap; changing `profiles.account_type` does not grant RBAC permissions.
 
 ## Database and storage validation
 

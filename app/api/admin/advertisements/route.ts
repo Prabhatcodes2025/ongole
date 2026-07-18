@@ -3,6 +3,7 @@ import {z} from "zod";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
 import {requestData} from "@/src/lib/request";
 import {env} from "@/src/lib/env";
+import {logEvent} from "@/src/lib/observability/logger";
 
 const webUrl=z.url().refine((value)=>/^https?:\/\//i.test(value));
 const scheduleValue=z.string().refine((value)=>!value||Number.isFinite(Date.parse(value)));
@@ -24,5 +25,5 @@ export async function POST(request:NextRequest){
     if(!value.id)return NextResponse.json({error:"Campaign ID is required."},{status:400});
     if(value.action==="delete")({error}=await supabase.from("advertisements").delete().eq("id",value.id));else({error}=await supabase.from("advertisements").update({status:value.action==="approve"?"approved":"archived",approved_by:value.action==="approve"?auth.user.id:null}).eq("id",value.id));
   }
-  if(error)return NextResponse.json({error:"The campaign could not be saved."},{status:409});await supabase.rpc("record_audit_event",{event_action:`advertisement.${value.action}`,event_type:"advertisement",event_reference:reference,event_new:{slot:value.slot,status:value.action}});return NextResponse.redirect(new URL("/admin/advertisements",request.url),303);
+  if(error){logEvent("error","admin.advertisement_save_failed",{code:error.code,action:value.action});return NextResponse.json({error:"The campaign could not be saved. Retry or contact support with the request ID."},{status:409})}await supabase.rpc("record_audit_event",{event_action:`advertisement.${value.action}`,event_type:"advertisement",event_reference:reference,event_new:{slot:value.slot,status:value.action}});return NextResponse.redirect(new URL("/admin/advertisements",request.url),303);
 }

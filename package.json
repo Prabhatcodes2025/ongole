@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "lint": "eslint . --ignore-pattern .next",
-    "verify:supabase": "node scripts/verify-supabase.mjs"
+    "verify:supabase": "node scripts/verify-supabase.mjs",
+    "verify:auth": "node scripts/verify-auth.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",

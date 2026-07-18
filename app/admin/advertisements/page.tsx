@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {redirect} from "next/navigation";
 import {AdminNavigation} from "@/src/components/admin-navigation";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
+import {logEvent} from "@/src/lib/observability/logger";
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Advertisements",robots:{index:false,follow:false}};
@@ -12,7 +13,7 @@ const localDate=(value:string|null)=>value?new Date(value).toISOString().slice(0
 
 export default async function AdvertisementsPage(){
   const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();if(!auth.user)redirect("/login?returnTo=/admin/advertisements");const {data:allowed}=await supabase.rpc("has_permission",{required_permission:"settings.manage"});if(!allowed)redirect("/admin");
-  const {data,error}=await supabase.from("advertisements").select("id,title,slot,image_url,destination_url,alt_text,status,starts_at,ends_at,sort_order,updated_at").order("updated_at",{ascending:false});const advertisements=(data||[]) as Advertisement[];
+  const {data,error}=await supabase.from("advertisements").select("id,title,slot,image_url,destination_url,alt_text,status,starts_at,ends_at,sort_order,updated_at").order("updated_at",{ascending:false});if(error)logEvent("error","admin.advertisements_query_failed",{code:error.code});const advertisements=(data||[]) as Advertisement[];
   return <main id="main" className="portal-page admin-portal"><div className="shell"><div className="portal-title"><div><p className="eyebrow">Campaign operations</p><h1>Advertisements</h1><p>Only approved campaigns inside their UTC schedule are eligible for public display. Empty slots remain collapsed.</p></div></div><AdminNavigation/>{error&&<p className="form-message error">Advertisements could not be loaded.</p>}<section className="admin-dashboard-grid master-layout"><article className="portal-section"><h2>Create campaign</h2><AdvertisementForm/></article><article className="portal-section"><h2>Campaigns</h2><div className="master-list">{advertisements.map((advertisement)=><article key={advertisement.id}><AdvertisementForm advertisement={advertisement}/><div><span className={`status status-${advertisement.status}`}>{advertisement.status}</span><span>{advertisement.slot} · order {advertisement.sort_order}</span><form action="/api/admin/advertisements" method="post"><input type="hidden" name="id" value={advertisement.id}/>{advertisement.status!=="approved"&&<button name="action" value="approve">Approve</button>}{advertisement.status!=="archived"&&<button name="action" value="archive">Archive</button>}<button className="danger-link" name="action" value="delete">Delete</button></form></div></article>)}{!advertisements.length&&<div className="empty-state compact"><h3>No campaigns</h3><p>Create a draft; it will remain hidden until approved.</p></div>}</div></article></section></div></main>;
 }
 

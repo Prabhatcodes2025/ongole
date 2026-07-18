@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 import {NextRequest,NextResponse} from "next/server";
 import {requestIp} from "@/src/lib/request";
 import {checkRateLimit} from "@/src/lib/security/rate-limit";
-import {createSupabaseServiceClient} from "@/src/lib/supabase/public";
+import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
 
 export async function POST(request:NextRequest){
   const rate=await checkRateLimit(`search-analytics:${requestIp(request)}`,60,60_000);

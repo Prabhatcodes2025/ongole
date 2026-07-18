@@ -1,6 +1,7 @@
 import { demoProperties } from "@/src/data/demo-properties";
 import { convertArea } from "@/src/lib/area-conversion";
-import { createPublicSupabaseClient, createSupabaseServiceClient } from "@/src/lib/supabase/public";
+import { createPublicSupabaseClient } from "@/src/lib/supabase/public";
+import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
 import type { AreaUnit, PropertyFilters, PropertyListResult, PropertyMedia, PublicProperty } from "@/src/types/property";
 
 const SELECT = "id,reference_no,slug,title,description,transaction_type,price_inr,area_value,area_unit,locality_text,city_text,district_text,state_text,details,is_verified,is_featured,is_pinned,is_premium,contact_visibility,published_at,property_categories(name,slug),property_types(name,slug)";

@@ -13,6 +13,7 @@ Last audited: 18 July 2026
 - [x] Sprint 2 reporting: CSV/XLSX exports for users, properties and enquiries.
 - [x] Quality gates: ESLint, TypeScript, automated tests and production Next.js build.
 - [x] Post-Sprint-3 code audit: schema/query comparison, idempotent seed completion, Gadi database correction, profile/RLS hardening, schema-aware health, thumbnail variants and advertisement administration.
+- [x] Authentication/RBAC hotfix: confirmation callback, cookie refresh proxy, safe profile reconciliation, current-user permission diagnostics, permission-aware admin metrics, master-data RLS policies and production auth verifier.
 
 ## Production configuration required
 
