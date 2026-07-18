@@ -1,6 +1,6 @@
 # OngoleProperty.com implementation progress
 
-Last audited: 17 July 2026
+Last audited: 18 July 2026
 
 ## Completed
 
@@ -12,13 +12,14 @@ Last audited: 17 July 2026
 - [x] Sprint 2 CRM and integrations: enquiry workflow, notes, SMTP templates, Turnstile coverage and Redis-backed rate limiting with safe fallbacks.
 - [x] Sprint 2 reporting: CSV/XLSX exports for users, properties and enquiries.
 - [x] Quality gates: ESLint, TypeScript, automated tests and production Next.js build.
+- [x] Post-Sprint-3 code audit: schema/query comparison, idempotent seed completion, Gadi database correction, profile/RLS hardening, schema-aware health, thumbnail variants and advertisement administration.
 
 ## Production configuration required
 
-- [ ] Apply migrations and seed to the production Supabase project.
-- [ ] Add Vercel Supabase, SMTP, Turnstile and Redis REST environment values.
-- [ ] Create the first super admin and verify the production workflow using real accounts and email delivery.
-- [ ] Repeat responsive browser QA when localhost access is permitted by the browser environment.
+- [ ] Apply `202607180002_post_sprint3_acceptance.sql` and rerun the idempotent seed in production.
+- [ ] Configure optional SMTP, Turnstile, Redis REST, Maps, analytics and Sentry integrations as required by launch policy.
+- [ ] Supply temporary owner/admin acceptance accounts and complete the destructive live workflow, then remove test records.
+- [ ] Complete exact-width and cross-browser visual QA; the available browser reported a mobile breakpoint but did not expose the requested physical viewport widths reliably.
 
 ## Sprint 3 completed in code
 
@@ -28,9 +29,9 @@ Last audited: 17 July 2026
 - [x] Production migration for advertisements, micro-market locations and trigram search indexes.
 - [x] GA4/Search Console/Bing integration, search analytics, request IDs, health reporting, structured logs and error boundaries.
 - [x] Backup, restore and disaster-recovery runbook.
-- [ ] Deploy this revision, apply the Sprint 3 migration and complete the final live browser/provider validation matrix.
+- [ ] Deploy this revision, apply the corrective migration and complete authenticated live acceptance.
 
-Current live blocker (18 July 2026): `https://ongole.vercel.app/api/health` reports `database: not_configured`.
+Current live state (18 July 2026): `https://ongole.vercel.app/api/health` returns HTTP 200 with `database: reachable`. The live public catalogue uses Supabase (no demo notice), but the deployed revision cannot report `schema_ready` until the corrective migration and application revision are deployed.
 
 ## Sprint 3 / excluded work
 

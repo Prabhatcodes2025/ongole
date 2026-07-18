@@ -26,6 +26,15 @@ insert into public.role_permissions(role_id, permission_id)
 select r.id,p.id from public.roles r cross join public.permissions p where r.code = 'super_admin'
 on conflict do nothing;
 
+insert into public.role_permissions(role_id, permission_id)
+select r.id,p.id from public.roles r
+join public.permissions p on
+  (r.code='property_manager' and p.code in ('properties.read','properties.manage','agents.read','agents.manage','audit.read'))
+  or (r.code='enquiry_manager' and p.code in ('enquiries.read','enquiries.manage','users.read'))
+  or (r.code='content_manager' and p.code in ('settings.manage','seo.manage'))
+  or (r.code='analyst' and p.code in ('analytics.read','audit.read'))
+on conflict do nothing;
+
 insert into public.property_categories(name,slug,sort_order) values
 ('Residential','residential',10),('Commercial','commercial',20),('Agricultural & Farm Land','agricultural',30),('Industrial','industrial',40),('Rental & Lease','rental-lease',50)
 on conflict (slug) do nothing;
@@ -37,6 +46,27 @@ select c.id,v.name,v.slug from public.property_categories c cross join (values
 ('agricultural','Agricultural Land','agricultural-land'),('agricultural','Farm Land','farm-land')
 ) as v(category_slug,name,slug) where c.slug=v.category_slug
 on conflict (slug) do nothing;
+
+insert into public.locations(type,name,slug,is_active,sort_order)
+select v.type,v.name,v.slug,true,v.sort_order
+from (values
+  ('locality','Bhagya Nagar','bhagya-nagar',10),
+  ('locality','Bhagyanagar','bhagyanagar',11),
+  ('locality','Gopal Nagar','gopal-nagar',20),
+  ('locality','Pernamitta','pernamitta',30),
+  ('locality','Lawyer Pet','lawyer-pet',40),
+  ('locality','Mangamuru Road','mangamuru-road',50),
+  ('locality','Kurnool Road','kurnool-road',60),
+  ('locality','Pelluru','pelluru',70)
+) as v(type,name,slug,sort_order)
+where not exists (select 1 from public.locations l where l.slug=v.slug and l.deleted_at is null);
+
+insert into public.master_items(kind,name,slug,sort_order) values
+('amenity','Parking','parking',10),('amenity','Power Backup','power-backup',20),('amenity','Lift','lift',30),('amenity','Security','security',40),('amenity','Water Supply','water-supply',50),('amenity','Road Access','road-access',60),
+('facing','East','east',10),('facing','West','west',20),('facing','North','north',30),('facing','South','south',40),('facing','North East','north-east',50),
+('ownership','Freehold','freehold',10),('ownership','Leasehold','leasehold',20),
+('advertisement_type','Hero Banner','hero-banner',10),('advertisement_type','Flash Advertisement','flash',20),('advertisement_type','Scrolling Advertisement','scrolling',30),('advertisement_type','Sidebar Advertisement','sidebar',40)
+on conflict(kind,slug) do nothing;
 
 insert into public.feature_flags(key,enabled,configuration) values
 ('memberships_public',false,'{}'),('online_payments',false,'{}'),('blog',true,'{}'),('paying_guest',true,'{}'),('agent_network',true,'{}'),('social_auto_publish',false,'{"queue_required":true}')

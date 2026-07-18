@@ -3,10 +3,12 @@
 ## Deployment
 
 1. Run `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`.
-2. Apply Supabase migrations in filename order and then `supabase/seed.sql`.
+2. Apply Supabase migrations in filename order through `202607180002_post_sprint3_acceptance.sql`, then run the idempotent `supabase/seed.sql`.
 3. Configure Vercel variables from `.env.example`; never place secrets in `NEXT_PUBLIC_*` variables.
 4. Deploy with standard Next.js settings: `pnpm build`, default output and Node.js 22.
-5. Verify `/api/health`, `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
+5. Verify `/api/health` reports `database: schema_ready`, then verify `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
+
+`NEXT_PUBLIC_SITE_URL` is currently `https://ongole.vercel.app`. When the custom domain is connected, update this variable and the matching Supabase Auth Site URL/redirect allow-list, then redeploy. No source change is required.
 
 ## Database and storage validation
 
@@ -15,6 +17,7 @@
 - Confirm anonymous users can select only published safe property columns and active approved campaigns.
 - Confirm the `property-media` bucket is private and signed URLs expire.
 - Confirm owner paths are scoped to the authenticated owner and property.
+- Confirm uploaded media creates a display WebP plus a private thumbnail WebP and that deleting media removes both objects.
 - Run `EXPLAIN (ANALYZE, BUFFERS)` for representative public location, price, area and title searches.
 
 ## Backups
@@ -48,3 +51,10 @@
 - Alert on repeated 5xx responses, database degradation, email failures and rate-limit anomalies.
 - Use the returned/request `x-request-id` to correlate platform and provider logs.
 - Structured server events are JSON. `SENTRY_DSN` is surfaced as a readiness state until the production Sentry project/SDK is enabled.
+
+## Rollback
+
+- Roll back the Vercel deployment to the previous known-good build if application behavior regresses.
+- Do not reverse the corrective migration by dropping data or policies. Apply a new forward-only migration after review.
+- If the schema probe is unavailable during a staged rollout, health returns `reachable` with HTTP 503; deploy/apply the missing migration rather than weakening the check.
+- Preserve database and Storage backups before any corrective data operation.

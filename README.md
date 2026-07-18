@@ -38,7 +38,7 @@ Add the variables documented in `.env.example` to the Vercel project. Apply the 
 
 ## Supabase rollout
 
-Apply migrations in filename order, ending with `supabase/migrations/202607170004_sprint2_operations.sql`, then run `supabase/seed.sql`. Create the first super admin only after the schema and RBAC seed are applied.
+Apply migrations in filename order, ending with `supabase/migrations/202607180002_post_sprint3_acceptance.sql`, then run `supabase/seed.sql`. The last migration fixes the database Gadi conversion, hardens authenticated column/role access and adds the content-free schema health probe. Create the first super admin only after the schema and RBAC seed are applied.
 
 ## Optional production services
 
@@ -60,4 +60,4 @@ Sprint 3 implements the complete client homepage audit, local `Gadi = square fee
 
 Apply `supabase/migrations/202607180001_sprint3_production_readiness.sql` after the Sprint 2 migration. Empty advertisement positions never render; campaigns must be approved, inside their schedule and use an image hosted in the configured Supabase project.
 
-See `docs/SPRINT-3.md` for the compliance checklist and `docs/PRODUCTION-RUNBOOK.md` for deployment, database, backup, restore, monitoring and disaster-recovery procedures.
+See `docs/SPRINT-3.md`, `docs/SPRINT-3-PRODUCTION-ACCEPTANCE.md` and `docs/PRODUCTION-RUNBOOK.md` for the implementation checklist, acceptance evidence and operational procedures. The current canonical origin is `https://ongole.vercel.app`; changing `NEXT_PUBLIC_SITE_URL` to the custom domain requires a Vercel redeploy but no code change.

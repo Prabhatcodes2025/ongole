@@ -43,12 +43,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const watermark = Buffer.from(`<svg width="${watermarkWidth}" height="${watermarkHeight}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" rx="8" fill="#111827" fill-opacity="0.62"/><text x="50%" y="56%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${Math.round(watermarkHeight * 0.35)}" font-weight="700" letter-spacing="1" fill="#ffffff">ONGOLEPROPERTY.COM</text></svg>`);
     const processed = await baseImage.composite([{ input: watermark, gravity: "southeast" }]).webp({ quality: 84, effort: 5 }).toBuffer();
     const output = await sharp(processed).metadata();
+    const thumbnail = await sharp(processed).resize({ width: 480, height: 360, fit: "cover", position: "centre", withoutEnlargement: true }).webp({ quality: 78, effort: 5 }).toBuffer();
+    const thumbnailOutput = await sharp(thumbnail).metadata();
     const mediaId = crypto.randomUUID();
     const path = `${auth.user.id}/${id}/${mediaId}.webp`;
+    const thumbnailPath = `${auth.user.id}/${id}/${mediaId}-thumb.webp`;
     const { error: uploadError } = await supabase.storage.from("property-media").upload(path, processed, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
     if (uploadError) throw uploadError;
-    const { error: recordError } = await supabase.from("property_media").insert({ id: mediaId, property_id: id, storage_path: path, original_filename: file.name.slice(0, 255), mime_type: "image/webp", byte_size: processed.byteLength, width: output.width, height: output.height, processing_status: "ready", is_cover: (count ?? 0) === 0, sort_order: count ?? 0, variants: { display: { path, width: output.width, height: output.height, format: "webp" } } });
-    if (recordError) { await supabase.storage.from("property-media").remove([path]); throw recordError; }
+    const { error: thumbnailUploadError } = await supabase.storage.from("property-media").upload(thumbnailPath, thumbnail, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
+    if (thumbnailUploadError) {await supabase.storage.from("property-media").remove([path]);throw thumbnailUploadError;}
+    const { error: recordError } = await supabase.from("property_media").insert({ id: mediaId, property_id: id, storage_path: path, original_filename: file.name.slice(0, 255), mime_type: "image/webp", byte_size: processed.byteLength, width: output.width, height: output.height, processing_status: "ready", is_cover: (count ?? 0) === 0, sort_order: count ?? 0, variants: { display: { path, width: output.width, height: output.height, format: "webp" }, thumbnail: { path:thumbnailPath,width:thumbnailOutput.width,height:thumbnailOutput.height,format:"webp",byte_size:thumbnail.byteLength } } });
+    if (recordError) { await supabase.storage.from("property-media").remove([path,thumbnailPath]); throw recordError; }
     await supabase.rpc("record_audit_event",{event_action:"media.upload",event_type:"property_media",event_reference:id,event_new:{media_id:mediaId,storage_path:path}});
     return NextResponse.redirect(dashboardUrl(request, id, "uploaded"), 303);
   } catch (error) {
