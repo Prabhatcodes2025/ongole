@@ -3,7 +3,7 @@
 ## Deployment
 
 1. Run `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`.
-2. Apply Supabase migrations in filename order through `202607180003_auth_session_rbac_hotfix.sql`, then run the idempotent `supabase/seed.sql`.
+2. Apply Supabase migrations in filename order through `202607180004_property_draft_creation_hotfix.sql`, then run the idempotent `supabase/seed.sql`.
 3. Configure Vercel variables from `.env.example`; never place secrets in `NEXT_PUBLIC_*` variables.
 4. Deploy with standard Next.js settings: `pnpm build`, default output and Node.js 22.
 5. Verify `/api/health` reports `database: schema_ready`, then verify `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
@@ -16,6 +16,8 @@ Supabase Authentication > URL Configuration:
 - Redirect URLs: `https://ongole.vercel.app/auth/callback`, `https://ongole.vercel.app/**`, `http://localhost:3000/auth/callback`, and `http://localhost:3000/**`
 
 After deployment, sign in as the intended administrator and open `/api/auth/context`. The response must contain the `super_admin` role and the expected permission codes. If roles are empty, assign `super_admin` using the documented SQL bootstrap; changing `profiles.account_type` does not grant RBAC permissions.
+
+Property draft verification must run after migration `202607180004`: create a disposable owner draft, confirm the response opens `/dashboard/properties/{id}`, confirm the initial `draft` history row, then repeat with an administrator. Search Vercel logs for `property.draft_create_failed` and its `requestId` if creation fails.
 
 ## Database and storage validation
 

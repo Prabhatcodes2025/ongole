@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import {CaptchaWidget} from "@/src/components/captcha-widget";
 
 export const dynamic="force-dynamic";export const metadata:Metadata={title:"Manage property",robots:{index:false,follow:false}};
-const notices:Record<string,string>={updated:"Property details updated.",duplicated:"A new draft copy was created.",uploaded:"Image processed and uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
+const notices:Record<string,string>={created:"Draft created successfully.",updated:"Property details updated.",duplicated:"A new draft copy was created.",uploaded:"Image processed and uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
 
 export default async function ManagePropertyPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{media?:string;notice?:string}>}){
   const {id}=await params;const query=await searchParams;const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();if(!auth.user)redirect(`/login?returnTo=/dashboard/properties/${id}`);
