@@ -3,7 +3,7 @@
 ## Deployment
 
 1. Run `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`.
-2. Apply Supabase migrations in filename order through `202607270001_property_trigger_update_hotfix.sql`, then run the idempotent `supabase/seed.sql`.
+2. Apply Supabase migrations in filename order through `202607270002_sprint4_paying_guest_module.sql`, then run the idempotent `supabase/seed.sql`.
 3. Configure Vercel variables from `.env.example`; never place secrets in `NEXT_PUBLIC_*` variables.
 4. Deploy with standard Next.js settings: `pnpm build`, default output and Node.js 22.
 5. Verify `/api/health` reports `database: schema_ready`, then verify `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
@@ -20,6 +20,8 @@ After deployment, sign in as the intended administrator and open `/api/auth/cont
 Property draft verification must run after migration `202607180004`: create a disposable owner draft, confirm the response opens `/dashboard/properties/{id}`, confirm the initial `draft` history row, then repeat with an administrator. Search Vercel logs for `property.draft_create_failed` and its `requestId` if creation fails.
 
 Migration `202607270001` must follow it before draft acceptance. It replaces the statement-level `refresh_master_usage_after_property` trigger that issued unbounded master-table updates with a row-level, affected-record-only refresh.
+
+Migration `202607270002` adds the PG module. After applying it, verify that `super_admin` and `property_manager` roles contain `pg.read` and `pg.manage`. Create a disposable PG owner draft, add at least one room, submit it, then approve and publish it from `/admin/pg`. Confirm `/paying-guest` and its sitemap URL show only the published record. Soft-delete and restore the record before removing the acceptance data.
 
 ## Database and storage validation
 

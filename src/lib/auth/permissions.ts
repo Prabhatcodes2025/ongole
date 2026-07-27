@@ -5,6 +5,7 @@ export const PERMISSIONS={
   agentsRead:"agents.read",agentsManage:"agents.manage",
   settingsManage:"settings.manage",seoManage:"seo.manage",
   analyticsRead:"analytics.read",auditRead:"audit.read",rolesManage:"roles.manage",
+  pgRead:"pg.read",pgManage:"pg.manage",
 } as const;
 export type PermissionCode=typeof PERMISSIONS[keyof typeof PERMISSIONS];
 

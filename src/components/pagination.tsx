@@ -1,2 +1,8 @@
 import Link from "next/link";
-export function Pagination({page,total,pageSize,params}:{page:number;total:number;pageSize:number;params:URLSearchParams}){const pages=Math.ceil(total/pageSize);if(pages<=1)return null;const link=(target:number)=>{const next=new URLSearchParams(params);next.set("page",String(target));return `/properties?${next}`};const visible=Array.from({length:pages},(_,i)=>i+1).filter((value)=>value===1||value===pages||Math.abs(value-page)<=2);return <nav className="pagination" aria-label="Property result pages">{page>1&&<Link href={link(page-1)} rel="prev">Previous</Link>}{visible.map((value,index)=><span key={value}>{index>0&&value-visible[index-1]>1&&<i>…</i>}<Link href={link(value)} aria-current={value===page?"page":undefined}>{value}</Link></span>)}{page<pages&&<Link href={link(page+1)} rel="next">Next</Link>}</nav>}
+
+export function Pagination({page,total,pageSize,params,basePath="/properties"}:{page:number;total:number;pageSize:number;params:URLSearchParams;basePath?:string}){
+  const pages=Math.ceil(total/pageSize);if(pages<=1)return null;
+  const link=(target:number)=>{const next=new URLSearchParams(params);next.set("page",String(target));return `${basePath}?${next}`};
+  const visible=Array.from({length:pages},(_,i)=>i+1).filter((value)=>value===1||value===pages||Math.abs(value-page)<=2);
+  return <nav className="pagination" aria-label="Result pages">{page>1&&<Link href={link(page-1)} rel="prev">Previous</Link>}{visible.map((value,index)=><span key={value}>{index>0&&value-visible[index-1]>1&&<i>…</i>}<Link href={link(value)} aria-current={value===page?"page":undefined}>{value}</Link></span>)}{page<pages&&<Link href={link(page+1)} rel="next">Next</Link>}</nav>;
+}

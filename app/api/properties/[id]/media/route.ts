@@ -8,6 +8,8 @@ const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 const ALLOWED_INPUT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function dashboardUrl(request: NextRequest, propertyId: string, result: string) {
+  const pgId=request.nextUrl.searchParams.get("context")==="pg"?request.nextUrl.searchParams.get("pgId"):null;
+  if(pgId&&/^[0-9a-f-]{36}$/i.test(pgId))return new URL(`/dashboard/pg/${pgId}?media=${result}`,request.url);
   return new URL(`/dashboard/properties/${propertyId}?media=${result}`, request.url);
 }
 
