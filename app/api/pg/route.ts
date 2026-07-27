@@ -9,6 +9,8 @@ export async function POST(request:NextRequest){
   const supabase=await createSupabaseServerClient();
   const {data:auth}=await supabase.auth.getUser();
   if(!auth.user)return NextResponse.redirect(new URL("/login?returnTo=/dashboard/pg/new",request.url),303);
+  const {data:planCheck,error:planError}=await supabase.rpc("check_listing_plan_limit",{target_kind:"paying_guest"});
+  if(planError||!(planCheck as {allowed?:boolean}|null)?.allowed)return NextResponse.redirect(new URL("/pricing?reason=pg-listing-limit",request.url),303);
   const raw=await requestData(request);
   const checked=Object.entries(raw).filter(([key,value])=>key.startsWith("amenity_")&&typeof value==="string").map(([,value])=>value as string);
   const parsed=pgDraftSchema.safeParse({...raw,amenities:[...new Set(checked)],house_rules:formList(raw.house_rules),video_urls:formList(raw.video_urls)});

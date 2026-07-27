@@ -30,7 +30,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const file = form.get("image");
   if (!(file instanceof File) || !file.size || file.size > MAX_SOURCE_BYTES || !ALLOWED_INPUT_TYPES.has(file.type)) return NextResponse.redirect(dashboardUrl(request, id, "invalid"), 303);
   const { count } = await supabase.from("property_media").select("id", { count: "exact", head: true }).eq("property_id", id).eq("media_type", "image");
-  if ((count ?? 0) >= 20) return NextResponse.redirect(dashboardUrl(request, id, "limit"), 303);
+  const {data:planContext}=await supabase.rpc("get_my_plan_context");const planLimit=Number((planContext as {plan?:{image_limit_per_listing?:number}}|null)?.plan?.image_limit_per_listing||0);
+  if ((count ?? 0) >= Math.min(20,planLimit||20)) return NextResponse.redirect(dashboardUrl(request, id, "limit"), 303);
 
   try {
     // Loaded only for an authenticated upload. This keeps the public worker

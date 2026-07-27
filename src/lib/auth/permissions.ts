@@ -6,6 +6,11 @@ export const PERMISSIONS={
   settingsManage:"settings.manage",seoManage:"seo.manage",
   analyticsRead:"analytics.read",auditRead:"audit.read",rolesManage:"roles.manage",
   pgRead:"pg.read",pgManage:"pg.manage",
+  plansRead:"plans.read",plansManage:"plans.manage",
+  subscriptionsRead:"subscriptions.read",subscriptionsManage:"subscriptions.manage",
+  paymentsRead:"payments.read",paymentsManage:"payments.manage",refundsManage:"refunds.manage",
+  promotionsRead:"promotions.read",promotionsManage:"promotions.manage",
+  reportsRead:"reports.read",notificationsManage:"notifications.manage",
 } as const;
 export type PermissionCode=typeof PERMISSIONS[keyof typeof PERMISSIONS];
 

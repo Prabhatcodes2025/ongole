@@ -13,6 +13,6 @@ export async function POST(request:NextRequest){
   const allowed=["q","purpose","category","type","location","minPrice","maxPrice","minArea","maxArea","sort"];
   const query=Object.fromEntries(allowed.flatMap((key)=>typeof payload.query?.[key]==="string"?[[key,String(payload.query[key]).slice(0,100)]]:[]));
   const service=createSupabaseServiceClient();
-  if(service)await service.from("analytics_events").insert({event_type:"property_search",session_hash:createHash("sha256").update(requestIp(request)).digest("hex").slice(0,32),metadata:{query,result_count:Math.max(0,Math.min(100000,Number(payload.resultCount)||0))}});
+  if(service)await service.from("analytics_events").insert({event_type:"search_impression",entity_type:"page",session_hash:createHash("sha256").update(requestIp(request)).digest("hex").slice(0,32),metadata:{query,result_count:Math.max(0,Math.min(100000,Number(payload.resultCount)||0))}});
   return new NextResponse(null,{status:204});
 }

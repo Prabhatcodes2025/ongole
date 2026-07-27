@@ -3,7 +3,12 @@ insert into public.roles(code,name,description,is_system) values
 ('property_manager','Property Manager','Review and manage property and PG listings',true),
 ('enquiry_manager','Enquiry Manager','Manage enquiries and site visits',true),
 ('content_manager','Content & SEO Manager','Manage website content and SEO',true),
-('analyst','Reports Analyst','Read analytics and export reports',true)
+('analyst','Reports Analyst','Read analytics and export reports',true),
+('admin','Administrator','General platform administrator',true),
+('pg_manager','PG Manager','Review and manage paying guest listings',true),
+('finance_manager','Finance Manager','Manage subscriptions, payments and refunds',true),
+('support_manager','Support Manager','Support users, subscriptions and notifications',true),
+('read_only_admin','Read-only Administrator','Read operational and financial data',true)
 on conflict (code) do nothing;
 
 insert into public.permissions(code,module,description) values
@@ -19,7 +24,20 @@ insert into public.permissions(code,module,description) values
 ('seo.manage','seo','Manage SEO, redirects, sitemaps and robots'),
 ('analytics.read','analytics','View analytics and reports'),
 ('audit.read','audit','View protected audit logs'),
-('roles.manage','roles','Manage admin roles and permissions')
+('roles.manage','roles','Manage admin roles and permissions'),
+('pg.read','paying_guest','View private and review-stage PG listings'),
+('pg.manage','paying_guest','Review, approve, publish and administer PG listings'),
+('plans.read','billing','View subscription plans'),
+('plans.manage','billing','Create and manage subscription plans'),
+('subscriptions.read','billing','View subscriptions'),
+('subscriptions.manage','billing','Activate, pause and cancel subscriptions'),
+('payments.read','finance','View payments and invoices'),
+('payments.manage','finance','Manage and reconcile payments'),
+('refunds.manage','finance','Create and manage refunds'),
+('promotions.read','monetization','View promotion products and activations'),
+('promotions.manage','monetization','Manage promotion products and activations'),
+('reports.read','reports','View and export reports'),
+('notifications.manage','notifications','Manage notification templates and deliveries')
 on conflict (code) do nothing;
 
 insert into public.role_permissions(role_id, permission_id)
@@ -32,7 +50,12 @@ join public.permissions p on
   (r.code='property_manager' and p.code in ('properties.read','properties.manage','agents.read','agents.manage','audit.read'))
   or (r.code='enquiry_manager' and p.code in ('enquiries.read','enquiries.manage','users.read'))
   or (r.code='content_manager' and p.code in ('settings.manage','seo.manage'))
-  or (r.code='analyst' and p.code in ('analytics.read','audit.read'))
+  or (r.code='analyst' and p.code in ('analytics.read','reports.read','audit.read'))
+  or (r.code='admin' and p.code in ('properties.read','properties.manage','pg.read','pg.manage','enquiries.read','enquiries.manage','users.read','plans.read','subscriptions.read','payments.read','promotions.read','analytics.read','reports.read','audit.read'))
+  or (r.code='pg_manager' and p.code in ('pg.read','pg.manage','enquiries.read','plans.read','subscriptions.read','promotions.read','analytics.read','reports.read','audit.read'))
+  or (r.code='finance_manager' and p.code in ('users.read','plans.read','plans.manage','subscriptions.read','subscriptions.manage','payments.read','payments.manage','refunds.manage','promotions.read','promotions.manage','analytics.read','reports.read','audit.read'))
+  or (r.code='support_manager' and p.code in ('users.read','enquiries.read','enquiries.manage','plans.read','subscriptions.read','payments.read','notifications.manage','audit.read'))
+  or (r.code='read_only_admin' and p.code in ('properties.read','pg.read','enquiries.read','users.read','plans.read','subscriptions.read','payments.read','promotions.read','analytics.read','reports.read','audit.read'))
 on conflict do nothing;
 
 insert into public.property_categories(name,slug,sort_order) values

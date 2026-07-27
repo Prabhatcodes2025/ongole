@@ -1,6 +1,6 @@
 # OngoleProperty.com implementation progress
 
-Last audited: 27 July 2026
+Last audited: 28 July 2026
 
 ## Completed
 
@@ -17,10 +17,12 @@ Last audited: 27 July 2026
 - [x] Property draft hotfix: authenticated sequence privilege, owner-derived draft creation, atomic initial history, collision-safe slug, edit-page redirect and request-ID diagnostics.
 - [x] Property trigger hotfix: row-targeted usage-count maintenance replaces safe-update-blocked statement-level table refreshes.
 - [x] Sprint 4 PG module: owner lifecycle, room inventory, media reuse, public search/details/enquiries, admin moderation, SEO, RLS/RBAC and automated contract coverage.
+- [x] Sprint 5 application implementation: professional shared dashboards, configurable plans, secure online/manual payment architecture, promotion activations, notification center, first-party analytics, permission-aware reports and public pricing.
+- [x] Sprint 5 database implementation: forward-only plan/subscription/payment/promotion/notification/analytics schema, RLS, RBAC, plan-limit triggers, secure RPCs and scheduled maintenance functions.
 
 ## Production configuration required
 
-- [ ] Apply migrations through `202607270002_sprint4_paying_guest_module.sql` and rerun the idempotent seed in production.
+- [ ] Apply migrations through `202607280001_sprint5_memberships_monetization.sql` and rerun the idempotent seed in production.
 - [ ] Configure optional SMTP, Turnstile, Redis REST, Maps, analytics and Sentry integrations as required by launch policy.
 - [ ] Supply temporary owner/admin acceptance accounts and complete the destructive live workflow, then remove test records.
 - [ ] Complete exact-width and cross-browser visual QA; the available browser reported a mobile breakpoint but did not expose the requested physical viewport widths reliably.
@@ -39,6 +41,6 @@ Current live state (18 July 2026): `https://ongole.vercel.app/api/health` return
 
 ## Future / excluded work
 
-- [ ] Memberships/payments, Docker/VPS automation, mobile applications and AI features.
+- [ ] Docker/VPS automation, mobile applications and AI features.
 
-See `docs/SPRINT-1.md`, `docs/SPRINT-2.md`, `docs/SPRINT-3.md` and `docs/SPRINT-4.md` for detailed completion and production verification checklists.
+See `docs/SPRINT-1.md`, `docs/SPRINT-2.md`, `docs/SPRINT-3.md`, `docs/SPRINT-4.md` and `docs/SPRINT-5.md` for detailed completion and production verification checklists.

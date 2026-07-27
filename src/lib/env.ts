@@ -13,6 +13,7 @@ export const env = {
   googleMapsKey: process.env.GOOGLE_MAPS_API_KEY,
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   sentryDsn: process.env.SENTRY_DSN,
+  razorpay:{keyId:process.env.RAZORPAY_KEY_ID,keySecret:process.env.RAZORPAY_KEY_SECRET,webhookSecret:process.env.RAZORPAY_WEBHOOK_SECRET},
   smtp: { host:process.env.SMTP_HOST,port:Number(process.env.SMTP_PORT||587),user:process.env.SMTP_USER,password:process.env.SMTP_PASSWORD,from:process.env.SMTP_FROM_EMAIL,admin:process.env.ADMIN_NOTIFICATION_EMAIL },
   isSupabaseConfigured: Boolean(publicUrl && publicAnonKey),
   isProduction: process.env.NODE_ENV === "production",
