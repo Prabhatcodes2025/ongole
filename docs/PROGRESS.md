@@ -15,10 +15,11 @@ Last audited: 18 July 2026
 - [x] Post-Sprint-3 code audit: schema/query comparison, idempotent seed completion, Gadi database correction, profile/RLS hardening, schema-aware health, thumbnail variants and advertisement administration.
 - [x] Authentication/RBAC hotfix: confirmation callback, cookie refresh proxy, safe profile reconciliation, current-user permission diagnostics, permission-aware admin metrics, master-data RLS policies and production auth verifier.
 - [x] Property draft hotfix: authenticated sequence privilege, owner-derived draft creation, atomic initial history, collision-safe slug, edit-page redirect and request-ID diagnostics.
+- [x] Property trigger hotfix: row-targeted usage-count maintenance replaces safe-update-blocked statement-level table refreshes.
 
 ## Production configuration required
 
-- [ ] Apply migrations through `202607180004_property_draft_creation_hotfix.sql` and rerun the idempotent seed in production.
+- [ ] Apply migrations through `202607270001_property_trigger_update_hotfix.sql` and rerun the idempotent seed in production.
 - [ ] Configure optional SMTP, Turnstile, Redis REST, Maps, analytics and Sentry integrations as required by launch policy.
 - [ ] Supply temporary owner/admin acceptance accounts and complete the destructive live workflow, then remove test records.
 - [ ] Complete exact-width and cross-browser visual QA; the available browser reported a mobile breakpoint but did not expose the requested physical viewport widths reliably.

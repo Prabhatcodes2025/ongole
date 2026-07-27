@@ -43,3 +43,24 @@ test("initial draft history is atomic and audit failure cannot hide a created dr
   assert.match(route,/PROPERTY_DRAFT_CREATE_FAILED/);
   assert.match(route,/payloadKeys:Object\.keys\(insertPayload\)/);
 });
+
+test("trigger hotfix replaces the unsafe statement refresh with row-targeted updates",async()=>{
+  const migration=await read("../supabase/migrations/202607270001_property_trigger_update_hotfix.sql");
+  assert.match(migration,/drop trigger if exists refresh_master_usage_after_property/);
+  assert.match(migration,/for each row execute function public\.refresh_master_usage_trigger/);
+  assert.doesNotMatch(migration,/perform public\.refresh_master_usage_counts/);
+  for(const statement of migration.matchAll(/update public\.(?:property_categories|property_types|locations|master_items)[\s\S]*?;/gi)){
+    assert.match(statement[0],/\bwhere\b/i);
+  }
+  assert.match(migration,/new\.updated_at := now\(\)/);
+  assert.doesNotMatch(migration,/update public\.properties set updated_at/i);
+  assert.match(migration,/set search_path = public, pg_temp/g);
+});
+
+test("draft-history trigger remains insert-only and is not duplicated by the trigger hotfix",async()=>{
+  const migration=await read("../supabase/migrations/202607270001_property_trigger_update_hotfix.sql");
+  const historyFunction=migration.match(/create or replace function public\.record_initial_property_history\(\)[\s\S]*?end \$\$;/i)?.[0]||"";
+  assert.match(historyFunction,/insert into public\.property_status_history/);
+  assert.doesNotMatch(historyFunction,/\bupdate\b/i);
+  assert.doesNotMatch(migration,/create trigger property_draft_initial_history/i);
+});
