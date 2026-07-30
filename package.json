@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "lint": "eslint . --ignore-pattern .next",
+    "verify:production": "node scripts/verify-production.mjs",
     "verify:supabase": "node scripts/verify-supabase.mjs",
     "verify:auth": "node scripts/verify-auth.mjs"
   },

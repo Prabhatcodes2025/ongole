@@ -2,11 +2,11 @@
 
 ## Deployment
 
-1. Run `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build`.
-2. Apply Supabase migrations in filename order through `202607280001_sprint5_memberships_monetization.sql`, then run the idempotent `supabase/seed.sql`.
+1. Run `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm verify:production`.
+2. Before migration `202607300001`, confirm no duplicate non-null mobile numbers exist. Apply Supabase migrations in filename order through `202607300002_sprint6_notification_scheduler.sql`, then run the idempotent `supabase/seed.sql`.
 3. Configure Vercel variables from `.env.example`; never place secrets in `NEXT_PUBLIC_*` variables.
 4. Deploy with standard Next.js settings: `pnpm build`, default output and Node.js 22.
-5. Verify `/api/health` reports `database: schema_ready`, then verify `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
+5. Verify `/api/health` reports `database: schema_ready` and `scheduler: configured`, then verify `/robots.txt`, `/sitemap.xml`, authentication, enquiry and property submission.
 
 `NEXT_PUBLIC_SITE_URL` is currently `https://ongole.vercel.app`. When the custom domain is connected, update this variable and the matching Supabase Auth Site URL/redirect allow-list, then redeploy. No source change is required.
 
@@ -23,7 +23,21 @@ Migration `202607270001` must follow it before draft acceptance. It replaces the
 
 Migration `202607270002` adds the PG module. After applying it, verify that `super_admin` and `property_manager` roles contain `pg.read` and `pg.manage`. Create a disposable PG owner draft, add at least one room, submit it, then approve and publish it from `/admin/pg`. Confirm `/paying-guest` and its sitemap URL show only the published record. Soft-delete and restore the record before removing the acceptance data.
 
-Migration `202607280001` adds Sprint 5 memberships, payment records, manual approvals, time-bound promotions, notifications and analytics. Configure `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` only as server-side Vercel variables, then register `/api/payments/webhooks/razorpay` with the provider. Schedule `aggregate_analytics(current_date - 1)` daily, `enqueue_expiry_notifications()` daily and `expire_promotions()` hourly from a trusted database scheduler. Validate a signed sandbox payment, a repeated webhook, an invalid signature, a manual proof review, plan limits and promotion expiry before production acceptance.
+Migration `202607280001` adds Sprint 5 memberships, payment records, manual approvals, time-bound promotions, notifications and analytics. Configure `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` only as server-side Vercel variables, then register `/api/payments/webhooks/razorpay` with the provider. Validate a signed sandbox payment, a repeated webhook, an invalid signature, a manual proof review, plan limits and promotion expiry before production acceptance.
+
+Migrations `202607300001` and `202607300002` complete the launch-critical contact entitlement, mobile uniqueness and notification queue behavior. The Vercel job in `vercel.json` calls `/api/cron/maintenance` daily in UTC and authenticates with Vercel's `Authorization: Bearer <CRON_SECRET>` header. It enqueues expiry notices, expires promotions, aggregates the prior UTC day, and drains both email queues using bounded retries and stale-claim recovery. Do not expose or manually append the secret to the URL.
+
+Before applying the mobile uniqueness migration, run:
+
+```sql
+select mobile, count(*)
+from public.profiles
+where mobile is not null
+group by mobile
+having count(*) > 1;
+```
+
+Resolve any returned duplicates with the account owners. Do not delete accounts or silently reassign numbers. After deployment, set all server-side mail, Supabase service-role and `CRON_SECRET` variables, redeploy, run `pnpm verify:production -- --environment` in the protected deployment environment, invoke the cron once from Vercel, and confirm a successful `cron.maintenance_completed` event.
 
 ## Database and storage validation
 

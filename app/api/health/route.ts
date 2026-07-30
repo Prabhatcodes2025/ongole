@@ -6,7 +6,7 @@ import {logEvent} from "@/src/lib/observability/logger";
 export const dynamic="force-dynamic";
 export async function GET(request:NextRequest){
   const requestId=request.headers.get("x-request-id")||crypto.randomUUID();
-  const services={database:env.isSupabaseConfigured?"reachable":"not_configured",smtp:env.smtp.host&&env.smtp.from?"configured":"disabled",redis:env.redisUrl&&env.redisToken?"configured":"fallback",captcha:env.captchaSecret&&env.captchaSiteKey?"configured":"disabled",maps:env.googleMapsKey?"configured":"disabled",analytics:env.gaMeasurementId?"configured":"disabled",errorReporting:env.sentryDsn?"configured":"logs_only"};
+  const services={database:env.isSupabaseConfigured?"reachable":"not_configured",scheduler:env.cronSecret&&env.supabaseServiceRoleKey?"configured":"disabled",smtp:env.smtp.host&&env.smtp.user&&env.smtp.password&&env.smtp.from?"configured":"disabled",redis:env.redisUrl&&env.redisToken?"configured":"fallback",captcha:env.captchaSecret&&env.captchaSiteKey?"configured":"disabled",maps:env.googleMapsKey?"configured":"disabled",analytics:env.gaMeasurementId?"configured":"disabled",errorReporting:env.sentryDsn?"configured":"logs_only"};
   const response=(status:"ok"|"degraded",database:"not_configured"|"reachable"|"schema_ready"|"degraded"|"unavailable",httpStatus=200)=>NextResponse.json({status,requestId,services:{...services,database},checkedAt:new Date().toISOString()},{status:httpStatus,headers:{"Cache-Control":"no-store"}});
   if(!env.isSupabaseConfigured)return response("degraded","not_configured",503);
   try{

@@ -23,6 +23,7 @@ pnpm lint
 pnpm typecheck
 pnpm build
 pnpm test
+pnpm verify:production
 ```
 
 ## Vercel
@@ -34,7 +35,7 @@ The repository uses the standard Next.js commands:
 - Install command: `pnpm install`
 - Node.js: 22.x
 
-Add the variables documented in `.env.example` to the Vercel project. Apply the SQL files under `supabase/migrations` to the production Supabase project before enabling authenticated workflows.
+Add the variables documented in `.env.example` to the Vercel project. Apply the SQL files under `supabase/migrations` to the production Supabase project in filename order before enabling authenticated workflows. Run `pnpm verify:production -- --environment` in a production-configured environment to fail closed on missing launch variables.
 
 ## Supabase rollout
 
@@ -45,6 +46,7 @@ Supabase Authentication URL Configuration must use `NEXT_PUBLIC_SITE_URL` as the
 ## Optional production services
 
 - SMTP delivery is enabled only when all `SMTP_*` variables and `ADMIN_NOTIFICATION_EMAIL` are configured.
+- `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` are required server-only variables for the authenticated Vercel maintenance job. The service role must never use a `NEXT_PUBLIC_*` name.
 - Turnstile is enabled only when both CAPTCHA keys are configured.
 - Distributed rate limiting requires an HTTPS Redis REST endpoint in `REDIS_URL` plus `REDIS_TOKEN`; local development safely falls back to in-memory limits.
 
