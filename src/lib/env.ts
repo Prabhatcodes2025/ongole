@@ -10,7 +10,7 @@ export const env = {
   captchaSiteKey: process.env.NEXT_PUBLIC_CAPTCHA_SITE_KEY,
   redisUrl: process.env.REDIS_URL,
   redisToken: process.env.REDIS_TOKEN,
-  googleMapsKey: process.env.GOOGLE_MAPS_API_KEY,
+  googleMapsKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   sentryDsn: process.env.SENTRY_DSN,
   cronSecret: process.env.CRON_SECRET,
