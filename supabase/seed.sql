@@ -96,7 +96,7 @@ insert into public.feature_flags(key,enabled,configuration) values
 on conflict (key) do nothing;
 
 insert into public.website_settings(key,value,is_public) values
-('contact','{"voice":"+91 77889 98459","whatsapp":"+91 99887 67689","email":"admin@ongoleproperty.com"}',true),
+('contact','{"voice":"+91 77889 98459","whatsapp":"+91 99887 67689","email":"enquiry@ongoleproperty.com","sales_email":"sales@ongoleproperty.com","nri_email":"nri@ongoleproperty.com"}',true),
 ('business','{"legal_name":"Kosana Associates LLP","since":2002,"hours":"24x7"}',true)
 on conflict (key) do nothing;
 
