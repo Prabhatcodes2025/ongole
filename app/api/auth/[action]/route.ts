@@ -6,11 +6,12 @@ import { requestData, requestIp } from "@/src/lib/request";
 import { env } from "@/src/lib/env";
 import { verifyCaptcha } from "@/src/lib/security/captcha";
 import { sendTemplateEmail } from "@/src/lib/email/service";
+import {isValidIndianMobile,normalizeMobile} from "@/src/lib/auth/mobile";
 import {loginErrorCode,normalizeEmail,reconcileAuthenticatedProfile,safeReturnPath} from "@/src/lib/auth/session";
 import {logEvent} from "@/src/lib/observability/logger";
 
 const loginSchema = z.object({ email: z.email(), password: z.string().min(8).max(200),returnTo:z.string().optional() });
-const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100), mobile: z.string().regex(/^[6-9][0-9]{9}$/), accountType: z.enum(["buyer","owner","agent","pg_owner"]) });
+const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100), mobile: z.string().transform(normalizeMobile).refine(isValidIndianMobile), accountType: z.enum(["buyer","owner","agent","pg_owner"]) });
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ action: string }> }) {
   const { action } = await params;
@@ -34,6 +35,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (action === "register") {
     const parsed = registerSchema.safeParse(data); if (!parsed.success) return NextResponse.json({ error: "Check your registration details and try again." }, { status: 400 });
     const { password, name, mobile, accountType } = parsed.data;const email=normalizeEmail(parsed.data.email);
+    const{data:mobileAvailable,error:mobileCheckError}=await supabase.rpc("is_mobile_available",{candidate_mobile:mobile});
+    if(mobileCheckError)return NextResponse.json({error:"Registration validation is temporarily unavailable."},{status:503});
+    if(!mobileAvailable)return NextResponse.json({error:"Use a valid mobile number that is not already registered."},{status:409});
     const { data: result, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${env.siteUrl}/auth/callback?next=${encodeURIComponent(safeReturnPath(parsed.data.returnTo))}`, data: { full_name: name, mobile, account_type: accountType } } });
     if (error){logEvent("warn","auth.registration_failed",{code:error.code||"signup_failed"});return NextResponse.redirect(new URL("/register?error=registration_failed",request.url),303)}
     await sendTemplateEmail(email,"welcome",{name});
