@@ -32,6 +32,7 @@ export type PublicProperty = {
   bathrooms?: number;
   facing?: string;
   furnishing?: string;
+  ownership?: string;
   amenities: string[];
   highlights: string[];
   tags: string[];
@@ -60,6 +61,15 @@ export type PropertyFilters = {
   bathrooms?: number;
   facing?: string;
   furnishing?: string;
+  ownership?: string;
+  areaUnit?: AreaUnit;
+  district?: string;
+  city?: string;
+  locality?: string;
+  verifiedOnly?: boolean;
+  featuredOnly?: boolean;
+  newOnly?: boolean;
+  availableOnly?: boolean;
   amenities?: string[];
   sort: "newest" | "oldest" | "price-asc" | "price-desc" | "area-asc" | "area-desc";
   page: number;

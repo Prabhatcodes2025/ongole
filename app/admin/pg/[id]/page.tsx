@@ -10,7 +10,7 @@ export default async function AdminPgDetails({params}:{params:Promise<{id:string
   const {id}=await params;const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();
   if(!auth.user)redirect(`/login?returnTo=/admin/pg/${id}`);
   const {data:allowed}=await supabase.rpc("has_permission",{required_permission:"pg.read"});if(!allowed)redirect("/dashboard");
-  const {data:pg}=await supabase.from("pg_listings").select("*,pg_room_types(*),properties!inner(id,reference_no,slug,title,description,status,locality_text,city_text,district_text,state_text,is_featured,is_verified,is_pinned,deleted_at,owner_id,profiles!properties_owner_id_fkey(full_name,email,phone))").eq("id",id).maybeSingle();
+  const {data:pg}=await supabase.from("pg_listings").select("*,pg_room_types(*),properties!inner(id,reference_no,slug,title,description,status,locality_text,city_text,district_text,state_text,is_featured,is_verified,is_pinned,deleted_at,owner_id,profiles!properties_owner_id_fkey(full_name,email,mobile))").eq("id",id).maybeSingle();
   if(!pg)notFound();const property=Array.isArray(pg.properties)?pg.properties[0]:pg.properties;if(!property)notFound();
   const {data:canManage}=await supabase.rpc("has_permission",{required_permission:"pg.manage"});
   const awaiting=property.status==="pending_review";

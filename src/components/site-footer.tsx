@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Facebook, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { siteConfig } from "@/src/config/site";
 
-const propertyLinks=[["/properties","All Properties"],["/properties?purpose=sale","Properties for Sale"],["/properties?purpose=rent","Properties for Rent"],["/paying-guest","Paying Guest"]] as const;
+const propertyLinks=[["/properties","All Properties"],["/properties-for-sale","Properties for Sale"],["/properties-for-rent","Properties for Rent"],["/paying-guest","Paying Guest"]] as const;
 const serviceLinks=[["/nri-services-ongole","NRI Services"],["/nri-services-ongole#property-tracing","Property Tracing"],["/agents","Real Estate Agents"],["/advertise-with-us","Advertise With Us"]] as const;
 const companyLinks=[["/","Home"],["/about","About Us"],["/contact","Contact Us"]] as const;
 const policyLinks=[["/privacy-policy","Privacy Policy"],["/terms-and-conditions","Terms & Conditions"],["/disclaimer","Disclaimer"],["/property-listing-policy","Property Listing Policy"],["/membership-policy","Membership Policy"],["/advertisement-policy","Advertisement Policy"],["/cookie-policy","Cookie Policy"],["/copyright-policy","Copyright Policy"],["/contact-grievance-policy","Contact & Grievance Policy"]] as const;

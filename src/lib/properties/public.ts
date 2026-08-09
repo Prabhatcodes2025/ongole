@@ -34,7 +34,7 @@ function mapRow(row: Row, media:PropertyMedia[]=[]): PublicProperty {
     transactionType: String(row.transaction_type) as PublicProperty["transactionType"], category: String(category.name || details.category_label || details.category || "Property"), categorySlug: String(category.slug || details.category || "property"), propertyType: String(propertyType.name || details.property_type || "Property"), propertyTypeSlug: String(propertyType.slug || details.property_type_slug || "property"),
     price: Number(row.price_inr || 0), areaValue: Number(row.area_value || 0), areaUnit: String(row.area_unit || "sq_ft") as AreaUnit,
     locality: String(row.locality_text), city: String(row.city_text), district: String(row.district_text), state: String(row.state_text),
-    bedrooms: Number(details.bedrooms) || undefined, bathrooms: Number(details.bathrooms) || undefined, facing: typeof details.facing === "string" ? details.facing : undefined, furnishing: typeof details.furnishing === "string" ? details.furnishing : undefined,
+    bedrooms: Number(details.bedrooms) || undefined, bathrooms: Number(details.bathrooms) || undefined, facing: typeof details.facing === "string" ? details.facing : undefined, furnishing: typeof details.furnishing === "string" ? details.furnishing : undefined, ownership: typeof details.ownership === "string" ? details.ownership : undefined,
     amenities: strings(details.amenities), highlights: strings(details.highlights), tags: strings(details.tags), videoUrl: typeof details.youtube_url === "string" ? details.youtube_url : undefined,
     isVerified: Boolean(row.is_verified), isFeatured: Boolean(row.is_featured), isPinned: Boolean(row.is_pinned), isPremium: Boolean(row.is_premium), contactVisibility: String(row.contact_visibility || "company") as PublicProperty["contactVisibility"], publishedAt: typeof row.published_at === "string" ? row.published_at : undefined,
     media,
@@ -45,7 +45,10 @@ async function mapRows(rows:Row[]){const media=await hydrateMedia(rows);return r
 
 function filterDemo(properties: PublicProperty[], filters: PropertyFilters) {
   const keyword = filters.keyword?.toLowerCase(); const location = filters.location?.toLowerCase();
-  return properties.filter((item) => (!filters.purpose || item.transactionType === filters.purpose) && (!filters.category || item.categorySlug === filters.category) && (!filters.type || item.propertyTypeSlug === filters.type) && (!location || `${item.locality} ${item.city} ${item.district}`.toLowerCase().includes(location)) && (!keyword || `${item.title} ${item.reference} ${item.description || ""}`.toLowerCase().includes(keyword)) && (filters.minPrice === undefined || item.price >= filters.minPrice) && (filters.maxPrice === undefined || item.price <= filters.maxPrice) && (filters.minArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") >= filters.minArea) && (filters.maxArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") <= filters.maxArea) && (filters.bedrooms === undefined || item.bedrooms === filters.bedrooms) && (filters.bathrooms === undefined || item.bathrooms === filters.bathrooms) && (!filters.facing || item.facing?.toLowerCase() === filters.facing.toLowerCase()) && (!filters.furnishing || item.furnishing?.toLowerCase() === filters.furnishing.toLowerCase()) && (!filters.amenities?.length || filters.amenities.every((amenity) => item.amenities.includes(amenity))));
+  const minArea=filters.minArea===undefined?undefined:convertArea(filters.minArea,filters.areaUnit||"sq_ft","sq_ft");
+  const maxArea=filters.maxArea===undefined?undefined:convertArea(filters.maxArea,filters.areaUnit||"sq_ft","sq_ft");
+  const newCutoff=Date.now()-30*24*60*60*1000;
+  return properties.filter((item) => (!filters.purpose || item.transactionType === filters.purpose) && (!filters.category || item.categorySlug === filters.category) && (!filters.type || item.propertyTypeSlug === filters.type) && (!location || `${item.locality} ${item.city} ${item.district}`.toLowerCase().includes(location)) && (!filters.district||item.district.toLowerCase().includes(filters.district.toLowerCase())) && (!filters.city||item.city.toLowerCase().includes(filters.city.toLowerCase())) && (!filters.locality||item.locality.toLowerCase().includes(filters.locality.toLowerCase())) && (!keyword || `${item.title} ${item.reference} ${item.description || ""}`.toLowerCase().includes(keyword)) && (filters.minPrice === undefined || item.price >= filters.minPrice) && (filters.maxPrice === undefined || item.price <= filters.maxPrice) && (minArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") >= minArea) && (maxArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") <= maxArea) && (filters.bedrooms === undefined || item.bedrooms === filters.bedrooms) && (filters.bathrooms === undefined || item.bathrooms === filters.bathrooms) && (!filters.facing || item.facing?.toLowerCase() === filters.facing.toLowerCase()) && (!filters.furnishing || item.furnishing?.toLowerCase() === filters.furnishing.toLowerCase()) && (!filters.ownership||item.ownership?.toLowerCase()===filters.ownership.toLowerCase()) && (!filters.verifiedOnly||item.isVerified) && (!filters.featuredOnly||item.isFeatured) && (!filters.newOnly||Date.parse(item.publishedAt||"")>=newCutoff) && (!filters.amenities?.length || filters.amenities.every((amenity) => item.amenities.includes(amenity))));
 }
 
 export function sortProperties(properties: PublicProperty[], sort: PropertyFilters["sort"]) {
@@ -60,15 +63,23 @@ export async function listPublicProperties(filters: PropertyFilters): Promise<Pr
   if (filters.category) query = query.contains("details", { category: filters.category });
   if (filters.type) query = query.contains("details", { property_type_slug: filters.type });
   if (filters.location) query = query.or(`locality_text.ilike.%${filters.location.replace(/[%(),]/g, "")}%,city_text.ilike.%${filters.location.replace(/[%(),]/g, "")}%`);
+  if (filters.district) query=query.ilike("district_text",`%${filters.district.replace(/[%(),]/g,"")}%`);
+  if (filters.city) query=query.ilike("city_text",`%${filters.city.replace(/[%(),]/g,"")}%`);
+  if (filters.locality) query=query.ilike("locality_text",`%${filters.locality.replace(/[%(),]/g,"")}%`);
   if (filters.keyword) query = query.or(`title.ilike.%${filters.keyword.replace(/[%(),]/g, "")}%,reference_no.ilike.%${filters.keyword.replace(/[%(),]/g, "")}%`);
   if (filters.minPrice !== undefined) query = query.gte("price_inr", filters.minPrice);
   if (filters.maxPrice !== undefined) query = query.lte("price_inr", filters.maxPrice);
-  if (filters.minArea !== undefined) query = query.gte("area_sq_ft", filters.minArea);
-  if (filters.maxArea !== undefined) query = query.lte("area_sq_ft", filters.maxArea);
+  if (filters.minArea !== undefined) query = query.gte("area_sq_ft", convertArea(filters.minArea,filters.areaUnit||"sq_ft","sq_ft"));
+  if (filters.maxArea !== undefined) query = query.lte("area_sq_ft", convertArea(filters.maxArea,filters.areaUnit||"sq_ft","sq_ft"));
   if (filters.bedrooms !== undefined) query = query.contains("details", { bedrooms: filters.bedrooms });
   if (filters.bathrooms !== undefined) query = query.contains("details", { bathrooms: filters.bathrooms });
   if (filters.facing) query = query.contains("details", { facing: filters.facing });
   if (filters.furnishing) query = query.contains("details", { furnishing: filters.furnishing });
+  if (filters.ownership) query = query.contains("details", { ownership: filters.ownership });
+  if (filters.verifiedOnly) query=query.eq("is_verified",true);
+  if (filters.featuredOnly) query=query.eq("is_featured",true);
+  if (filters.newOnly) query=query.gte("published_at",new Date(Date.now()-30*24*60*60*1000).toISOString());
+  if (filters.availableOnly) query=query.or("details->>availability.eq.available,details->>availability.is.null");
   if (filters.amenities?.length) query = query.contains("details", { amenities: filters.amenities });
   const sortMap: Record<PropertyFilters["sort"], [string, boolean]> = { newest:["published_at",false], oldest:["published_at",true], "price-asc":["price_inr",true], "price-desc":["price_inr",false], "area-asc":["area_sq_ft",true], "area-desc":["area_sq_ft",false] };
   const [column, ascending] = sortMap[filters.sort]; const start = (filters.page - 1) * filters.pageSize;
@@ -89,9 +100,13 @@ export async function getPublicProperty(slug: string) {
 }
 
 export async function getSimilarProperties(property: PublicProperty, limit = 3) {
-  const result = await listPublicProperties({ purpose: property.transactionType, category: property.categorySlug, location: property.city, sort:"newest", page:1, pageSize:limit + 1 });
+  const result = await listPublicProperties({ purpose: property.transactionType, category: property.categorySlug, location: property.city, minPrice:Math.max(0,property.price*.7), maxPrice:property.price*1.3, sort:"newest", page:1, pageSize:limit + 4 });
   return result.properties.filter((item) => item.id !== property.id).slice(0, limit);
 }
+
+export async function getPropertySeoOverride(propertyId:string){const service=createSupabaseServiceClient();if(!service)return null;const{data}=await service.from("seo_overrides").select("title,description,canonical_url,robots,open_graph,structured_data").eq("entity_type","property").eq("entity_id",propertyId).maybeSingle();return data||null}
+
+export async function getPropertyRedirect(slug:string){const service=createSupabaseServiceClient();if(!service)return null;const oldPath=`/property/${slug.replace(/[^a-zA-Z0-9-]/g,"")}`;const{data}=await service.from("url_history").select("new_path,status_code").eq("entity_type","property").eq("old_path",oldPath).maybeSingle();return data?.new_path&&data.new_path!==oldPath?{path:String(data.new_path),status:Number(data.status_code)}:null}
 
 export async function getPublicPropertyContact(property: PublicProperty) {
   if (property.isDemo) return null;
