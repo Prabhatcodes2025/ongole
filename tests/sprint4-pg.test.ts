@@ -25,8 +25,10 @@ test("owner, public and admin PG workflows are connected",async()=>{
     read("../app/admin/pg/[id]/page.tsx"),read("../app/api/admin/pg/[id]/status/route.ts"),read("../app/sitemap.ts")
   ]);
   for(const marker of ["Submit for review","Duplicate PG","Room types","property-media"])assert.match(owner,new RegExp(marker));
-  for(const marker of ["Budget from","Room sharing","Beds available now","Amenities"])assert.match(publicList,new RegExp(marker));
-  for(const marker of ["LodgingBusiness","EnquiryForm","WhatsApp","Similar PGs"])assert.match(details,new RegExp(marker));
+  for(const marker of ["Budget from","Available now","Food preference","Facilities"])assert.match(publicList,new RegExp(marker));
+  assert.doesNotMatch(publicList,/Room sharing|family/i);
+  for(const marker of ["Accommodation","EnquiryForm","WhatsApp","Similar Paying Guests","ClickToLoadMap"])assert.match(details,new RegExp(marker));
+  assert.doesNotMatch(details,/security_deposit|<dt>Security Deposit|<h2>Security Deposit/i);
   for(const marker of ["Approve PG","Request changes","Reject","Publish PG","Soft delete"])assert.match(admin,new RegExp(marker));
   assert.match(statusApi,/required_permission:"pg.manage"/);
   assert.match(sitemap,/getPublicPgSlugs/);

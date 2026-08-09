@@ -13,6 +13,6 @@ export function PropertySearch({compact=false,catalog=fallbackPropertyCatalog}:{
     <label className="search-location"><span>Location</span><input name="location" list="property-location-options" autoComplete="off" aria-autocomplete="list" placeholder="Type a locality" maxLength={100}/><datalist id="property-location-options">{catalog.locations.map((location)=><option key={location} value={location}/>)}</datalist></label>
     <label><span>Budget from</span><input name="minPrice" type="number" min="0" step="10000" inputMode="numeric" aria-label="Budget from in rupees"/></label>
     <label><span>Budget to</span><input name="maxPrice" type="number" min="0" step="10000" inputMode="numeric" aria-label="Budget to in rupees"/></label>
-    <input type="hidden" name="sort" value="newest"/><button className="button" type="submit"><Search size={18} aria-hidden="true"/>Search</button>
+    <input type="hidden" name="sort" value="newest"/><button className="button" type="submit"><Search size={18} aria-hidden="true"/>Search properties</button>
   </form>;
 }

@@ -11,7 +11,9 @@ import {loginErrorCode,normalizeEmail,reconcileAuthenticatedProfile,safeReturnPa
 import {logEvent} from "@/src/lib/observability/logger";
 
 const loginSchema = z.object({ email: z.email(), password: z.string().min(8).max(200),returnTo:z.string().optional() });
-const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100), mobile: z.string().transform(normalizeMobile).refine(isValidIndianMobile), accountType: z.enum(["buyer","owner","agent","pg_owner"]) });
+const strongPassword=z.string().min(8).max(200).regex(/[a-z]/).regex(/[A-Z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/);
+const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100),password:strongPassword, mobile: z.string().transform(normalizeMobile).refine(isValidIndianMobile), accountType: z.enum(["buyer","owner","agent","pg_owner"]),yearsExperience:z.union([z.coerce.number().int().min(0).max(80),z.literal("").transform(()=>undefined)]).optional(),officeAddress:z.string().trim().max(500).optional().default(""),about:z.string().trim().max(1500).optional().default(""),workingTowns:z.string().trim().max(300).optional().default(""),specializations:z.string().trim().max(500).optional().default("") });
+const list=(value:string,limit:number)=>[...new Set(value.split(",").map((item)=>item.trim()).filter(Boolean))].slice(0,limit);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ action: string }> }) {
   const { action } = await params;
@@ -34,11 +36,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   if (action === "register") {
     const parsed = registerSchema.safeParse(data); if (!parsed.success) return NextResponse.json({ error: "Check your registration details and try again." }, { status: 400 });
-    const { password, name, mobile, accountType } = parsed.data;const email=normalizeEmail(parsed.data.email);
+    const { password, name, mobile, accountType } = parsed.data;const email=normalizeEmail(parsed.data.email);const agentMetadata=accountType==="agent"?{years_experience:parsed.data.yearsExperience??null,office_address:parsed.data.officeAddress||null,about:parsed.data.about||null,working_towns:list(parsed.data.workingTowns,5),specializations:list(parsed.data.specializations,20)}:{};
     const{data:mobileAvailable,error:mobileCheckError}=await supabase.rpc("is_mobile_available",{candidate_mobile:mobile});
     if(mobileCheckError)return NextResponse.json({error:"Registration validation is temporarily unavailable."},{status:503});
     if(!mobileAvailable)return NextResponse.json({error:"Use a valid mobile number that is not already registered."},{status:409});
-    const { data: result, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${env.siteUrl}/auth/callback?next=${encodeURIComponent(safeReturnPath(parsed.data.returnTo))}`, data: { full_name: name, mobile, account_type: accountType } } });
+    const { data: result, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${env.siteUrl}/auth/callback?next=${encodeURIComponent(safeReturnPath(parsed.data.returnTo))}`, data: { full_name: name, mobile, account_type: accountType, ...agentMetadata } } });
     if (error){logEvent("warn","auth.registration_failed",{code:error.code||"signup_failed"});return NextResponse.redirect(new URL("/register?error=registration_failed",request.url),303)}
     await sendTemplateEmail(email,"welcome",{name});
     if(result.session&&result.user){const profile=await reconcileAuthenticatedProfile(supabase,result.user);if(!profile.ok){await supabase.auth.signOut();return NextResponse.redirect(new URL("/login?error=profile_unavailable",request.url),303)}await supabase.rpc("record_audit_event",{event_action:"auth.register",event_type:"user",event_reference:result.user.id,event_new:{account_type:accountType}})}

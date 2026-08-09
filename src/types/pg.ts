@@ -1,4 +1,4 @@
-export const PG_CATEGORIES=["mens","womens","co_living","family"] as const;
+export const PG_CATEGORIES=["mens","womens","co_living"] as const;
 export const PG_SHARING_TYPES=["single","double","triple","four_sharing"] as const;
 export const PG_AMENITIES=["WiFi","AC","Laundry","Food","Power Backup","Parking","CCTV","Housekeeping","Lift","TV","Gym","Hot Water"] as const;
 

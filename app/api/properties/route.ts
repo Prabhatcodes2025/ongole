@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   if (authError || !auth.user) return NextResponse.redirect(new URL("/login?returnTo=/post-property", request.url), 303);
   const {data:planCheck,error:planError}=await supabase.rpc("check_listing_plan_limit",{target_kind:"property"});
   const planResult=planCheck as {allowed?:boolean;used?:number;limit?:number;plan?:string}|null;
-  if(planError||!planResult?.allowed){const failure={error:"LISTING_LIMIT_REACHED",message:"Your property listing limit has been reached. Upgrade your plan to create another listing.",usage:planResult};if(request.headers.get("content-type")?.includes("application/json"))return NextResponse.json(failure,{status:409});return NextResponse.redirect(new URL("/pricing?reason=listing-limit",request.url),303)}
+  if(planError||!planResult?.allowed){const failure={error:"LISTING_LIMIT_REACHED",message:"Your property listing limit has been reached. Upgrade your plan to create another listing.",usage:planResult};if(request.headers.get("content-type")?.includes("application/json"))return NextResponse.json(failure,{status:409});return NextResponse.redirect(new URL("/dashboard/billing?reason=listing-limit",request.url),303)}
   const value = parsed.data; const baseSlug = propertySlug({ title: value.title, transactionType: value.transactionType, locality: value.locality, city: value.city });
   const propertyTypeSlug=value.propertyType.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
   const [{data:category},{data:propertyType}]=await Promise.all([supabase.from("property_categories").select("id").eq("slug",value.category).maybeSingle(),supabase.from("property_types").select("id").eq("slug",propertyTypeSlug).maybeSingle()]);

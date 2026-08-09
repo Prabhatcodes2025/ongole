@@ -85,18 +85,29 @@ for (const [name, query] of [
       .select("id,owner_id,latitude,longitude")
       .limit(1),
   ],
-  ["audit logs", client.from("audit_logs").select("id").limit(1)],
   [
     "private media rows",
     client.from("property_media").select("id,storage_path").limit(1),
   ],
+]) {
+  const { error } = await query;
+  if (!error) failures.push(`anonymous access unexpectedly succeeded for ${name}`);
+}
+
+// RLS-protected tables may correctly return HTTP 200 with an empty result instead
+// of a PostgreSQL permission error. Treat either response as protected, but fail
+// if the anonymous client can see even one private row.
+for (const [name, query] of [
+  ["audit logs", client.from("audit_logs").select("id").limit(1)],
   [
     "role mappings",
     client.from("user_roles").select("user_id,role_id").limit(1),
   ],
 ]) {
-  const { error } = await query;
-  if (!error) failures.push(`anonymous access unexpectedly succeeded for ${name}`);
+  const { data, error } = await query;
+  if (!error && Array.isArray(data) && data.length > 0) {
+    failures.push(`anonymous rows unexpectedly visible for ${name}`);
+  }
 }
 
 if (failures.length) {

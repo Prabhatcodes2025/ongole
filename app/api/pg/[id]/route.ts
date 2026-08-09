@@ -17,7 +17,7 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
     if(error)return NextResponse.json({error:"The PG could not be duplicated."},{status:409});
     return NextResponse.redirect(new URL(`/dashboard/pg/${(data as {id:string}).id}?notice=duplicated`,request.url),303);
   }
-  const {data:pg}=await supabase.from("pg_listings").select("property_id,properties!inner(owner_id,status)").eq("id",id).eq("properties.owner_id",auth.user.id).maybeSingle();
+  const {data:pg}=await supabase.from("pg_listings").select("property_id,details,properties!inner(owner_id,status)").eq("id",id).eq("properties.owner_id",auth.user.id).maybeSingle();
   if(!pg)return NextResponse.json({error:"PG listing not found."},{status:404});
   if(action==="delete"){
     const {error}=await supabase.rpc("owner_soft_delete_property",{target_property:pg.property_id});
@@ -29,5 +29,6 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   if(!parsed.success)return NextResponse.json({error:"Check the PG details and try again.",fields:parsed.error.flatten().fieldErrors},{status:400});
   const {error}=await supabase.rpc("update_pg_draft",{target_pg:id,pg_payload:parsed.data});
   if(error)return NextResponse.json({error:"The PG draft could not be updated.",detail:error.message},{status:409});
+  const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};const{error:landmarkError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null}}).eq("id",id);if(landmarkError)return NextResponse.json({error:"The PG details were saved but its landmark could not be updated."},{status:500});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }
