@@ -13,7 +13,8 @@ test("approved About, Contact and navigation content replaces legacy public copy
   ]);
   for(const source of [home,about,footer,slugPage])assert.doesNotMatch(source,/Kosana Associates/i);
   for(const marker of ["Who we are","What we do","Property Tracing","NRI Property Services","siteConfig.nriEmail"])assert.match(about,new RegExp(marker.replace(".","\\.")));
-  for(const marker of ["siteConfig.email","siteConfig.salesEmail","siteConfig.nriEmail","EnquiryForm","Open location in Google Maps"])assert.match(contact,new RegExp(marker.replace(".","\\.")));
+  for(const marker of ["siteConfig.email","siteConfig.salesEmail","siteConfig.nriEmail","EnquiryForm","Our Service Area","variant=\"contact\""])assert.match(contact,new RegExp(marker.replace(".","\\.")));
+  assert.doesNotMatch(contact,/Open location in Google Maps|physical office address|4th Lane/i);
   for(const address of ["enquiry@ongoleproperty.com","sales@ongoleproperty.com","nri@ongoleproperty.com"])assert.match(siteConfig,new RegExp(address.replace(".","\\.")));
   assert.doesNotMatch(contact,/admin@ongoleproperty\.com/i);
   for(const href of ["/about","/contact","/agents","/nri-services-ongole","/privacy-policy","/contact-grievance-policy"])assert.match(footer,new RegExp(href.replaceAll("/","\\/")));
@@ -22,7 +23,8 @@ test("approved About, Contact and navigation content replaces legacy public copy
 
 test("NRI page is canonical, uses supplied imagery, structured data and approved workflow",async()=>{
   const[page,pricing,sitemap]=await Promise.all([read("../app/nri-services-ongole/page.tsx"),read("../app/pricing/page.tsx"),read("../app/sitemap.ts")]);
-  for(const marker of ["nri-family-consultation.webp","property-tracing-survey.webp","Exclusive Property Tracing","15–20 working days","FAQPage","siteConfig.nriEmail"])assert.match(page,new RegExp(marker.replace(".","\\.")));
+  for(const marker of ["nri-family-consultation.webp","property-tracing-survey.webp","ongoleproperty-nri-property-services-process.png","Exclusive Property Tracing","FAQPage","siteConfig.nriEmail","variant=\"nri\""])assert.match(page,new RegExp(marker.replace(".","\\.")));
+  assert.doesNotMatch(page,/15–20 working days|fixed timeline|guaranteed tracing/i);
   assert.match(page,/canonical:\s*"\/nri-services-ongole"/);
   assert.match(pricing,/permanentRedirect\("\/nri-services-ongole"\)/);
   assert.match(sitemap,/nri-services-ongole/);

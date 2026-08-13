@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound,redirect } from "next/navigation";
 import { AboutPage } from "@/src/components/public/about-page";
 import { ContactPage } from "@/src/components/public/contact-page";
 import { AgentsPage } from "@/src/components/public/agents-page";
@@ -20,9 +20,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const description="OngoleProperty.com is a trusted real estate platform serving Ongole and Prakasam District. Discover verified residential, commercial, agricultural and farm properties, connect with trusted property owners and agents, and access professional property tracing and dedicated NRI property services.";
     return{title:"About OngoleProperty.com | Trusted Local Real Estate Platform",description,alternates:{canonical:"/about"},openGraph:{title:"About OngoleProperty.com",description,url:"/about",type:"website"},twitter:{card:"summary_large_image",title:"About OngoleProperty.com",description}};
   }
-  if(slug==="contact"){
-    const description="Contact OngoleProperty.com for property enquiries, sales and advertising, NRI services and professional real estate support in Ongole and Prakasam District.";
-    return{title:"Contact OngoleProperty.com",description,alternates:{canonical:"/contact"},openGraph:{title:"Contact OngoleProperty.com",description,url:"/contact",type:"website"},twitter:{card:"summary_large_image",title:"Contact OngoleProperty.com",description}};
+  if(slug==="contact"||slug==="contact-us"){
+    const title="Contact OngoleProperty.com | Property Services in Ongole & Prakasam District",description="Contact OngoleProperty.com for property enquiries, buying, selling, rental, Paying Guest and NRI property services across Ongole and Prakasam District.";
+    return{title:{absolute:title},description,alternates:{canonical:"/contact"},robots:{index:true,follow:true},openGraph:{title,description,url:"/contact",type:"website",images:[{url:"/images/ongoleproperty-contact-property-professionals.webp",width:1344,height:768,alt:"Property professionals assisting a client with a property enquiry"}]},twitter:{card:"summary_large_image",title,description,images:["/images/ongoleproperty-contact-property-professionals.webp"]}};
   }
   if(slug==="agents"){
     const description="Register as a real estate agent serving Ongole and Prakasam District. Profiles remain pending until administrator review and verification.";
@@ -35,11 +35,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export function generateStaticParams() {
-  return [...Object.keys(pages),"about","contact","agents",...Object.keys(legalPages),...Object.keys(legalAliases)].map((slug) => ({ slug }));
+  return [...Object.keys(pages),"about","contact","contact-us","agents",...Object.keys(legalPages),...Object.keys(legalAliases)].map((slug) => ({ slug }));
 }
 
 export default async function ContentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if(slug==="contact-us")redirect("/contact");
   const legal=resolveLegalPage(slug);
   const page = pages[slug];
   if(slug==="about")return <AboutPage/>;

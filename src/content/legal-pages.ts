@@ -14,7 +14,7 @@ export type LegalPage = {
 };
 
 const contact =
-  "For questions, requests, or complaints about this policy, email enquiry@ongoleproperty.com or contact OngoleProperty.com, 4th Lane, Bhagya Nagar, Ongole, Prakasam District, Andhra Pradesh, India.";
+  "For questions, requests, or complaints about this policy, email enquiry@ongoleproperty.com. OngoleProperty.com currently provides online property assistance and professional field services across Ongole and Prakasam District without a customer-facing physical office.";
 
 export const legalPages: Record<string, LegalPage> = {
   "terms-and-conditions": {
@@ -136,7 +136,7 @@ export const legalPages: Record<string, LegalPage> = {
     canonical: "/contact-grievance-policy",
     effectiveDate: "30 July 2026",
     sections: [
-      { title: "How to contact us", paragraphs: ["Voice call: +91 77889 98459. WhatsApp: +91 99887 67689. General enquiry: enquiry@ongoleproperty.com. Sales and advertising: sales@ongoleproperty.com. NRI services: nri@ongoleproperty.com.", "Office: 4th Lane, Bhagya Nagar, Ongole, Prakasam District, Andhra Pradesh, India. Digital enquiries may be submitted at any time."] },
+      { title: "How to contact us", paragraphs: ["Voice call: +91 77889 98459. WhatsApp: +91 99887 67689. General enquiry: enquiry@ongoleproperty.com. Sales and advertising: sales@ongoleproperty.com. NRI services: nri@ongoleproperty.com.", "We currently provide online property assistance and professional field services across Ongole and Prakasam District without a customer-facing physical office. Digital enquiries may be submitted at any time."] },
       { title: "What to include", paragraphs: ["To help us investigate, provide:"], items: ["Your name and a reliable contact method.", "The property, PG, account, payment, advertisement, or enquiry reference when applicable.", "A clear description, relevant dates, and supporting material that you are authorised to share.", "The resolution you are requesting."] },
       { title: "Review process", paragraphs: ["We will acknowledge and review grievances within a reasonable period based on urgency and complexity. Identity or authority may be verified before account, personal-data, payment, or listing information is disclosed or changed.", "Urgent security, fraud, privacy, or unlawful-content reports may be prioritised. Records may be retained for audit, fraud prevention, dispute resolution, and legal obligations."] },
       { title: "Escalation", paragraphs: ["If the initial response does not resolve the concern, reply to the same support correspondence and request escalation, quoting the original reference. This policy does not limit rights or remedies available under applicable law."] },

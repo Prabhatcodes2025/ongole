@@ -12,10 +12,11 @@ test("draft creation uses the authenticated user and ignores browser ownership",
   assert.match(route,/status: "draft"/);
 });
 
-test("draft payload normalizes unresolved foreign keys and excludes generated area",async()=>{
+test("draft payload rejects unresolved foreign keys and excludes generated area",async()=>{
   const route=await read("../app/api/properties/route.ts");
-  assert.match(route,/category_id:category\?\.id\|\|null/);
-  assert.match(route,/property_type_id:propertyType\?\.id\|\|null/);
+  assert.match(route,/if\(!category\|\|!propertyType\)return/);
+  assert.match(route,/category_id:category\.id/);
+  assert.match(route,/property_type_id:propertyType\.id/);
   assert.doesNotMatch(route,/area_sq_ft\s*:/);
   assert.doesNotMatch(route,/area_gadi\s*:/);
 });
