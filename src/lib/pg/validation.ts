@@ -1,15 +1,16 @@
 import {z} from "zod";
 import {PG_AMENITIES,PG_CATEGORIES,PG_SHARING_TYPES} from "@/src/types/pg";
 import {youtubeVideoId} from "@/src/lib/youtube";
+import {propertyContentIsProductionSafe,propertyTitleIsProductionSafe} from "@/src/lib/properties/validation";
 
 const optionalNumber=z.union([z.coerce.number().nonnegative(),z.literal("").transform(()=>undefined)]).optional();
 const optionalCoordinate=z.union([z.coerce.number(),z.literal("").transform(()=>undefined)]).optional();
 const optionalPhone=z.string().trim().regex(/^[6-9][0-9]{9}$/).or(z.literal("")).optional();
 
 export const pgDraftSchema=z.object({
-  pg_name:z.string().trim().min(3).max(120),
+  pg_name:z.string().trim().min(3).max(120).refine(propertyTitleIsProductionSafe,"Remove test, placeholder, code or technical content from the PG name."),
   category:z.enum(PG_CATEGORIES),
-  description:z.string().trim().refine((value)=>value.split(/\s+/).filter(Boolean).length<=250,"Description must not exceed 250 words.").refine((value)=>!/(?:\b[6-9]\d{9}\b|\b\d{3}[-\s]\d{3}[-\s]\d{4}\b|[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/|www\.|(?:^|\s)@[a-z0-9_.]+|follow\s+us|limited\s+offer|book\s+now|\b(?:fuck|shit|bitch|bastard)\b)/i.test(value),"Description cannot contain contact details, links, social handles, promotional advertising or profanity.").max(3000).default(""),
+  description:z.string().trim().refine((value)=>value.split(/\s+/).filter(Boolean).length<=250,"Description must not exceed 250 words.").refine((value)=>!/(?:\b[6-9]\d{9}\b|\b\d{3}[-\s]\d{3}[-\s]\d{4}\b|[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/|www\.|(?:^|\s)@[a-z0-9_.]+|follow\s+us|limited\s+offer|book\s+now|\b(?:fuck|shit|bitch|bastard)\b)/i.test(value),"Description cannot contain contact details, links, social handles, promotional advertising or profanity.").refine(propertyContentIsProductionSafe,"Description cannot contain test, code or technical content.").max(3000).default(""),
   address_line:z.string().trim().max(500).default(""),
   locality:z.string().trim().min(2).max(120).default("Ongole"),
   city:z.string().trim().min(2).max(120).default("Ongole"),

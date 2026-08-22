@@ -5,6 +5,7 @@ import { SiteHeader } from "@/src/components/site-header";
 import { SiteFooter } from "@/src/components/site-footer";
 import { siteConfig } from "@/src/config/site";
 import { Analytics } from "@/src/components/analytics";
+import {NumericInputGuard} from "@/src/components/numeric-input-guard";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const lora = Lora({ variable: "--font-lora", subsets: ["latin"] });
@@ -23,5 +24,5 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const structuredData=[{"@context":"https://schema.org","@type":"Organization",name:siteConfig.name,legalName:siteConfig.legalName,url:siteConfig.url,logo:`${siteConfig.url}/ongole-property-logo.png`,email:siteConfig.email,telephone:siteConfig.phone,areaServed:[{"@type":"City",name:"Ongole"},{"@type":"AdministrativeArea",name:"Prakasam District"}]},{"@context":"https://schema.org","@type":"WebSite",name:siteConfig.name,url:siteConfig.url,potentialAction:{"@type":"SearchAction",target:`${siteConfig.url}/properties?q={search_term_string}`,"query-input":"required name=search_term_string"}}];
-  return <html lang="en-IN"><body className={`${geist.variable} ${lora.variable}`}><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structuredData).replace(/</g,"\\u003c")}}/><Analytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}/><SiteHeader />{children}<SiteFooter /></body></html>;
+  return <html lang="en-IN"><body className={`${geist.variable} ${lora.variable}`}><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structuredData).replace(/</g,"\\u003c")}}/><Analytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}/><NumericInputGuard/><SiteHeader />{children}<SiteFooter /></body></html>;
 }

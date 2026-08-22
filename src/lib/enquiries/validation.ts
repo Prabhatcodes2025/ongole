@@ -1,7 +1,6 @@
 import {z} from "zod";
 import {isValidIndianMobile} from "@/src/lib/auth/mobile";
 
-const countryCodes=new Set(["+1","+44","+61","+65","+971","+974","+965","+966"]);
 const words=(value:string)=>value.trim().split(/\s+/).filter(Boolean).length;
 const indianDigits=(value:string)=>{const digits=value.replace(/\D/g,"");return digits.length===12&&digits.startsWith("91")?digits.slice(2):digits};
 
@@ -19,6 +18,6 @@ export const enquirySchema=z.object({
 }).superRefine((value,context)=>{
   const digits=value.mobile.replace(/\D/g,"");
   if(value.isForeign==="true"){
-    if(!countryCodes.has(value.countryCode)||!/^[0-9]{6,14}$/.test(digits)||`${value.countryCode}${digits}`.replace(/\D/g,"").length>15)context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid international mobile number."});
+    if(!/^\+[1-9][0-9]{0,3}$/.test(value.countryCode)||!/^[0-9]{6,14}$/.test(digits)||`${value.countryCode}${digits}`.replace(/\D/g,"").length>15)context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid international mobile number."});
   }else if(!isValidIndianMobile(indianDigits(value.mobile)))context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid 10-digit Indian mobile number."});
 }).transform(value=>({...value,mobile:value.isForeign==="true"?`${value.countryCode}${value.mobile.replace(/\D/g,"")}`:indianDigits(value.mobile)}));

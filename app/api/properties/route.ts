@@ -8,10 +8,10 @@ import {checkRateLimit} from "@/src/lib/security/rate-limit";
 import {verifyCaptcha} from "@/src/lib/security/captcha";
 import {requestIp} from "@/src/lib/request";
 import {logEvent} from "@/src/lib/observability/logger";
-import {applicablePropertyDetails,propertyDescriptionIsPublicSafe,propertyTypeSlug as normalizePropertyTypeSlug} from "@/src/lib/properties/validation";
+import {applicablePropertyDetails,propertyDescriptionIsPublicSafe,propertyTitleIsProductionSafe,propertyTypeSlug as normalizePropertyTypeSlug} from "@/src/lib/properties/validation";
 import {youtubeVideoId} from "@/src/lib/youtube";
 
-const schema = z.object({ transactionType: z.enum(["sale","rent","lease"]), category: z.string().min(2).max(60), propertyType: z.string().trim().min(2).max(80), title: z.string().trim().min(10).max(120), description: z.string().trim().min(40).max(10000).refine(propertyDescriptionIsPublicSafe,"Description cannot contain contact details, links or social handles."), locality: z.string().trim().min(2).max(120), city: z.string().trim().min(2).max(120), district: z.string().trim().min(2).max(120), state: z.string().trim().min(2).max(120), price: z.coerce.number().nonnegative(), areaValue: z.coerce.number().positive(), areaUnit: z.enum(["gadi","sq_ft","sq_yd","sq_m","acre","cent","gunta","hectare"]), declaration: z.literal("accepted") }).passthrough();
+const schema = z.object({ transactionType: z.enum(["sale","rent","lease"]), category: z.string().min(2).max(60), propertyType: z.string().trim().min(2).max(80), title: z.string().trim().min(10).max(120).refine(propertyTitleIsProductionSafe,"Remove test, placeholder, code or technical content from the title."), description: z.string().trim().min(40).max(10000).refine(propertyDescriptionIsPublicSafe,"Description cannot contain contact details, links, social handles, test data or technical content."), locality: z.string().trim().min(2).max(120), city: z.string().trim().min(2).max(120), district: z.string().trim().min(2).max(120), state: z.string().trim().min(2).max(120), price: z.coerce.number().nonnegative(), areaValue: z.coerce.number().positive(), areaUnit: z.enum(["gadi","sq_ft","sq_yd","sq_m","acre","cent","gunta","hectare"]), declaration: z.literal("accepted") }).passthrough();
 
 export async function POST(request: NextRequest) {
   const requestId=request.headers.get("x-request-id")||crypto.randomUUID();

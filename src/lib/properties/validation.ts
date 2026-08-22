@@ -1,5 +1,10 @@
 const prohibitedPublicContent=/(?:\b[6-9]\d{9}\b|\b\d{3}[-\s]\d{3}[-\s]\d{4}\b|[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/|www\.|(?:^|\s)@[a-z0-9_.]+)/i;
-export function propertyDescriptionIsPublicSafe(value:string){return!prohibitedPublicContent.test(value)}
+const technicalOrTestContent=/(?:<\/?[a-z][^>]*>|javascript\s*:|data\s*:\s*text\/html|\btest\s+property\b|delete\s+after\s+uat|\b(?:insert\s+into|delete\s+from|drop\s+table|alter\s+table|create\s+table|grant\s+.+?\s+to)\s+(?:public\.)?[a-z_][a-z0-9_]*|\b(?:stack\s+trace|syntax\s+error|supabase\s+error|debug\s*:))/i;
+const placeholderTitle=/(?:\b(?:dummy|sample|placeholder)\s+(?:property|listing)\b|\b[b-df-hj-np-tv-z]{7,}\b)/i;
+export function propertyContentIsProductionSafe(value:string){return!technicalOrTestContent.test(value)}
+export function propertyTitleIsProductionSafe(value:string){return propertyContentIsProductionSafe(value)&&!placeholderTitle.test(value)}
+export function propertyDescriptionIsPublicSafe(value:string){return!prohibitedPublicContent.test(value)&&propertyContentIsProductionSafe(value)}
+export function propertyPublicRecordIsSafe(title:string,description:string){return propertyTitleIsProductionSafe(title)&&propertyDescriptionIsPublicSafe(description)}
 export function propertyTypeSlug(value:string){return value.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
 
 const agriculturalTypes=new Set(["agricultural-land","farm-land"]);

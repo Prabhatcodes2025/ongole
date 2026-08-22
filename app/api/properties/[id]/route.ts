@@ -3,9 +3,9 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { requestData } from "@/src/lib/request";
 import { youtubeVideoId } from "@/src/lib/youtube";
-import {applicablePropertyDetails,propertyDescriptionIsPublicSafe} from "@/src/lib/properties/validation";
+import {applicablePropertyDetails,propertyDescriptionIsPublicSafe,propertyTitleIsProductionSafe} from "@/src/lib/properties/validation";
 
-const editSchema=z.object({action:z.literal("update"),title:z.string().trim().min(10).max(120),description:z.string().trim().min(40).max(10000).refine(propertyDescriptionIsPublicSafe,"Description cannot contain contact details, links or social handles."),locality:z.string().trim().min(2).max(120),city:z.string().trim().min(2).max(120),district:z.string().trim().min(2).max(120),state:z.string().trim().min(2).max(120),price:z.coerce.number().nonnegative(),areaValue:z.coerce.number().positive(),areaUnit:z.enum(["gadi","sq_ft","sq_yd","sq_m","acre","cent","gunta","hectare"]),youtubeUrl:z.string().trim().max(500).optional()}).passthrough();
+const editSchema=z.object({action:z.literal("update"),title:z.string().trim().min(10).max(120).refine(propertyTitleIsProductionSafe,"Remove test, placeholder, code or technical content from the title."),description:z.string().trim().min(40).max(10000).refine(propertyDescriptionIsPublicSafe,"Description cannot contain contact details, links, social handles, test data or technical content."),locality:z.string().trim().min(2).max(120),city:z.string().trim().min(2).max(120),district:z.string().trim().min(2).max(120),state:z.string().trim().min(2).max(120),price:z.coerce.number().nonnegative(),areaValue:z.coerce.number().positive(),areaUnit:z.enum(["gadi","sq_ft","sq_yd","sq_m","acre","cent","gunta","hectare"]),youtubeUrl:z.string().trim().max(500).optional()}).passthrough();
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;const origin=request.headers.get("origin");if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:"Invalid request origin."},{status:403});

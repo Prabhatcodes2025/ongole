@@ -9,6 +9,7 @@ import { sendTemplateEmail } from "@/src/lib/email/service";
 import {isValidIndianMobile,normalizeMobile} from "@/src/lib/auth/mobile";
 import {loginErrorCode,normalizeEmail,reconcileAuthenticatedProfile,safeReturnPath} from "@/src/lib/auth/session";
 import {logEvent} from "@/src/lib/observability/logger";
+import {registrationFieldMessages,registrationFieldsFromIssues} from "@/src/lib/auth/registration";
 
 const loginSchema = z.object({ email: z.email(), password: z.string().min(8).max(200),returnTo:z.string().optional() });
 const strongPassword=z.string().min(8).max(200).regex(/[a-z]/).regex(/[A-Z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/);
@@ -26,11 +27,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if(!["logout","google"].includes(action)){const token=typeof data["cf-turnstile-response"]==="string"?data["cf-turnstile-response"]:null;if(!await verifyCaptcha(token,ip))return NextResponse.json({error:"CAPTCHA verification failed."},{status:400})}
   const supabase = await createSupabaseServerClient();
   if(action==="google"){
-    const returnTo=safeReturnPath(data.returnTo);const accountType=data.accountType==="owner"?"owner":null;
+    const returnTo=safeReturnPath(data.returnTo);const accountType=["buyer","owner","agent","pg_owner"].includes(String(data.accountType||""))?String(data.accountType):null;
     if(accountType&&data.termsAccepted!=="accepted")return NextResponse.redirect(new URL(`/register?error=terms_required&returnTo=${encodeURIComponent(returnTo)}`,request.url),303);
-    const callback=new URL("/auth/callback",env.siteUrl);callback.searchParams.set("next",returnTo);if(accountType){callback.searchParams.set("intent","owner");callback.searchParams.set("termsVersion",termsVersion)}
+    const callback=new URL("/auth/callback",env.siteUrl);callback.searchParams.set("next",returnTo);if(accountType){callback.searchParams.set("intent",accountType);callback.searchParams.set("termsVersion",termsVersion)}
     const{data:oauth,error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:callback.toString(),queryParams:{prompt:"select_account"}}});
-    if(error||!oauth.url){logEvent("warn","auth.google_start_failed",{code:error?.code||"oauth_url_missing"});return NextResponse.redirect(new URL(accountType?"/register?error=oauth_failed":"/login?error=auth_unavailable",request.url),303)}
+    if(error||!oauth.url){logEvent("warn","auth.google_start_failed",{code:error?.code||"oauth_url_missing"});return NextResponse.redirect(new URL(accountType?`/register?error=oauth_failed&accountType=${accountType}`:"/login?error=auth_unavailable",request.url),303)}
     return NextResponse.redirect(oauth.url,303);
   }
   if (action === "login") {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.redirect(new URL(`${returnTo}${profile.repaired?(returnTo.includes("?")?"&":"?")+"notice=profile_repaired":""}`, request.url), 303);
   }
   if (action === "register") {
-    const parsed = registerSchema.safeParse(data); if (!parsed.success){const fields=[...new Set(parsed.error.issues.map(issue=>String(issue.path[0]||"form")))];logEvent("warn","auth.registration_validation_failed",{fields});if(request.headers.get("accept")?.includes("application/json"))return NextResponse.json({error:"Check your registration details and try again.",fields},{status:400});return NextResponse.redirect(new URL("/register?error=invalid_details",request.url),303)}
+    const parsed = registerSchema.safeParse(data); if (!parsed.success){const fields=registrationFieldsFromIssues(parsed.error.issues.map(issue=>String(issue.path[0]||"form")));logEvent("warn","auth.registration_validation_failed",{fields});if(request.headers.get("accept")?.includes("application/json"))return NextResponse.json({error:"Please correct the invalid registration fields.",fields:Object.fromEntries(fields.map(field=>[field,registrationFieldMessages[field]]))},{status:400});const url=new URL("/register?error=invalid_details",request.url);if(fields.length)url.searchParams.set("fields",fields.join(","));if(typeof data.accountType==="string")url.searchParams.set("accountType",data.accountType);if(typeof data.returnTo==="string")url.searchParams.set("returnTo",safeReturnPath(data.returnTo));return NextResponse.redirect(url,303)}
     const { password, name, mobile, accountType } = parsed.data;const email=normalizeEmail(parsed.data.email);const agentMetadata=accountType==="agent"?{years_experience:parsed.data.yearsExperience??null,office_address:parsed.data.officeAddress||null,about:parsed.data.about||null,working_towns:list(parsed.data.workingTowns,5),specializations:list(parsed.data.specializations,20)}:{};
     const{data:mobileAvailable,error:mobileCheckError}=await supabase.rpc("is_mobile_available",{candidate_mobile:mobile});
     if(mobileCheckError){logEvent("error","auth.mobile_availability_failed",{code:mobileCheckError.code});return NextResponse.redirect(new URL("/register?error=registration_failed",request.url),303)}

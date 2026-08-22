@@ -1,6 +1,7 @@
 import "server-only";
 import {siteConfig} from "@/src/config/site";
 import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
+import {propertyPublicRecordIsSafe} from "@/src/lib/properties/validation";
 
 type Row=Record<string,unknown>;
 export type PublicPg={
@@ -26,7 +27,7 @@ async function mapRows(rows:Row[]):Promise<PublicPg[]>{
   return rows.map((row)=>{
     const property=nested(row.properties)||{},details=nested(row.details)||{};const rooms=Array.isArray(row.pg_room_types)?row.pg_room_types as Row[]:[];const ownerId=String(property.owner_id||""),entitled=(Boolean(property.is_featured)||paidOwners.has(ownerId))&&["public","eligible_members"].includes(String(property.contact_visibility||"company"));const officialPhone=siteConfig.phone.replace(/\D/g,"").slice(-10),officialWhatsapp=siteConfig.whatsapp.replace(/\D/g,"").slice(-10),ownerPhone=String(row.contact_mobile||ownerPhones.get(ownerId)||""),ownerWhatsapp=String(row.contact_whatsapp||ownerPhone);
     return{id:String(row.id),propertyId:String(row.property_id),reference:String(property.reference_no),slug:String(property.slug),name:String(row.pg_name),category:String(row.category),description:String(property.description||""),address:String(row.address_line||""),landmark:String(details.landmark||""),locality:String(property.locality_text),city:String(property.city_text),district:String(property.district_text),state:String(property.state_text),latitude:property.latitude==null?null:Number(property.latitude),longitude:property.longitude==null?null:Number(property.longitude),rent:Number(row.rent_per_bed||0),capacity:row.capacity==null?null:Number(row.capacity),foodType:String(row.food_type||""),amenities:strings(row.amenities),rules:strings(row.house_rules),videos:strings(row.video_urls),verified:Boolean(property.is_verified),featured:Boolean(property.is_featured),pinned:Boolean(property.is_pinned),publishedAt:typeof property.published_at==="string"?property.published_at:null,rooms:rooms.map((room)=>({id:String(room.id),name:String(room.name),capacity:Number(room.capacity),availableBeds:Number(room.available_beds),rent:Number(room.monthly_rent)})),contactLabel:entitled&&ownerPhone?"Property owner":"OngoleProperty.com",contactPhone:entitled&&ownerPhone?ownerPhone:officialPhone,contactWhatsapp:entitled&&ownerWhatsapp?ownerWhatsapp:officialWhatsapp,media:mediaRows.map((item,index)=>({item,url:signed?.[index]?.signedUrl||""})).filter(({item,url})=>String(item.property_id)===String(row.property_id)&&url).slice(0,6).map(({item,url})=>({id:String(item.id),url,alt:String(item.alt_text||row.pg_name)}))};
-  });
+  }).filter((pg)=>propertyPublicRecordIsSafe(pg.name,pg.description));
 }
 
 const SELECT="id,property_id,pg_name,category,rent_per_bed,capacity,food_type,address_line,amenities,house_rules,video_urls,contact_mobile,contact_whatsapp,details,properties!inner(reference_no,slug,description,status,owner_id,contact_visibility,locality_text,city_text,district_text,state_text,latitude,longitude,is_verified,is_featured,is_pinned,published_at,deleted_at),pg_room_types(id,name,capacity,available_beds,monthly_rent,sort_order)";
@@ -74,6 +75,6 @@ export async function getSimilarPgs(pg:PublicPg,limit=3){
 
 export async function getPublicPgSlugs(limit=1000){
   const service=createSupabaseServiceClient();if(!service)return[];
-  const {data}=await service.from("pg_listings").select("properties!inner(slug,published_at,status,deleted_at)").eq("properties.status","published").is("properties.deleted_at",null).limit(limit);
-  return(data||[]).map((row)=>nested(row.properties)).filter(Boolean).map((property)=>({slug:String(property?.slug),publishedAt:property?.published_at as string|null}));
+  const {data}=await service.from("pg_listings").select("pg_name,properties!inner(slug,published_at,status,deleted_at,description)").eq("properties.status","published").is("properties.deleted_at",null).limit(limit);
+  return(data||[]).filter((row)=>{const property=nested(row.properties);return property&&propertyPublicRecordIsSafe(String(row.pg_name||""),String(property.description||""))}).map((row)=>nested(row.properties)).filter(Boolean).map((property)=>({slug:String(property?.slug),publishedAt:property?.published_at as string|null}));
 }

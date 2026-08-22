@@ -2,6 +2,7 @@ import { demoProperties } from "@/src/data/demo-properties";
 import { convertArea } from "@/src/lib/area-conversion";
 import { createPublicSupabaseClient } from "@/src/lib/supabase/public";
 import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
+import {propertyPublicRecordIsSafe} from "@/src/lib/properties/validation";
 import type { AreaUnit, PropertyFilters, PropertyListResult, PropertyMedia, PublicProperty } from "@/src/types/property";
 
 const SELECT = "id,reference_no,slug,title,description,transaction_type,price_inr,area_value,area_unit,locality_text,city_text,district_text,state_text,details,is_verified,is_featured,is_pinned,is_premium,contact_visibility,published_at,property_categories(name,slug),property_types(name,slug)";
@@ -41,7 +42,7 @@ function mapRow(row: Row, media:PropertyMedia[]=[]): PublicProperty {
   };
 }
 
-async function mapRows(rows:Row[]){const media=await hydrateMedia(rows);return rows.map((row)=>mapRow(row,media.get(String(row.id))||[]))}
+async function mapRows(rows:Row[]){const media=await hydrateMedia(rows);return rows.map((row)=>mapRow(row,media.get(String(row.id))||[])).filter((property)=>propertyPublicRecordIsSafe(property.title,property.description||""))}
 
 function filterDemo(properties: PublicProperty[], filters: PropertyFilters) {
   const keyword = filters.keyword?.toLowerCase(); const location = filters.location?.toLowerCase();
@@ -127,6 +128,6 @@ export async function getPublicPropertyMap(property: PublicProperty) {
 export async function getPublicPropertySlugs(limit = 1000) {
   const supabase = createPublicSupabaseClient();
   if (!supabase) return [];
-  const { data } = await supabase.from("properties").select("slug,published_at").eq("status", "published").is("deleted_at", null).not("slug", "is", null).order("published_at", { ascending:false }).limit(limit);
-  return (data || []).map((row) => ({ slug: row.slug as string, publishedAt: row.published_at as string | null }));
+  const { data } = await supabase.from("properties").select("slug,published_at,title,description").eq("status", "published").is("deleted_at", null).not("slug", "is", null).order("published_at", { ascending:false }).limit(limit);
+  return (data || []).filter((row)=>propertyPublicRecordIsSafe(String(row.title||""),String(row.description||""))).map((row) => ({ slug: row.slug as string, publishedAt: row.published_at as string | null }));
 }

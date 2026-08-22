@@ -1,7 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BadgeCheck,
-  Building2,
   Eye,
   Handshake,
   Landmark,
@@ -89,11 +89,11 @@ export function AboutPage() {
 
   return <main id="main" className="about-page">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
-    <section className="about-hero"><div className="shell about-hero-grid"><div><nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><b>›</b><span>About Us</span></nav><p className="eyebrow">About OngoleProperty.com</p><h1>A trusted, locally focused real estate platform</h1><p>Connecting genuine property owners, buyers, sellers, tenants, investors and real estate professionals across Ongole and Prakasam District.</p><div className="button-row"><Link className="button" href="/properties">Explore Properties</Link><Link className="button button-outline" href="/contact">Contact Us</Link></div></div><div className="about-hero-mark" aria-hidden="true"><Building2/><strong>Local knowledge</strong><span>Professional property coordination</span></div></div></section>
+    <section className="about-hero"><div className="shell about-hero-grid"><div><nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><b>›</b><span>About Us</span></nav><p className="eyebrow">About OngoleProperty.com</p><h1>Ongole &amp; Prakasam District</h1><p className="about-hero-subheading">Local Expertise. Trusted Experience. Responsible Property Support.</p><p>Connecting genuine property owners, buyers, sellers, tenants, investors and real estate professionals across Ongole and Prakasam District.</p><div className="button-row"><Link className="button" href="/properties">Explore Properties</Link><Link className="button button-outline" href="/contact">Contact Us</Link></div></div><div className="about-hero-visual"><Image src="/images/prakasam-bhavan-ongole-prakasam-district-real-estate.webp" alt="Prakasam Bhavan in Ongole, Prakasam District" width={1254} height={1254} priority sizes="(max-width: 900px) min(100vw - 28px, 520px), 360px"/></div></div></section>
 
     <section className="section shell about-intro"><div><p className="eyebrow">Who we are</p><h2>Quality property information for confident decisions</h2></div><div><p>OngoleProperty.com is a trusted real estate platform dedicated to serving Ongole and Prakasam District. Our mission is to connect genuine property owners, buyers, sellers, tenants, investors and real estate professionals through a transparent and professionally managed platform.</p><p>We believe every property transaction should be based on trust, verified information and local market knowledge. Rather than focusing only on the number of listings, our priority is to provide quality property information that helps people make informed decisions with confidence.</p></div></section>
 
-    <section className="section section-tinted"><div className="shell"><div className="section-heading"><div><p className="eyebrow">What we do</p><h2>Property discovery, marketing and professional support</h2></div><p>Our objective is to make buying, selling and renting properties easier, more transparent and more professional.</p></div><ul className="about-service-grid">{services.map((service)=><li key={service}><SearchCheck aria-hidden="true"/><span>{service}</span></li>)}</ul></div></section>
+    <section className="section section-tinted"><div className="shell"><div className="section-heading about-services-heading"><div><p className="eyebrow">What we do</p><h2>Property discovery, marketing and professional support</h2></div><p>Our objective is to make buying, selling and renting properties easier, more transparent and more professional.</p></div><ul className="about-service-grid">{services.map((service)=><li key={service}><SearchCheck aria-hidden="true"/><span>{service}</span></li>)}</ul></div></section>
 
     <section className="section shell"><div className="section-heading"><div><p className="eyebrow">Why people trust us</p><h2>Trust is the foundation of every successful property transaction</h2></div><p>At OngoleProperty.com we believe in quality rather than quantity.</p></div><div className="about-trust-grid">{trustPoints.map(([Icon, label])=><article key={label}><Icon aria-hidden="true"/><h3>{label}</h3></article>)}</div></section>
 
