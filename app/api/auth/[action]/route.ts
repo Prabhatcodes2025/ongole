@@ -17,8 +17,27 @@ const termsVersion="2026-08-13";
 const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100),password:strongPassword, mobile: z.string().transform(normalizeMobile).refine(isValidIndianMobile), accountType: z.enum(["buyer","owner","agent","pg_owner"]),termsAccepted:z.literal("accepted"),yearsExperience:z.union([z.coerce.number().int().min(0).max(80),z.literal("").transform(()=>undefined)]).optional(),officeAddress:z.string().trim().max(500).optional().default(""),about:z.string().trim().max(1500).optional().default(""),workingTowns:z.string().trim().max(300).optional().default(""),specializations:z.string().trim().max(500).optional().default("") });
 const list=(value:string,limit:number)=>[...new Set(value.split(",").map((item)=>item.trim()).filter(Boolean))].slice(0,limit);
 
+async function startGoogleOAuth(request:NextRequest,data:Record<string,unknown>){
+  const ip=requestIp(request);const rate=await checkRateLimit(`auth:google:${ip}`,3,15*60_000);
+  if(!rate.allowed)return NextResponse.json({error:"Too many attempts. Please try again later."},{status:429,headers:{"Retry-After":String(rate.retryAfter)}});
+  if(!env.isSupabaseConfigured)return NextResponse.json({error:"Authentication is not configured yet. Add the Supabase environment values."},{status:503});
+  const supabase=await createSupabaseServerClient();
+  const returnTo=safeReturnPath(data.returnTo);const accountType=["buyer","owner","agent","pg_owner"].includes(String(data.accountType||""))?String(data.accountType):null;
+  if(accountType&&data.termsAccepted!=="accepted")return NextResponse.redirect(new URL(`/register?error=terms_required&returnTo=${encodeURIComponent(returnTo)}`,request.url),303);
+  const callback=new URL("/auth/callback",request.nextUrl.origin);callback.searchParams.set("next",returnTo);if(accountType){callback.searchParams.set("intent",accountType);callback.searchParams.set("termsVersion",termsVersion)}
+  const{data:oauth,error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:callback.toString(),queryParams:{prompt:"select_account"}}});
+  if(error||!oauth.url){logEvent("warn","auth.google_start_failed",{code:error?.code||"oauth_url_missing"});return NextResponse.redirect(new URL(accountType?`/register?error=oauth_failed&accountType=${accountType}`:"/login?error=auth_unavailable",request.url),303)}
+  return NextResponse.redirect(oauth.url,303);
+}
+
+export async function GET(request:NextRequest,{params}:{params:Promise<{action:string}>}){
+  const{action}=await params;if(action!=="google")return NextResponse.json({error:"Method not allowed"},{status:405});
+  return startGoogleOAuth(request,Object.fromEntries(request.nextUrl.searchParams));
+}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ action: string }> }) {
   const { action } = await params;
+  if(action==="google")return startGoogleOAuth(request,await requestData(request));
   const ip = requestIp(request);
   const rate = await checkRateLimit(`auth:${action}:${ip}`, action === "login" ? 6 : 3, 15 * 60_000);
   if (!rate.allowed) return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
@@ -26,14 +45,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const data = await requestData(request);
   if(!["logout","google"].includes(action)){const token=typeof data["cf-turnstile-response"]==="string"?data["cf-turnstile-response"]:null;if(!await verifyCaptcha(token,ip))return NextResponse.json({error:"CAPTCHA verification failed."},{status:400})}
   const supabase = await createSupabaseServerClient();
-  if(action==="google"){
-    const returnTo=safeReturnPath(data.returnTo);const accountType=["buyer","owner","agent","pg_owner"].includes(String(data.accountType||""))?String(data.accountType):null;
-    if(accountType&&data.termsAccepted!=="accepted")return NextResponse.redirect(new URL(`/register?error=terms_required&returnTo=${encodeURIComponent(returnTo)}`,request.url),303);
-    const callback=new URL("/auth/callback",env.siteUrl);callback.searchParams.set("next",returnTo);if(accountType){callback.searchParams.set("intent",accountType);callback.searchParams.set("termsVersion",termsVersion)}
-    const{data:oauth,error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:callback.toString(),queryParams:{prompt:"select_account"}}});
-    if(error||!oauth.url){logEvent("warn","auth.google_start_failed",{code:error?.code||"oauth_url_missing"});return NextResponse.redirect(new URL(accountType?`/register?error=oauth_failed&accountType=${accountType}`:"/login?error=auth_unavailable",request.url),303)}
-    return NextResponse.redirect(oauth.url,303);
-  }
   if (action === "login") {
     const parsed = loginSchema.safeParse(data); if (!parsed.success) return NextResponse.json({ error: "Enter a valid email and password." }, { status: 400 });
     const email=normalizeEmail(parsed.data.email),returnTo=safeReturnPath(parsed.data.returnTo);

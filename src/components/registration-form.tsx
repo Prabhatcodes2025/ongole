@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CaptchaWidget } from "@/src/components/captcha-widget";
 import { PasswordInput } from "@/src/components/password-input";
 import {registrationFieldMessages,type RegistrationField,validateRegistrationFields} from "@/src/lib/auth/registration";
+import {GoogleOAuthButton} from "@/src/components/google-oauth-button";
 
 const accountTypes = [
   ["buyer", "Buyer"],
@@ -21,7 +22,7 @@ export function RegistrationForm({ initialAccountType, returnTo,serverErrorField
   const describedBy=(field:RegistrationField,help?:string)=>[help,errors[field]?`${field}-error`:null].filter(Boolean).join(" ")||undefined;
   return <>
     <label>Register as<select name="oauthAccountType" value={accountType} onChange={(event)=>{setAccountType(event.target.value);setErrors(current=>({...current,accountType:undefined}))}} aria-invalid={Boolean(errors.accountType)||undefined} aria-describedby={describedBy("accountType")}><option value="buyer">Buyer</option><option value="owner">Property owner</option><option value="agent">Real estate agent</option><option value="pg_owner">PG owner / manager</option></select>{error("accountType")}</label>
-    <form className="oauth-form" action="/api/auth/google" method="post"><input type="hidden" name="returnTo" value={returnTo}/><input type="hidden" name="accountType" value={accountType}/><label className="consent auth-consent"><input required type="checkbox" name="termsAccepted" value="accepted"/><span>I agree to the <a href="/terms-and-conditions" target="_blank" rel="noreferrer">Terms &amp; Conditions</a>.</span></label><button className="button button-light" type="submit">Continue with Google as {accountLabel}</button></form>
+    <GoogleOAuthButton returnTo={returnTo} accountType={accountType} accountLabel={accountLabel}/>
     <div className="auth-divider"><span>or register with email</span></div>
   <form action="/api/auth/register" method="post" noValidate onSubmit={(event)=>{const values=Object.fromEntries(new FormData(event.currentTarget));const next=validateRegistrationFields(values);if(Object.keys(next).length){event.preventDefault();setErrors(next);const first=Object.keys(next)[0];event.currentTarget.querySelector<HTMLElement>(`[name="${first}"]`)?.focus()}else setErrors({})}}>
     <input type="hidden" name="returnTo" value={returnTo}/>
