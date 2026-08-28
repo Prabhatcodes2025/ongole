@@ -39,11 +39,11 @@ export function parsePropertyFilters(params: SearchParams): PropertyFilters {
     facing: text(params, "facing") || undefined,
     furnishing: text(params, "furnishing") || undefined,
     ownership: text(params, "ownership") || undefined,
-    areaUnit: (["gadi", "sq_ft", "sq_yd", "sq_m", "acre", "cent", "gunta", "hectare"] as string[]).includes(text(params, "areaUnit")) ? text(params, "areaUnit") as PropertyFilters["areaUnit"] : "sq_ft",
-    verifiedOnly: checked(params, "verified"),
-    featuredOnly: checked(params, "featured"),
-    newOnly: checked(params, "new"),
-    availableOnly: checked(params, "available"),
+    areaUnit: (["gadi", "sq_ft", "sq_yd", "sq_m", "acre", "cent", "gunta", "hectare"] as string[]).includes(text(params, "areaUnit")) ? text(params, "areaUnit") as PropertyFilters["areaUnit"] : undefined,
+    verifiedOnly: checked(params, "verified") || undefined,
+    featuredOnly: checked(params, "featured") || undefined,
+    newOnly: checked(params, "new") || undefined,
+    availableOnly: checked(params, "available") || undefined,
     amenities: (Array.isArray(amenities) ? amenities : amenities ? [amenities] : []).filter(Boolean),
     sort: (["newest", "oldest", "price-asc", "price-desc", "area-asc", "area-desc"] as string[]).includes(sort) ? sort as PropertyFilters["sort"] : "newest",
     page: Math.max(1, Math.floor(positiveNumber(text(params, "page")) || 1)),
@@ -52,5 +52,9 @@ export function parsePropertyFilters(params: SearchParams): PropertyFilters {
 }
 
 export function activeFilterEntries(filters: PropertyFilters) {
-  return Object.entries(filters).filter(([key, value]) => !["sort", "page", "pageSize"].includes(key) && value !== undefined && value !== "" && (!Array.isArray(value) || value.length));
+  const hasArea=filters.minArea!==undefined||filters.maxArea!==undefined;
+  return Object.entries(filters).filter(([key, value]) => !["sort", "page", "pageSize"].includes(key) && value !== undefined && value !== "" && value!==false && (!Array.isArray(value) || value.length) && (key!=="areaUnit"||hasArea));
 }
+
+const filterLabels:Record<string,string>={category:"Category",type:"Property type",location:"Location",city:"Mandal/Town",locality:"Location",keyword:"Keyword",minPrice:"Minimum price",maxPrice:"Maximum price",minArea:"Minimum area",maxArea:"Maximum area",bedrooms:"Bedrooms",bathrooms:"Bathrooms",facing:"Facing",furnishing:"Furnishing",ownership:"Ownership",areaUnit:"Area unit",featuredOnly:"Featured",newOnly:"New listings",availableOnly:"Available now",amenities:"Amenities"};
+export function activeFilterLabel(key:string){return filterLabels[key]||key.replace(/Only$/,"").replace(/([A-Z])/g," $1").replace(/^./,letter=>letter.toUpperCase())}

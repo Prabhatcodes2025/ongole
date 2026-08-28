@@ -22,6 +22,8 @@ export type PublicProperty = {
   propertyType: string;
   propertyTypeSlug: string;
   price: number;
+  rentPeriod?: "month" | "year";
+  amountBasis?: "per_acre" | "total_property" | "per_acre_year" | "per_acre_crop";
   areaValue: number;
   areaUnit: AreaUnit;
   locality: string;
@@ -37,6 +39,8 @@ export type PublicProperty = {
   highlights: string[];
   tags: string[];
   videoUrl?: string;
+  googleMapsUrl?: string;
+  details?: Record<string, unknown>;
   isVerified: boolean;
   isFeatured: boolean;
   isPinned?: boolean;

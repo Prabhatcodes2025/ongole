@@ -33,10 +33,10 @@ function mapRow(row: Row, media:PropertyMedia[]=[]): PublicProperty {
   return {
     id: String(row.id), reference: String(row.reference_no), slug: String(row.slug), title: String(row.title), description: String(row.description || ""),
     transactionType: String(row.transaction_type) as PublicProperty["transactionType"], category: String(category.name || details.category_label || details.category || "Property"), categorySlug: String(category.slug || details.category || "property"), propertyType: String(propertyType.name || details.property_type || "Property"), propertyTypeSlug: String(propertyType.slug || details.property_type_slug || "property"),
-    price: Number(row.price_inr || 0), areaValue: Number(row.area_value || 0), areaUnit: String(row.area_unit || "sq_ft") as AreaUnit,
+    price: Number(row.price_inr || 0), rentPeriod: details.rent_period==="year"?"year":details.rent_period==="month"?"month":undefined, amountBasis: typeof details.amount_basis==="string"?details.amount_basis as PublicProperty["amountBasis"]:undefined, areaValue: Number(row.area_value || 0), areaUnit: String(row.area_unit || "sq_ft") as AreaUnit,
     locality: String(row.locality_text), city: String(row.city_text), district: String(row.district_text), state: String(row.state_text),
     bedrooms: Number(details.bedrooms) || undefined, bathrooms: Number(details.bathrooms) || undefined, facing: typeof details.facing === "string" ? details.facing : undefined, furnishing: typeof details.furnishing === "string" ? details.furnishing : undefined, ownership: typeof details.ownership === "string" ? details.ownership : undefined,
-    amenities: strings(details.amenities), highlights: strings(details.highlights), tags: strings(details.tags), videoUrl: typeof details.youtube_url === "string" ? details.youtube_url : undefined,
+    amenities: strings(details.amenities), highlights: strings(details.highlights), tags: strings(details.tags), videoUrl: typeof details.youtube_url === "string"&&details.video_approved===true ? details.youtube_url : undefined, googleMapsUrl:typeof details.google_maps_url==="string"?details.google_maps_url:undefined,details,
     isVerified: Boolean(row.is_verified), isFeatured: Boolean(row.is_featured), isPinned: Boolean(row.is_pinned), isPremium: Boolean(row.is_premium), contactVisibility: String(row.contact_visibility || "company") as PublicProperty["contactVisibility"], publishedAt: typeof row.published_at === "string" ? row.published_at : undefined,
     media,
   };
@@ -49,7 +49,7 @@ function filterDemo(properties: PublicProperty[], filters: PropertyFilters) {
   const minArea=filters.minArea===undefined?undefined:convertArea(filters.minArea,filters.areaUnit||"sq_ft","sq_ft");
   const maxArea=filters.maxArea===undefined?undefined:convertArea(filters.maxArea,filters.areaUnit||"sq_ft","sq_ft");
   const newCutoff=Date.now()-30*24*60*60*1000;
-  return properties.filter((item) => (!filters.purpose || item.transactionType === filters.purpose) && (!filters.category || item.categorySlug === filters.category) && (!filters.type || item.propertyTypeSlug === filters.type) && (!location || `${item.locality} ${item.city} ${item.district}`.toLowerCase().includes(location)) && (!filters.district||item.district.toLowerCase().includes(filters.district.toLowerCase())) && (!filters.city||item.city.toLowerCase().includes(filters.city.toLowerCase())) && (!filters.locality||item.locality.toLowerCase().includes(filters.locality.toLowerCase())) && (!keyword || `${item.title} ${item.reference} ${item.description || ""}`.toLowerCase().includes(keyword)) && (filters.minPrice === undefined || item.price >= filters.minPrice) && (filters.maxPrice === undefined || item.price <= filters.maxPrice) && (minArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") >= minArea) && (maxArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") <= maxArea) && (filters.bedrooms === undefined || item.bedrooms === filters.bedrooms) && (filters.bathrooms === undefined || item.bathrooms === filters.bathrooms) && (!filters.facing || item.facing?.toLowerCase() === filters.facing.toLowerCase()) && (!filters.furnishing || item.furnishing?.toLowerCase() === filters.furnishing.toLowerCase()) && (!filters.ownership||item.ownership?.toLowerCase()===filters.ownership.toLowerCase()) && (!filters.verifiedOnly||item.isVerified) && (!filters.featuredOnly||item.isFeatured) && (!filters.newOnly||Date.parse(item.publishedAt||"")>=newCutoff) && (!filters.amenities?.length || filters.amenities.every((amenity) => item.amenities.includes(amenity))));
+  return properties.filter((item) => (!filters.purpose || (filters.purpose==="rent"?["rent","lease"].includes(item.transactionType):item.transactionType === filters.purpose)) && (!filters.category || item.categorySlug === filters.category) && (!filters.type || item.propertyTypeSlug === filters.type) && (!location || `${item.locality} ${item.city} ${item.district}`.toLowerCase().includes(location)) && (!filters.district||item.district.toLowerCase().includes(filters.district.toLowerCase())) && (!filters.city||item.city.toLowerCase().includes(filters.city.toLowerCase())) && (!filters.locality||item.locality.toLowerCase().includes(filters.locality.toLowerCase())) && (!keyword || `${item.title} ${item.reference} ${item.description || ""}`.toLowerCase().includes(keyword)) && (filters.minPrice === undefined || item.price >= filters.minPrice) && (filters.maxPrice === undefined || item.price <= filters.maxPrice) && (minArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") >= minArea) && (maxArea === undefined || convertArea(item.areaValue, item.areaUnit, "sq_ft") <= maxArea) && (filters.bedrooms === undefined || item.bedrooms === filters.bedrooms) && (filters.bathrooms === undefined || item.bathrooms === filters.bathrooms) && (!filters.facing || item.facing?.toLowerCase() === filters.facing.toLowerCase()) && (!filters.furnishing || item.furnishing?.toLowerCase() === filters.furnishing.toLowerCase()) && (!filters.ownership||item.ownership?.toLowerCase()===filters.ownership.toLowerCase()) && (!filters.verifiedOnly||item.isVerified) && (!filters.featuredOnly||item.isFeatured) && (!filters.newOnly||Date.parse(item.publishedAt||"")>=newCutoff) && (!filters.amenities?.length || filters.amenities.every((amenity) => item.amenities.includes(amenity))));
 }
 
 export function sortProperties(properties: PublicProperty[], sort: PropertyFilters["sort"]) {
@@ -58,9 +58,9 @@ export function sortProperties(properties: PublicProperty[], sort: PropertyFilte
 
 export async function listPublicProperties(filters: PropertyFilters): Promise<PropertyListResult> {
   const supabase = createPublicSupabaseClient();
-  if (!supabase) { const filtered = sortProperties(filterDemo(demoProperties, filters), filters.sort); const start = (filters.page - 1) * filters.pageSize; return { properties: filtered.slice(start, start + filters.pageSize), total: filtered.length, page: filters.page, pageSize: filters.pageSize, source: "demo" }; }
-  let query = supabase.from("properties").select(SELECT, { count: "exact" }).eq("status", "published").is("deleted_at", null);
-  if (filters.purpose) query = query.eq("transaction_type", filters.purpose);
+  if (!supabase) { const filtered = sortProperties(filterDemo(demoProperties, filters), filters.sort); const page=Math.min(filters.page,Math.max(1,Math.ceil(filtered.length/filters.pageSize)));const start = (page - 1) * filters.pageSize; return { properties: filtered.slice(start, start + filters.pageSize), total: filtered.length, page, pageSize: filters.pageSize, source: "demo" }; }
+  const buildQuery=()=>{let query = supabase.from("properties").select(SELECT).eq("status", "published").is("deleted_at", null);
+  if (filters.purpose) query = filters.purpose==="rent"?query.in("transaction_type",["rent","lease"]):query.eq("transaction_type", filters.purpose);
   if (filters.category) query = query.contains("details", { category: filters.category });
   if (filters.type) query = query.contains("details", { property_type_slug: filters.type });
   if (filters.location) query = query.or(`locality_text.ilike.%${filters.location.replace(/[%(),]/g, "")}%,city_text.ilike.%${filters.location.replace(/[%(),]/g, "")}%`);
@@ -83,10 +83,10 @@ export async function listPublicProperties(filters: PropertyFilters): Promise<Pr
   if (filters.availableOnly) query=query.or("details->>availability.eq.available,details->>availability.is.null");
   if (filters.amenities?.length) query = query.contains("details", { amenities: filters.amenities });
   const sortMap: Record<PropertyFilters["sort"], [string, boolean]> = { newest:["published_at",false], oldest:["published_at",true], "price-asc":["price_inr",true], "price-desc":["price_inr",false], "area-asc":["area_sq_ft",true], "area-desc":["area_sq_ft",false] };
-  const [column, ascending] = sortMap[filters.sort]; const start = (filters.page - 1) * filters.pageSize;
-  const { data, count, error } = await query.order("is_pinned", { ascending:false }).order(column, { ascending, nullsFirst: false }).range(start, start + filters.pageSize - 1);
-  if (error) return { properties: [], total: 0, page: filters.page, pageSize: filters.pageSize, source: "supabase", error: "Properties are temporarily unavailable." };
-  return { properties: await mapRows((data || []) as Row[]), total: count || 0, page: filters.page, pageSize: filters.pageSize, source: "supabase" };
+  const [column, ascending] = sortMap[filters.sort];return query.order("is_pinned", { ascending:false }).order(column, { ascending, nullsFirst: false })};
+  const rows:Row[]=[];for(let from=0;;from+=1000){const{data,error}=await buildQuery().range(from,from+999);if(error)return{properties:[],total:0,page:1,pageSize:filters.pageSize,source:"supabase",error:"Properties are temporarily unavailable."};const batch=(data||[])as Row[];rows.push(...batch);if(batch.length<1000)break}
+  const renderableRows=rows.filter((row)=>propertyPublicRecordIsSafe(String(row.title||""),String(row.description||"")));const total=renderableRows.length;const page=Math.min(filters.page,Math.max(1,Math.ceil(total/filters.pageSize)));const start=(page-1)*filters.pageSize;
+  return { properties: await mapRows(renderableRows.slice(start,start+filters.pageSize)), total, page, pageSize: filters.pageSize, source: "supabase" };
 }
 
 export async function getFeaturedProperties(limit = 6) { return (await listPublicProperties({ sort:"newest", page:1, pageSize:limit })).properties.slice(0, limit); }
@@ -100,9 +100,10 @@ export async function getPublicProperty(slug: string) {
   return data ? (await mapRows([data as Row]))[0] : null;
 }
 
-export async function getSimilarProperties(property: PublicProperty, limit = 3) {
-  const result = await listPublicProperties({ purpose: property.transactionType, category: property.categorySlug, location: property.city, minPrice:Math.max(0,property.price*.7), maxPrice:property.price*1.3, sort:"newest", page:1, pageSize:limit + 4 });
-  return result.properties.filter((item) => item.id !== property.id).slice(0, limit);
+export async function getSimilarProperties(property: PublicProperty, limit = 4) {
+  const exact=await listPublicProperties({purpose:property.transactionType,type:property.propertyTypeSlug,city:property.city,sort:"newest",page:1,pageSize:limit+1});const matches=exact.properties.filter((item)=>item.id!==property.id);
+  if(matches.length>=limit)return matches.slice(0,limit);
+  const nearby=await listPublicProperties({purpose:property.transactionType,city:property.city,sort:"newest",page:1,pageSize:limit+matches.length+1});const ids=new Set([property.id,...matches.map((item)=>item.id)]);return[...matches,...nearby.properties.filter((item)=>!ids.has(item.id))].slice(0,limit);
 }
 
 export async function getPropertySeoOverride(propertyId:string){const service=createSupabaseServiceClient();if(!service)return null;const{data}=await service.from("seo_overrides").select("title,description,canonical_url,robots,open_graph,structured_data").eq("entity_type","property").eq("entity_id",propertyId).maybeSingle();return data||null}

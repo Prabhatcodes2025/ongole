@@ -23,7 +23,7 @@ export const fallbackLocations = ["Ongole", "Bhagya Nagar", "Bhagyanagar", "Gopa
 export const facingOptions = ["East", "West", "North", "South", "North East"];
 export const furnishingOptions = ["Unfurnished", "Semi Furnished", "Fully Furnished"];
 export const amenityOptions = ["Parking", "Power Backup", "Lift", "Security", "Water Supply", "Road Access"];
-export const transactionLabels: Record<TransactionType, string> = { sale: "Sale", rent: "Rent", lease: "Lease" };
+export const transactionLabels: Record<TransactionType, string> = { sale: "Sale", rent: "Rent/Lease", lease: "Rent/Lease" };
 
 export type PropertyCatalogData={categories:Array<{value:string;label:string;types:Array<{value:string;label:string}>}>;locations:string[];facings:string[];amenities:string[]};
 export const fallbackPropertyCatalog:PropertyCatalogData={categories:propertyCategories.map((category)=>({value:category.value,label:category.label,types:category.types.map((value)=>({value,label:propertyTypeLabels[value]}))})),locations:fallbackLocations,facings:facingOptions,amenities:amenityOptions};
