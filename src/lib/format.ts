@@ -1,4 +1,4 @@
-import { transactionLabels } from "@/src/config/property-catalog";
+import { isDevelopmentJv, transactionLabels } from "@/src/config/property-catalog";
 import type { PublicProperty, TransactionType } from "@/src/types/property";
 
 export function formatPrice(value: number, purpose?: TransactionType) {
@@ -6,8 +6,9 @@ export function formatPrice(value: number, purpose?: TransactionType) {
   return purpose === "rent" || purpose === "lease" ? `${amount} / ${purpose === "lease" ? "Year" : "Month"}` : amount;
 }
 
-export function formatPropertyPrice(property: Pick<PublicProperty,"price"|"transactionType"|"rentPeriod"|"amountBasis">) {
+export function formatPropertyPrice(property: Pick<PublicProperty,"price"|"transactionType"|"rentPeriod"|"amountBasis"> & Partial<Pick<PublicProperty,"categorySlug">>) {
   const amount=`₹${new Intl.NumberFormat("en-IN",{maximumFractionDigits:0}).format(property.price)}`;
+  if(isDevelopmentJv(property))return `Present Market Price: ${amount}`;
   if(property.amountBasis==="per_acre")return `Price: ${amount} / Acre`;
   if(property.amountBasis==="total_property")return `Price: ${amount} (Total Property)`;
   if(property.amountBasis==="per_acre_year")return `Rent/Lease: ${amount} / Acre / Year`;
@@ -16,6 +17,7 @@ export function formatPropertyPrice(property: Pick<PublicProperty,"price"|"trans
   return `Price: ${amount}`;
 }
 
-export function propertyPurposeLabel(property: Pick<PublicProperty, "transactionType">) {
+export function propertyPurposeLabel(property: Pick<PublicProperty, "transactionType"> & Partial<Pick<PublicProperty,"categorySlug">>) {
+  if(isDevelopmentJv(property))return "Development / Joint Venture";
   return transactionLabels[property.transactionType];
 }

@@ -485,3 +485,7 @@ textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px so
 /* Final operational administration */
 .admin-filters-expanded{flex-wrap:wrap;align-items:flex-end}.admin-filters-expanded input,.admin-filters-expanded select{flex:1 1 170px}.property-admin-table{min-width:1120px}.property-admin-table .admin-row{grid-template-columns:60px 1.7fr 1.2fr 1.2fr .8fr 1.3fr 100px}.user-admin-table{min-width:1080px}.user-admin-table .admin-row{grid-template-columns:1.5fr 1.5fr .7fr 1fr .55fr .7fr 85px}.listing-hero-actions{display:flex;justify-content:flex-end;margin-top:10px}.listing-hero-actions .button{min-height:40px}.check-label{display:flex!important;align-items:center;gap:8px}.check-label input{width:auto!important}
 @media(max-width:720px){.admin-filters-expanded{display:grid;grid-template-columns:1fr}.listing-hero-actions{justify-content:stretch}.listing-hero-actions .button{width:100%}}
+
+input.dev-jv-price { appearance: textfield; -moz-appearance: textfield; }
+input.dev-jv-price::-webkit-inner-spin-button,
+input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

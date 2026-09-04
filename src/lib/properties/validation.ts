@@ -18,6 +18,7 @@ const flag=(input:Record<string,unknown>,key:string)=>input[key]===true||input[k
 export function applicablePropertyDetails(input:Record<string,unknown>,transactionType:string,typeValue:string){
   const type=propertyTypeSlug(typeValue),isAgricultural=agriculturalTypes.has(type),isPlot=plotTypes.has(type),isResidential=residentialTypes.has(type),isCommercial=commercialTypes.has(type),isBuilt=isResidential||isCommercial;
   const errors:Record<string,string>={};
+  if(input.category==="dev-jv"&&(transactionType!=="sale"||type!=="open-plot"))errors.category="Development / Joint Venture requires Sale and Open Plot.";
   if(!isAgricultural&&!isPlot&&!isResidential&&!isCommercial)errors.propertyType="Choose a supported property type.";
   if(isAgricultural&&!["sale","rent"].includes(transactionType))errors.transactionType="Agricultural land supports Sale or Rent only.";
   if(isPlot&&transactionType!=="sale")errors.transactionType="Open plots support Sale only.";
