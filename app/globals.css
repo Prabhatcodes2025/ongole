@@ -489,3 +489,8 @@ textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px so
 input.dev-jv-price { appearance: textfield; -moz-appearance: textfield; }
 input.dev-jv-price::-webkit-inner-spin-button,
 input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.mandal-town-autocomplete { position:relative; min-width:0; }
+.mandal-town-options { position:absolute; top:100%; left:0; right:0; z-index:30; display:block; max-height:240px; overflow-y:auto; background:#fff; border:1px solid var(--line); box-shadow:0 8px 20px #0002; }
+.mandal-town-options [role=option] { display:block; padding:10px; cursor:pointer; color:var(--ink); font-size:.85rem; }
+.mandal-town-options [role=option]:hover,.mandal-town-options [aria-selected=true] { background:#f0eee7; }
