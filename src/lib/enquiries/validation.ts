@@ -6,6 +6,7 @@ const indianDigits=(value:string)=>{const digits=value.replace(/\D/g,"");return 
 
 export const enquirySchema=z.object({
   propertyReference:z.string().trim().max(40).optional().default(""),
+  formContext:z.enum(["default","contact","nri"]).optional().default("default"),
   name:z.string().trim().min(2,"Please enter your name.").max(100),
   mobile:z.string().trim().min(6,"Please enter a valid mobile number.").max(20),
   isForeign:z.enum(["true","false"]).optional().default("false"),
@@ -16,6 +17,7 @@ export const enquirySchema=z.object({
   message:z.string().trim().min(5,"Please enter your message.").max(5000).refine(value=>words(value)<=250,"Please keep your message within 250 words."),
   website:z.string().max(200).optional().default(""),captchaToken:z.string().optional(),"cf-turnstile-response":z.string().optional(),
 }).superRefine((value,context)=>{
+  if(value.formContext!=="default"&&!value.email)context.addIssue({code:"custom",path:["email"],message:"Please enter your email address."});
   const digits=value.mobile.replace(/\D/g,"");
   if(value.isForeign==="true"){
     if(!/^\+[1-9][0-9]{0,3}$/.test(value.countryCode)||!/^[0-9]{6,14}$/.test(digits)||`${value.countryCode}${digits}`.replace(/\D/g,"").length>15)context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid international mobile number."});

@@ -42,7 +42,7 @@ export async function listPublicPgs(filters:PgFilters){
     roomPgIds=[...new Set((matchingRooms||[]).map((room)=>String(room.pg_listing_id)))];
     if(!roomPgIds.length)return{items:[],total:0};
   }
-  let query=service.from("pg_listings").select(SELECT,{count:"exact"}).eq("properties.status","published").is("properties.deleted_at",null).in("category",["mens","womens","co_living"]);
+  let query=service.from("pg_listings").select(SELECT,{count:"exact"}).in("properties.status",["published","expired"]).is("properties.deleted_at",null).in("category",["mens","womens","co_living"]);
   const clean=(value:string)=>value.replace(/[%(),]/g,"");
   if(filters.q)query=query.or(`pg_name.ilike.%${clean(filters.q)}%,address_line.ilike.%${clean(filters.q)}%`);
   if(filters.city)query=query.eq("properties.city_text",filters.city);
@@ -64,7 +64,7 @@ export async function listPublicPgs(filters:PgFilters){
 export async function getPublicPg(slug:string){
   const service=createSupabaseServiceClient();if(!service)return null;
   const safe=slug.replace(/[^a-zA-Z0-9-]/g,"");if(!safe)return null;
-  const {data}=await service.from("pg_listings").select(SELECT).eq("properties.status","published").is("properties.deleted_at",null).in("category",["mens","womens","co_living"]).eq("properties.slug",safe).maybeSingle();
+  const {data}=await service.from("pg_listings").select(SELECT).in("properties.status",["published","expired"]).is("properties.deleted_at",null).in("category",["mens","womens","co_living"]).eq("properties.slug",safe).maybeSingle();
   return data?(await mapRows([data as unknown as Row]))[0]||null:null;
 }
 
@@ -75,6 +75,6 @@ export async function getSimilarPgs(pg:PublicPg,limit=3){
 
 export async function getPublicPgSlugs(limit=1000){
   const service=createSupabaseServiceClient();if(!service)return[];
-  const {data}=await service.from("pg_listings").select("pg_name,properties!inner(slug,published_at,status,deleted_at,description)").eq("properties.status","published").is("properties.deleted_at",null).limit(limit);
+  const {data}=await service.from("pg_listings").select("pg_name,properties!inner(slug,published_at,status,deleted_at,description)").in("properties.status",["published","expired"]).is("properties.deleted_at",null).limit(limit);
   return(data||[]).filter((row)=>{const property=nested(row.properties);return property&&propertyPublicRecordIsSafe(String(row.pg_name||""),String(property.description||""))}).map((row)=>nested(row.properties)).filter(Boolean).map((property)=>({slug:String(property?.slug),publishedAt:property?.published_at as string|null}));
 }

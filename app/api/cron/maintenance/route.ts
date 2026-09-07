@@ -34,24 +34,25 @@ export async function GET(request:NextRequest){
 
   try{
     const targetDay=new Date(Date.now()-86_400_000).toISOString().slice(0,10);
-    const [expiry,promotions,analytics]=await Promise.all([
+    const [expiry,liveExpiry,promotions,analytics]=await Promise.all([
       service.rpc("enqueue_expiry_notifications"),
+      service.rpc("expire_live_properties"),
       service.rpc("expire_promotions"),
       service.rpc("aggregate_analytics",{target_day:targetDay}),
     ]);
-    const maintenanceError=expiry.error||promotions.error||analytics.error;
+    const maintenanceError=expiry.error||liveExpiry.error||promotions.error||analytics.error;
     if(maintenanceError)throw new Error(`maintenance_rpc_failed:${maintenanceError.code||"unknown"}`);
 
     const deliveries=await processNotificationDeliveries(service);
     const outbox=await processLegacyOutbox(service);
     logQueueResult("notification_deliveries",deliveries,requestId);
     logQueueResult("notification_outbox",outbox,requestId);
-    logEvent("info","cron.maintenance_completed",{requestId,expiryNotifications:expiry.data,expiredPromotions:promotions.data,analyticsRows:analytics.data});
+    logEvent("info","cron.maintenance_completed",{requestId,expiryNotifications:expiry.data,expiredProperties:liveExpiry.data,expiredPromotions:promotions.data,analyticsRows:analytics.data});
 
     return NextResponse.json({
       status:"ok",
       requestId,
-      maintenance:{expiryNotifications:expiry.data,expiredPromotions:promotions.data,analyticsRows:analytics.data},
+      maintenance:{expiryNotifications:expiry.data,expiredProperties:liveExpiry.data,expiredPromotions:promotions.data,analyticsRows:analytics.data},
       queues:{notificationDeliveries:deliveries,legacyOutbox:outbox},
     },{headers:{"Cache-Control":"no-store"}});
   }catch(error){

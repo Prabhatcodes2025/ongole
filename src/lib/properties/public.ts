@@ -59,7 +59,7 @@ export function sortProperties(properties: PublicProperty[], sort: PropertyFilte
 export async function listPublicProperties(filters: PropertyFilters): Promise<PropertyListResult> {
   const supabase = createPublicSupabaseClient();
   if (!supabase) { const filtered = sortProperties(filterDemo(demoProperties, filters), filters.sort); const page=Math.min(filters.page,Math.max(1,Math.ceil(filtered.length/filters.pageSize)));const start = (page - 1) * filters.pageSize; return { properties: filtered.slice(start, start + filters.pageSize), total: filtered.length, page, pageSize: filters.pageSize, source: "demo" }; }
-  const buildQuery=()=>{let query = supabase.from("properties").select(SELECT).eq("status", "published").is("deleted_at", null);
+  const buildQuery=()=>{let query = supabase.from("properties").select(SELECT).in("status", ["published","expired"]).is("deleted_at", null);
   if (filters.purpose) query = filters.purpose==="rent"?query.in("transaction_type",["rent","lease"]):query.eq("transaction_type", filters.purpose);
   if (filters.category) query = query.contains("details", { category: filters.category });
   if (filters.type) query = query.contains("details", { property_type_slug: filters.type });
@@ -96,7 +96,7 @@ export async function getPublicProperty(slug: string) {
   if (!supabase) return demoProperties.find((item) => item.slug === slug || item.reference.toLowerCase() === slug.toLowerCase()) || null;
   const safeSlug=slug.replace(/[^a-zA-Z0-9-]/g,"");
   if(!safeSlug)return null;
-  const { data } = await supabase.from("properties").select(SELECT).eq("status", "published").is("deleted_at", null).or(`slug.eq.${safeSlug},reference_no.eq.${safeSlug}`).maybeSingle();
+  const { data } = await supabase.from("properties").select(SELECT).in("status", ["published","expired"]).is("deleted_at", null).or(`slug.eq.${safeSlug},reference_no.eq.${safeSlug}`).maybeSingle();
   return data ? (await mapRows([data as Row]))[0] : null;
 }
 
@@ -129,6 +129,6 @@ export async function getPublicPropertyMap(property: PublicProperty) {
 export async function getPublicPropertySlugs(limit = 1000) {
   const supabase = createPublicSupabaseClient();
   if (!supabase) return [];
-  const { data } = await supabase.from("properties").select("slug,published_at,title,description").eq("status", "published").is("deleted_at", null).not("slug", "is", null).order("published_at", { ascending:false }).limit(limit);
+  const { data } = await supabase.from("properties").select("slug,published_at,title,description").in("status", ["published","expired"]).is("deleted_at", null).not("slug", "is", null).order("published_at", { ascending:false }).limit(limit);
   return (data || []).filter((row)=>propertyPublicRecordIsSafe(String(row.title||""),String(row.description||""))).map((row) => ({ slug: row.slug as string, publishedAt: row.published_at as string | null }));
 }

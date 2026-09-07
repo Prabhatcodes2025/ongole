@@ -8,8 +8,9 @@ import {applicablePropertyDetails,propertyDescriptionIsPublicSafe,propertyTitleI
 const editSchema=z.object({action:z.literal("update"),title:z.string().trim().min(10).max(120).refine(propertyTitleIsProductionSafe,"Remove test, placeholder, code or technical content from the title."),description:z.string().trim().min(40).max(10000).refine(propertyDescriptionIsPublicSafe,"Description cannot contain contact details, links, social handles, test data or technical content."),locality:z.string().trim().min(2).max(120),city:z.string().trim().min(2).max(120),district:z.string().trim().min(2).max(120),state:z.string().trim().min(2).max(120),price:z.coerce.number().nonnegative(),areaValue:z.coerce.number().positive(),areaUnit:z.enum(["gadi","sq_ft","sq_yd","sq_m","acre","cent","gunta","hectare"]),youtubeUrl:z.string().trim().max(500).optional()}).passthrough();
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}){
-  const {id}=await params;const origin=request.headers.get("origin");if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:"Invalid request origin."},{status:403});
+  const {id}=await params;const wantsJson=request.headers.get("accept")?.includes("application/json")===true;const origin=request.headers.get("origin");if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:"Invalid request origin."},{status:403});
   const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();if(!auth.user)return NextResponse.json({error:"Authentication required."},{status:401});
+  if(!auth.user.email_confirmed_at)return NextResponse.json({error:"Verify your email address before changing a property draft."},{status:403});
   const payload=await requestData(request);const action=typeof payload.action==="string"?payload.action:"";
   const {data:property}=await supabase.from("properties").select("id,reference_no,status,title,transaction_type,details").eq("id",id).eq("owner_id",auth.user.id).is("deleted_at",null).maybeSingle();
   if(!property)return NextResponse.json({error:"Property not found."},{status:404});
@@ -28,5 +29,5 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const {error}=await supabase.from("properties").update({title:value.title,description:value.description,locality_text:value.locality,city_text:value.city,district_text:value.district,state_text:value.state,price_inr:value.price,area_value:value.areaValue,area_unit:value.areaUnit,details}).eq("id",id).eq("owner_id",auth.user.id);
   if(error)return NextResponse.json({error:"The property could not be updated."},{status:500});
   await supabase.rpc("record_audit_event",{event_action:"property.update",event_type:"property",event_reference:property.reference_no,event_old:{title:property.title},event_new:{title:value.title}});
-  return NextResponse.redirect(new URL(`/dashboard/properties/${id}?notice=updated`,request.url),303);
+  return wantsJson?NextResponse.json({id,status:"draft"}):NextResponse.redirect(new URL(`/dashboard/properties/${id}?notice=updated`,request.url),303);
 }
