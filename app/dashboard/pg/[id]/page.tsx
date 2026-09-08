@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
-import {PgForm} from "@/app/dashboard/pg/new/page";
+import {PgForm} from "@/src/components/pg-posting-workflow";
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Manage PG listing",robots:{index:false,follow:false}};

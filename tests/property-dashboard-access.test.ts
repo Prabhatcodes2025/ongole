@@ -67,7 +67,8 @@ test("dashboard route separates property authorization from optional related dat
   assert.doesNotMatch(route,/\.eq\("owner_id",auth\.user\.id\)/);
   assert.doesNotMatch(route,/deleted_at,property_media\(/);
   assert.match(route,/from\("property_media"\)[\s\S]*?\.eq\("property_id",id\)/);
-  assert.match(route,/if\(access==="admin"\)redirect\(`\/admin\/properties\/\$\{id\}`\)/);
+  assert.match(route,/const isAdmin=access==="admin"/);
+  assert.match(route,/Administrator edit/);
   assert.match(route,/if\(propertyError\)[\s\S]*?throw new Error/);
 });
 

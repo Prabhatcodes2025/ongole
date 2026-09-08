@@ -17,7 +17,7 @@ test("registration supports Terms evidence, Google OAuth and safe validation log
 });
 
 test("mobile validation rejects repeated patterns and accepts valid Indian and foreign numbers",()=>{
-  assert.equal(isValidIndianMobile("9876543210"),true);assert.equal(isValidIndianMobile("9999999999"),false);assert.equal(isValidIndianMobile("2424242424"),false);
+  assert.equal(isValidIndianMobile("9876501234"),true);assert.equal(isValidIndianMobile("9876543210"),false);assert.equal(isValidIndianMobile("9999999999"),false);assert.equal(isValidIndianMobile("2424242424"),false);
   assert.equal(enquirySchema.safeParse({name:"NRI Client",mobile:"5551234567",isForeign:"true",countryCode:"+1",email:"nri@example.com",message:"Please help with my property requirement."}).success,true);
   assert.equal(enquirySchema.safeParse({name:"Finland Client",mobile:"401234567",isForeign:"true",countryCode:"+358",email:"nri@example.com",message:"Please help with my property requirement."}).success,true);
   assert.equal(enquirySchema.safeParse({name:"Local Client",mobile:"2424242424",message:"Please contact me about a property."}).success,false);

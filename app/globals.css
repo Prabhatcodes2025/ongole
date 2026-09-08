@@ -153,13 +153,14 @@ h2 { margin:0; font-size:clamp(2rem,4vw,3.6rem); line-height:1.08; }
 .auth-card label,.submission-form label { display:grid; gap:7px; color:#4f5b55; font-size:.76rem; font-weight:750; }
 .auth-card input,.auth-card select,.submission-form input,.submission-form select,.submission-form textarea { width:100%; padding:13px; border:1px solid #c9c6bd; background:#fff; color:var(--ink); }
 .auth-card a { color:var(--terracotta); font-weight:700; }
-.submission-form { display:grid; gap:28px; max-width:900px; margin-inline:auto; }
-.submission-form fieldset { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin:0; padding:28px; border:1px solid var(--line); }
+.submission-form { display:grid; gap:22px; max-width:980px; margin-inline:auto; }
+.submission-form fieldset { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:0; padding:22px; border:1px solid var(--line); }
 .submission-form legend { padding:0 10px; font-family:var(--font-lora),serif; font-size:1.3rem; }
 .submission-form .wide { grid-column:1/-1; }
 .submission-form .consent { display:flex; grid-template-columns:auto 1fr; align-items:start; }
 .submission-form .consent input { width:auto; margin-top:2px; }
 .submission-form>.button { justify-self:start; }
+.submission-form fieldset.nearby-distance{grid-template-columns:minmax(0,1fr) 92px;gap:8px;padding:0;border:0}.submission-form fieldset.nearby-distance legend{grid-column:1/-1;padding:0;font:750 .76rem var(--font-geist),sans-serif;color:#4f5b55}
 .form-note { margin:0; color:var(--muted); font-size:.82rem; }
 .portal-page { min-height:700px; padding:70px 0 110px; background:#f5f4ef; }
 .portal-title { display:flex; justify-content:space-between; align-items:end; gap:45px; margin-bottom:48px; }
@@ -494,3 +495,4 @@ input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin
 .mandal-town-options { position:absolute; top:100%; left:0; right:0; z-index:30; display:block; max-height:240px; overflow-y:auto; background:#fff; border:1px solid var(--line); box-shadow:0 8px 20px #0002; }
 .mandal-town-options [role=option] { display:block; padding:10px; cursor:pointer; color:var(--ink); font-size:.85rem; }
 .mandal-town-options [role=option]:hover,.mandal-town-options [aria-selected=true] { background:#f0eee7; }
+.nri-hero h1{font-size:clamp(2.25rem,4vw,3.8rem);line-height:1.05}

@@ -58,7 +58,7 @@ test("locked PG requirements are enforced in validation, uploads and database",a
     read("../app/api/properties/[id]/media/route.ts"),read("../app/dashboard/pg/[id]/page.tsx"),read("../src/lib/pg/public.ts"),
     read("../app/paying-guest/page.tsx"),read("../app/paying-guest/[slug]/page.tsx"),read("../supabase/migrations/202608090001_client_public_site_alignment.sql")
   ]);
-  for(const marker of ["www.ongoleproperty.com | 7788998459","hardLimit=isPg?6:20","webp"])assert.match(upload,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  for(const marker of ["7788998459 , www.ongoleproperty.com","limit=6","webp"])assert.match(upload,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
   assert.match(owner,/Select the cover image after upload/);
   assert.match(publicService,/paidOwners/);
   assert.match(publicService,/contactLabel:entitled/);

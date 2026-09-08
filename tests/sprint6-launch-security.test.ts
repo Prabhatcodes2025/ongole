@@ -7,7 +7,8 @@ const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("Indian mobile validation normalizes input and rejects repeated digits",()=>{
   assert.equal(normalizeMobile(" 9876543210 "),"9876543210");
-  assert.equal(isValidIndianMobile("9876543210"),true);
+  assert.equal(isValidIndianMobile("9876501234"),true);
+  assert.equal(isValidIndianMobile("9876543210"),false);
   assert.equal(isValidIndianMobile("7777777777"),false);
   assert.equal(isValidIndianMobile("5876543210"),false);
   assert.equal(isValidIndianMobile("98765"),false);

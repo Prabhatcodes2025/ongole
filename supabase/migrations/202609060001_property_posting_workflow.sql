@@ -142,15 +142,15 @@ begin
   if not public.has_permission('properties.manage') then raise exception 'not_authorized'; end if;
   select * into current_property from public.properties where id=target_property for update;if not found then raise exception 'property_not_found'; end if;
   old_status:=current_property.status;
-  next_status:=case review_action when 'approve' then 'published'::public.property_status when 'publish' then 'published'::public.property_status when 'renew' then 'published'::public.property_status when 'reject' then 'rejected'::public.property_status when 'request_changes' then 'changes_requested'::public.property_status when 'archive' then 'archived'::public.property_status when 'mark_sold' then 'sold'::public.property_status else null end;
+  next_status:=case review_action when 'approve' then 'approved'::public.property_status when 'publish' then 'published'::public.property_status when 'renew' then 'published'::public.property_status when 'reject' then 'rejected'::public.property_status when 'request_changes' then 'changes_requested'::public.property_status when 'archive' then 'archived'::public.property_status when 'mark_sold' then 'sold'::public.property_status else null end;
   if next_status is null then raise exception 'invalid_action'; end if;
   if (review_action='approve' and old_status<>'pending_review') or (review_action='publish' and old_status<>'approved') or (review_action='renew' and old_status<>'expired') or (review_action='reject' and old_status<>'pending_review') or (review_action='request_changes' and old_status not in ('pending_review','approved','published')) or (review_action in ('archive','mark_sold') and old_status not in ('approved','published','expired')) then raise exception 'invalid_transition'; end if;
   if review_action in ('reject','request_changes') and nullif(trim(review_reason),'') is null then raise exception 'reason_required'; end if;
   update public.properties set status=next_status,
     approved_at=case when review_action='approve' then now() else approved_at end,
     approved_by=case when review_action='approve' then auth.uid() else approved_by end,
-    published_at=case when review_action in ('approve','publish','renew') then now() else published_at end,
-    expires_at=case when review_action in ('approve','publish','renew') then now()+interval '1 month' else expires_at end
+    published_at=case when review_action in ('publish','renew') then now() else published_at end,
+    expires_at=case when review_action in ('publish','renew') then now()+interval '1 month' else expires_at end
   where id=target_property returning * into current_property;
   insert into public.property_status_history(property_id,from_status,to_status,changed_by,reason) values(target_property,old_status,next_status,auth.uid(),coalesce(review_reason,case when review_action='renew' then 'Offline renewal' end));
   insert into public.audit_logs(actor_id,action,entity_type,entity_reference,old_values,new_values) values(auth.uid(),'property.'||review_action,'property',current_property.reference_no,jsonb_build_object('status',old_status),jsonb_build_object('status',next_status,'expires_at',current_property.expires_at,'reason',review_reason));
