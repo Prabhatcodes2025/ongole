@@ -490,6 +490,8 @@ textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px so
 input.dev-jv-price { appearance: textfield; -moz-appearance: textfield; }
 input.dev-jv-price::-webkit-inner-spin-button,
 input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.submission-form.compact-form{gap:16px}.submission-form input,.submission-form select{min-height:40px}.submission-form .compact-field{max-width:720px}.submission-form [aria-invalid=true]{border-color:#a5312d;box-shadow:0 0 0 2px rgba(165,49,45,.12)}.preview-gallery{margin-bottom:28px}.preview-gallery .property-image{height:260px}.preview-gallery img{width:100%;height:100%;object-fit:cover}.check-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:720px){.check-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.preview-gallery .property-image{height:220px}}
 
 .mandal-town-autocomplete { position:relative; min-width:0; }
 .mandal-town-options { position:absolute; top:100%; left:0; right:0; z-index:30; display:block; max-height:240px; overflow-y:auto; background:#fff; border:1px solid var(--line); box-shadow:0 8px 20px #0002; }

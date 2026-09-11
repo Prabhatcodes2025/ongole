@@ -37,7 +37,7 @@ export function PublicPropertyPostingForm({catalog}:{catalog:PropertyCatalogData
 export function DashboardPropertyDraftForm({catalog}:{catalog:PropertyCatalogData}){
   const router=useRouter(),formRef=useRef<HTMLFormElement>(null);
   const[defaults,setDefaults]=useState<Values|null>(null),[submitting,setSubmitting]=useState(false),[message,setMessage]=useState(""),[errors,setErrors]=useState<Record<string,string>>({});
-  useEffect(()=>{try{const stored=sessionStorage.getItem(STORAGE_KEY);const parsed=stored?JSON.parse(stored):{};setDefaults({...parsed,draftKey:parsed.draftKey||draftKey()})}catch{setDefaults({draftKey:draftKey()})}},[]);
+  useEffect(()=>{const timeout=window.setTimeout(()=>{try{const stored=sessionStorage.getItem(STORAGE_KEY);const parsed=stored?JSON.parse(stored):{};setDefaults({...parsed,draftKey:parsed.draftKey||draftKey()})}catch{setDefaults({draftKey:draftKey()})}},0);return()=>window.clearTimeout(timeout)},[]);
   async function save(event:FormEvent<HTMLFormElement>){
     event.preventDefault();const form=event.currentTarget;if(!form.reportValidity())return;setSubmitting(true);setMessage("");setErrors({});
     const body=new FormData(form);const current=valuesFrom(form);sessionStorage.setItem(STORAGE_KEY,JSON.stringify(current));

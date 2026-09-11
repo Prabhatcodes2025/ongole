@@ -3,9 +3,10 @@ import{z}from"zod";
 import{isValidIndianMobile,normalizeMobile}from"@/src/lib/auth/mobile";
 import{requestData}from"@/src/lib/request";
 import{createSupabaseServerClient}from"@/src/lib/supabase/server";
+import{safeReturnPath}from"@/src/lib/auth/session";
 
 const mobileSchema=z.string().transform(normalizeMobile).refine((value)=>value===""||isValidIndianMobile(value));
-const schema=z.object({fullName:z.string().trim().min(2).max(120),mobile:mobileSchema});
+const schema=z.object({fullName:z.string().trim().min(2).max(120),mobile:mobileSchema,returnTo:z.string().optional()});
 
 export async function POST(request:NextRequest){
   const origin=request.headers.get("origin");
@@ -24,5 +25,5 @@ export async function POST(request:NextRequest){
   const{error}=await supabase.from("profiles").update({full_name:parsed.data.fullName,mobile}).eq("id",auth.user.id);
   if(error)return NextResponse.json({error:error.code==="23505"?"This mobile number is already registered.":"Profile could not be updated."},{status:409});
   await supabase.rpc("record_audit_event",{event_action:"profile.update",event_type:"profile",event_reference:auth.user.id,event_new:{full_name:parsed.data.fullName}});
-  return NextResponse.redirect(new URL("/dashboard/profile?notice=updated",request.url),303);
+  return NextResponse.redirect(new URL(parsed.data.returnTo?safeReturnPath(parsed.data.returnTo):"/dashboard/profile?notice=updated",request.url),303);
 }

@@ -14,5 +14,6 @@ export async function GET(request:NextRequest){
     if(accountError){await supabase.auth.signOut();logEvent("warn","auth.google_account_claim_failed",{code:accountError.code});return NextResponse.redirect(new URL("/login?error=profile_unavailable",request.url),303)}
   }
   const profile=await reconcileAuthenticatedProfile(supabase,auth.user);if(!profile.ok){await supabase.auth.signOut();logEvent("warn","auth.callback_profile_failed",{code:profile.errorCode});return NextResponse.redirect(new URL("/login?error=profile_unavailable",request.url),303)}
+  const{data:requiredProfile}=await supabase.from("profiles").select("mobile").eq("id",auth.user.id).maybeSingle();if(!requiredProfile?.mobile)return NextResponse.redirect(new URL(`/dashboard/profile?complete=1&returnTo=${encodeURIComponent(next)}`,request.url),303);
   return NextResponse.redirect(new URL(`${next}${profile.repaired?(next.includes("?")?"&":"?")+"notice=profile_repaired":""}`,request.url),303);
 }

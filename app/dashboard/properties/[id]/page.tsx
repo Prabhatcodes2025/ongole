@@ -12,7 +12,7 @@ import {AsyncPropertyForm,AsyncSubmitProperty} from "@/src/components/property-p
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Manage property",robots:{index:false,follow:false}};
-const notices:Record<string,string>={created:"Draft created successfully.",updated:"Property details updated.",duplicated:"A new draft copy was created.",uploaded:"Image processed and uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
+const notices:Record<string,string>={created:"Draft created successfully.",updated:"Property details updated.",duplicated:"A new draft copy was created.","duplicate-failed":"The property could not be duplicated. Your original listing was not changed.",uploaded:"Image processed and uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
 
 export default async function ManagePropertyPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{media?:string;notice?:string}>}){
   const {id}=await params;const query=await searchParams;const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();

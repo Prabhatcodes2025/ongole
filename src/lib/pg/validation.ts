@@ -10,7 +10,7 @@ const optionalPhone=z.string().trim().regex(/^[6-9][0-9]{9}$/).or(z.literal(""))
 export const pgDraftSchema=z.object({
   pg_name:z.string().trim().min(3).max(120).refine(propertyTitleIsProductionSafe,"Remove test, placeholder, code or technical content from the PG name."),
   category:z.enum(PG_CATEGORIES),
-  description:z.string().trim().refine((value)=>value.split(/\s+/).filter(Boolean).length<=250,"Description must not exceed 250 words.").refine((value)=>!/(?:\b[6-9]\d{9}\b|\b\d{3}[-\s]\d{3}[-\s]\d{4}\b|[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/|www\.|(?:^|\s)@[a-z0-9_.]+|follow\s+us|limited\s+offer|book\s+now|\b(?:fuck|shit|bitch|bastard)\b)/i.test(value),"Description cannot contain contact details, links, social handles, promotional advertising or profanity.").refine(propertyContentIsProductionSafe,"Description cannot contain test, code or technical content.").max(3000).default(""),
+  description:z.string().trim().min(20,"Description must be at least 20 characters.").max(250,"Description must not exceed 250 characters.").refine((value)=>!/(?:\b[6-9]\d{9}\b|\b\d{3}[-\s]\d{3}[-\s]\d{4}\b|[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/|www\.|(?:^|\s)@[a-z0-9_.]+|follow\s+us|limited\s+offer|book\s+now|\b(?:fuck|shit|bitch|bastard)\b)/i.test(value),"Description cannot contain phone numbers, email addresses, WhatsApp/social handles, links, promotional advertising or profanity.").refine(propertyContentIsProductionSafe,"Description cannot contain test, code or technical content.").or(z.literal("")),
   address_line:z.string().trim().max(500).default(""),
   locality:z.string().trim().min(2).max(120).default("Ongole"),
   city:z.string().trim().min(2).max(120).default("Ongole"),
@@ -21,6 +21,7 @@ export const pgDraftSchema=z.object({
   rent_per_bed:z.coerce.number().nonnegative().default(0),
   capacity:optionalNumber,
   food_type:z.string().trim().max(80).optional().default(""),
+  lunch_box_available:z.coerce.boolean().optional().default(false),
   amenities:z.array(z.enum(PG_AMENITIES)).default([]),
   house_rules:z.array(z.string().trim().min(2).max(250)).max(30).default([]),
   video_urls:z.array(z.string().url().max(500).refine((value)=>Boolean(youtubeVideoId(value)),"Only YouTube video URLs are allowed.")).max(10).default([]),

@@ -13,6 +13,8 @@ export const registrationFieldMessages={
 export type RegistrationField=keyof typeof registrationFieldMessages;
 const accountTypes=new Set(["buyer","owner","agent","pg_owner"]);
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const disposableDomains=new Set(["tempmail.com","guerrillamail.com","10minutemail.com","mailinator.com"]);
+export function isAllowedRegistrationEmail(value:string){const email=value.trim().toLowerCase();return emailPattern.test(email)&&!disposableDomains.has(email.split("@")[1]||"")}
 const strongPassword=/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}/;
 
 export function validateRegistrationFields(input:Record<string,FormDataEntryValue|undefined>){
@@ -20,7 +22,7 @@ export function validateRegistrationFields(input:Record<string,FormDataEntryValu
   const value=(key:string)=>typeof input[key]==="string"?input[key].trim():"";
   if(value("name").length<2)errors.name=registrationFieldMessages.name;
   if(!isValidIndianMobile(normalizeMobile(value("mobile"))))errors.mobile=registrationFieldMessages.mobile;
-  if(!emailPattern.test(value("email")))errors.email=registrationFieldMessages.email;
+  if(!isAllowedRegistrationEmail(value("email")))errors.email="Use a permanent email address; disposable email domains are not accepted.";
   if(!accountTypes.has(value("accountType")))errors.accountType=registrationFieldMessages.accountType;
   if(!strongPassword.test(value("password")))errors.password=registrationFieldMessages.password;
   if(value("termsAccepted")!=="accepted")errors.termsAccepted=registrationFieldMessages.termsAccepted;

@@ -9,12 +9,12 @@ import { sendTemplateEmail } from "@/src/lib/email/service";
 import {isValidIndianMobile,normalizeMobile} from "@/src/lib/auth/mobile";
 import {loginErrorCode,normalizeEmail,reconcileAuthenticatedProfile,safeReturnPath} from "@/src/lib/auth/session";
 import {logEvent} from "@/src/lib/observability/logger";
-import {registrationFieldMessages,registrationFieldsFromIssues} from "@/src/lib/auth/registration";
+import {isAllowedRegistrationEmail,registrationFieldMessages,registrationFieldsFromIssues} from "@/src/lib/auth/registration";
 
 const loginSchema = z.object({ email: z.email(), password: z.string().min(8).max(200),returnTo:z.string().optional() });
 const strongPassword=z.string().min(8).max(200).regex(/[a-z]/).regex(/[A-Z]/).regex(/[0-9]/).regex(/[^A-Za-z0-9]/);
 const termsVersion="2026-08-13";
-const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100),password:strongPassword, mobile: z.string().transform(normalizeMobile).refine(isValidIndianMobile), accountType: z.enum(["buyer","owner","agent","pg_owner"]),termsAccepted:z.literal("accepted"),consentEmail:z.literal("accepted").optional(),consentWhatsapp:z.literal("accepted").optional(),consentSms:z.literal("accepted").optional(),consentPhone:z.literal("accepted").optional(),yearsExperience:z.union([z.coerce.number().int().min(0).max(80),z.literal("").transform(()=>undefined)]).optional(),officeAddress:z.string().trim().max(500).optional().default(""),about:z.string().trim().max(1500).optional().default(""),workingTowns:z.string().trim().max(300).optional().default(""),specializations:z.string().trim().max(500).optional().default("") });
+const registerSchema = loginSchema.extend({ name: z.string().trim().min(2).max(100),email:z.string().refine(isAllowedRegistrationEmail),password:strongPassword, mobile: z.string().transform(normalizeMobile).refine(isValidIndianMobile), accountType: z.enum(["buyer","owner","agent","pg_owner"]),termsAccepted:z.literal("accepted"),consentEmail:z.literal("accepted").optional(),consentWhatsapp:z.literal("accepted").optional(),consentSms:z.literal("accepted").optional(),consentPhone:z.literal("accepted").optional(),yearsExperience:z.union([z.coerce.number().int().min(0).max(80),z.literal("").transform(()=>undefined)]).optional(),officeAddress:z.string().trim().max(500).optional().default(""),about:z.string().trim().max(1500).optional().default(""),workingTowns:z.string().trim().max(300).optional().default(""),specializations:z.string().trim().max(500).optional().default("") });
 const list=(value:string,limit:number)=>[...new Set(value.split(",").map((item)=>item.trim()).filter(Boolean))].slice(0,limit);
 
 async function startGoogleOAuth(request:NextRequest,data:Record<string,unknown>){

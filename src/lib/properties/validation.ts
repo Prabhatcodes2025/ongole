@@ -19,7 +19,7 @@ export function applicablePropertyDetails(input:Record<string,unknown>,transacti
   const type=propertyTypeSlug(typeValue),isAgricultural=agriculturalTypes.has(type),isPlot=plotTypes.has(type),isResidential=residentialTypes.has(type),isCommercial=commercialTypes.has(type),isBuilt=isResidential||isCommercial;
   const errors:Record<string,string>={};
   if(input.category==="dev-jv"&&(transactionType!=="sale"||type!=="open-plot"))errors.category="Development / Joint Venture requires Sale and Open Plot.";
-  if(!isAgricultural&&!isPlot&&!isResidential&&!isCommercial)errors.propertyType="Choose a supported property type.";
+  if(!isAgricultural&&!isPlot&&!isResidential&&!isCommercial&&!['rent','lease'].includes(transactionType))errors.propertyType="Choose a supported property type.";
   if(isAgricultural&&!["sale","rent"].includes(transactionType))errors.transactionType="Agricultural land supports Sale or Rent only.";
   if(isPlot&&transactionType!=="sale")errors.transactionType="Open plots support Sale only.";
   const details:Record<string,unknown>={property_type_slug:type};
@@ -31,10 +31,12 @@ export function applicablePropertyDetails(input:Record<string,unknown>,transacti
   if(isPlot||isAgricultural){for(const[key,column]of [["fencing","fencing"],["electricityConnection","electricity_connection"],["roadAccess","road_access"]] as const){const value=text(input,key);if(!value)errors[key]=`Select ${key.replace(/([A-Z])/g," $1").toLowerCase()}.`;else details[column]=value}}
   if(isBuilt){for(const key of ["parking","powerBackup","generator","security","cctv","lift","fireSafety","wasteManagement","balcony","poojaRoom","storeRoom","servantRoom","gasPipeline"]){if(flag(input,key))details[key.replace(/[A-Z]/g,letter=>`_${letter.toLowerCase()}`)]=true}}
   const googleMapsUrl=text(input,"googleMapsUrl"),youtubeUrl=text(input,"youtubeUrl");if(googleMapsUrl){try{const host=new URL(googleMapsUrl).hostname.toLowerCase();if(host==="maps.app.goo.gl"||host==="goo.gl"||host==="google.com"||host.endsWith(".google.com"))details.google_maps_url=googleMapsUrl;else errors.googleMapsUrl="Enter a valid Google Maps link."}catch{errors.googleMapsUrl="Enter a valid Google Maps link."}}if(youtubeUrl)details.youtube_url=youtubeUrl;
-  const nearby:Record<string,unknown>={};for(const[key,column]of [["nearbyRailwayStation","railway_station"],["nearbyBank","bank"],["nearbyAtm","atm"],["nearbyCollege","college"],["nearbyHospital","hospital"],["nearbyBusDepot","bus_depot"]] as const){const value=number(input,key),unit=text(input,`${key}Unit`);if(value!==null)nearby[column]={distance:value,unit:unit==="km"?"Km":"Meter"}}
+  const nearby:Record<string,unknown>={};for(const[key,column]of [["nearbyRailwayStation","railway_station"],["nearbyBank","bank"],["nearbyCollege","college"],["nearbyHospital","hospital"],["nearbyBusDepot","bus_depot"]] as const){const value=number(input,key),unit=text(input,`${key}Unit`);if(value!==null)nearby[column]={distance:value,unit:unit==="km"?"Km":"Meter"}}
   const otherName=text(input,"nearbyOtherName"),otherDistance=number(input,"nearbyOtherDistance"),otherUnit=text(input,"nearbyOtherDistanceUnit");if(otherName&&otherDistance!==null)nearby.other={name:otherName,distance:otherDistance,unit:otherUnit==="km"?"Km":"Meter"};if(Object.keys(nearby).length)details.nearby_places=nearby;
   return{details,errors,valid:Object.keys(errors).length===0,type,isAgricultural,isPlot,isResidential,isCommercial};
 }
+
+export function rentNearbyErrors(input:Record<string,unknown>,transactionType:string){const errors:Record<string,string>={};if(!["rent","lease"].includes(transactionType))return errors;for(const[key,label]of [["nearbyRailwayStation","Railway Station"],["nearbyBank","Bank / ATM"],["nearbyCollege","College / School"],["nearbyHospital","Hospital"],["nearbyBusDepot","RTC Depot / Bus Stand"]] as const)if(number(input,key)===null)errors[key]=`Enter the nearby ${label} distance.`;return errors}
 
 export function storedPropertyDetailsValidation(details:Record<string,unknown>,transactionType:string){
   const nearby=details.nearby_places&&typeof details.nearby_places==="object"&&!Array.isArray(details.nearby_places)?details.nearby_places as Record<string,unknown>:{};

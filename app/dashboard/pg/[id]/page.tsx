@@ -7,7 +7,7 @@ import {PgForm} from "@/src/components/pg-posting-workflow";
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Manage PG listing",robots:{index:false,follow:false}};
-const notices:Record<string,string>={created:"PG draft created.",updated:"PG details saved.",duplicated:"PG draft duplicated.",submitted:"PG submitted for review.","room-added":"Room type added.","room-removed":"Room type removed.",uploaded:"Image uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
+const notices:Record<string,string>={created:"PG draft created.",updated:"PG details saved.",duplicated:"PG draft duplicated.","duplicate-failed":"The PG could not be duplicated. Your original listing was not changed.",submitted:"PG submitted for review.","room-added":"Room type added.","room-removed":"Room type removed.",uploaded:"Image uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
 
 export default async function ManagePgPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{notice?:string;media?:string}>}){
   const {id}=await params;const query=await searchParams;

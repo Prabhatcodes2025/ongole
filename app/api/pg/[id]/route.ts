@@ -4,7 +4,7 @@ import {requestData} from "@/src/lib/request";
 import {formList,pgDraftSchema} from "@/src/lib/pg/validation";
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}){
-  const {id}=await params;
+  const {id}=await params;const wantsJson=request.headers.get("accept")?.includes("application/json")===true;
   const origin=request.headers.get("origin");
   if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:"Invalid request origin."},{status:403});
   const supabase=await createSupabaseServerClient();
@@ -14,9 +14,10 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const action=typeof raw.action==="string"?raw.action:"update";
   if(action==="duplicate"){
     const {data,error}=await supabase.rpc("duplicate_pg_listing",{target_pg:id});
-    if(error)return NextResponse.json({error:"The PG could not be duplicated."},{status:409});
+    if(error)return wantsJson?NextResponse.json({error:"The PG could not be duplicated."},{status:409}):NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=duplicate-failed`,request.url),303);
     return NextResponse.redirect(new URL(`/dashboard/pg/${(data as {id:string}).id}?notice=duplicated`,request.url),303);
   }
+  if(typeof raw.description!=="string"||raw.description.trim().length<20)return NextResponse.json({error:"Check the PG details and try again.",fields:{description:["Description must be at least 20 characters."]}},{status:400});
   const {data:pg}=await supabase.from("pg_listings").select("property_id,details,properties!inner(owner_id,status)").eq("id",id).eq("properties.owner_id",auth.user.id).maybeSingle();
   if(!pg)return NextResponse.json({error:"PG listing not found."},{status:404});
   if(action==="delete"){
@@ -29,6 +30,6 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   if(!parsed.success)return NextResponse.json({error:"Check the PG details and try again.",fields:parsed.error.flatten().fieldErrors},{status:400});
   const {error}=await supabase.rpc("update_pg_draft",{target_pg:id,pg_payload:parsed.data});
   if(error)return NextResponse.json({error:"The PG draft could not be updated.",detail:error.message},{status:409});
-  const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};const{error:landmarkError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null}}).eq("id",id);if(landmarkError)return NextResponse.json({error:"The PG details were saved but its landmark could not be updated."},{status:500});
+  const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};const{error:landmarkError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,lunch_box_available:parsed.data.lunch_box_available}}).eq("id",id);if(landmarkError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }
