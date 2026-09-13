@@ -17,7 +17,7 @@ function resolveLegalPage(slug:string){const canonicalSlug=legalAliases[slug]||s
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   if(slug==="about"){
-    const description="OngoleProperty.com is a trusted real estate platform serving Ongole and Prakasam District. Discover verified residential, commercial, agricultural and farm properties, connect with trusted property owners and agents, and access professional property tracing and dedicated NRI property services.";
+    const description="OngoleProperty.com is a trusted real estate platform serving Ongole and Prakasam District. Discover Priority Listings across residential, commercial, agricultural and farm properties, connect with trusted property owners and agents, and access professional property tracing and dedicated NRI property services.";
     return{title:"About OngoleProperty.com | Trusted Local Real Estate Platform",description,alternates:{canonical:"/about"},openGraph:{title:"About OngoleProperty.com",description,url:"/about",type:"website"},twitter:{card:"summary_large_image",title:"About OngoleProperty.com",description}};
   }
   if(slug==="contact"||slug==="contact-us"){

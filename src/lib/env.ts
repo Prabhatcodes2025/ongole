@@ -1,8 +1,9 @@
 const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publicAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (process.env.NODE_ENV === "production" ? "https://ongoleproperty.com" : "http://localhost:3000");
 
 export const env = {
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  siteUrl,
   supabaseUrl: publicUrl,
   supabaseAnonKey: publicAnonKey,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,

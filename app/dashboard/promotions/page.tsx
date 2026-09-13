@@ -31,16 +31,18 @@ export default async function PromotionsPage({searchParams}:{searchParams:Promis
       <div className="dashboard-title-actions"><PromotionClaimButton propertyId={selected.id} promotionType="featured"/><PromotionClaimButton propertyId={selected.id} promotionType="verified"/></div>
     </section>
     <div className="promotion-grid">{products?.filter((product)=>product.eligible_listing_type==="both"||product.eligible_listing_type===eligibleType).map((product)=><article className="dashboard-card" key={product.id}>
-      <p className="eyebrow">{product.placement}</p><h2>{product.name}</h2>
-      <p>{product.duration_days} days · {product.promotion_type.replaceAll("_"," ")}</p>
+      <p className="eyebrow">{product.placement}</p><h2>{promotionLabel(product.name,product.promotion_type)}</h2>
+      <p>{product.duration_days} days · {promotionLabel(product.promotion_type,product.promotion_type)}</p>
       <strong>₹{Number(product.price).toLocaleString("en-IN")}</strong>
       <PaymentButton productId={product.id} propertyId={selected.id} label="Purchase"/>
     </article>)}</div></>:<EmptyState title="No eligible listings" description="Create a listing before purchasing a promotion."/>}
     <section className="dashboard-section"><div className="dashboard-section-head"><h2>Activation history</h2></div>
       {activations?.length?<DataTable caption="Promotion activations" headers={["Promotion","Listing","Starts","Ends","Status"]}>{activations.map((item)=>{
         const product=Array.isArray(item.promotion_products)?item.promotion_products[0]:item.promotion_products;
-        return <tr key={item.id}><td>{product?.name}</td><td>{properties?.find((property)=>property.id===item.property_id)?.title}</td><td>{new Date(item.starts_at).toLocaleDateString("en-IN")}</td><td>{new Date(item.ends_at).toLocaleDateString("en-IN")}</td><td><StatusBadge status={item.status}/></td></tr>
+        return <tr key={item.id}><td>{promotionLabel(product?.name,product?.promotion_type)}</td><td>{properties?.find((property)=>property.id===item.property_id)?.title}</td><td>{new Date(item.starts_at).toLocaleDateString("en-IN")}</td><td>{new Date(item.ends_at).toLocaleDateString("en-IN")}</td><td><StatusBadge status={item.status}/></td></tr>
       })}</DataTable>:<EmptyState title="No promotions" description="Purchased or included activations appear here."/>}
     </section>
   </DashboardShell>;
 }
+
+function promotionLabel(value:string|undefined,type:string|undefined){return type==="verified"?"Priority Listing":value?.replaceAll("_"," ")}

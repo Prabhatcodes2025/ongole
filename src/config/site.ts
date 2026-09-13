@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "OngoleProperty.com",
   legalName: "Kosana Associates LLP",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.ongoleproperty.com",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://ongoleproperty.com",
   since: 2002,
   phone: "+91 77889 98459",
   phoneHref: "tel:+917788998459",
@@ -11,7 +11,7 @@ export const siteConfig = {
   salesEmail: "sales@ongoleproperty.com",
   nriEmail: "nri@ongoleproperty.com",
   serviceArea: "Serving Ongole & Prakasam District with online property assistance and professional field services.",
-  description: "Trusted real estate marketing for verified properties across Ongole and Prakasam District since 2002.",
+  description: "Trusted real estate marketing featuring Priority Listings across Ongole and Prakasam District since 2002.",
   social: {
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || "",
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "",
