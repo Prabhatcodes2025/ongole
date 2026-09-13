@@ -6,14 +6,18 @@ import {registrationErrorCode} from "../src/lib/auth/registration";
 const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("password recovery lands directly on reset-password and confirms the new password",async()=>{
-  const[route,page,form,proxy]=await Promise.all([read("../app/api/auth/[action]/route.ts"),read("../app/reset-password/page.tsx"),read("../src/components/reset-password-form.tsx"),read("../proxy.ts")]);
+  const[route,page,exchange,form,proxy]=await Promise.all([read("../app/api/auth/[action]/route.ts"),read("../app/reset-password/page.tsx"),read("../app/auth/recovery/route.ts"),read("../src/components/reset-password-form.tsx"),read("../proxy.ts")]);
   assert.match(route,/resetPasswordForEmail\(email,\{redirectTo:resetUrl\}\)/);
   assert.match(route,/\/reset-password/);
   assert.match(page,/ResetPasswordForm/);
+  assert.match(page,/query\.code\)redirect\(`\/auth\/recovery\?code=/);
+  assert.match(exchange,/exchangeCodeForSession\(code\)/);
+  assert.match(exchange,/response\.cookies\.set/);
+  assert.match(exchange,/PASSWORD_RECOVERY/);
   assert.match(form,/Confirm Password/);
-  assert.match(form,/exchangeCodeForSession/);
-  assert.match(form,/verifyOtp/);
+  assert.doesNotMatch(form,/exchangeCodeForSession|verifyOtp|supabase\.auth\.setSession\(/);
   assert.match(proxy,/path==="\/reset-password"/);
+  assert.match(proxy,/path==="\/auth\/recovery"/);
   assert.match(proxy,/path==="\/api\/auth\/update-password"/);
 });
 

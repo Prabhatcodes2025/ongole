@@ -13,7 +13,7 @@ export async function proxy(request:NextRequest){
       // GIS and recovery establish a fresh Supabase session before the app's
       // own session-control cookies exist. Their handlers complete that setup.
       const path=request.nextUrl.pathname;
-      if(path==="/reset-password"||path==="/api/auth/update-password"||path==="/api/auth/google"&&request.method==="POST"){
+      if(path==="/reset-password"||path==="/auth/recovery"||path==="/api/auth/update-password"||path==="/api/auth/google"&&request.method==="POST"){
         response.headers.set("x-request-id",requestId);return response;
       }
       const timing=sessionTiming(request.cookies.get(SESSION_START_COOKIE)?.value,request.cookies.get(SESSION_ACTIVITY_COOKIE)?.value);
