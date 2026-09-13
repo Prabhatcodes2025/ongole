@@ -13,7 +13,7 @@ export function formatPropertyPrice(property: Pick<PublicProperty,"price"|"trans
   if(property.amountBasis==="total_property")return `Price: ${amount} (Total Property)`;
   if(property.amountBasis==="per_acre_year")return `Rent/Lease: ${amount} / Acre / Year`;
   if(property.amountBasis==="per_acre_crop")return `Rent/Lease: ${amount} / Acre / Crop`;
-  if(property.transactionType==="rent"||property.transactionType==="lease")return `Rent/Lease: ${amount} / ${property.rentPeriod==="year"||property.transactionType==="lease"?"Year":"Month"}`;
+  if(property.transactionType==="rent"||property.transactionType==="lease")return `Rent/Lease: ${amount} / ${property.rentPeriod==="day"?"Day":property.rentPeriod==="month"?"Month":property.rentPeriod==="year"||property.transactionType==="lease"?"Year":"Month"}`;
   return `Price: ${amount}`;
 }
 

@@ -15,15 +15,29 @@ test("default booleans and area unit do not become active filters",()=>{
 
 test("Sale and Rent/Lease prices use the rupee symbol and selected period",()=>{
   assert.equal(formatPropertyPrice({price:6800000,transactionType:"sale"}),"Price: ₹68,00,000");
+  assert.equal(formatPropertyPrice({price:1200,transactionType:"rent",rentPeriod:"day"}),"Rent/Lease: ₹1,200 / Day");
   assert.equal(formatPropertyPrice({price:15000,transactionType:"rent",rentPeriod:"month"}),"Rent/Lease: ₹15,000 / Month");
   assert.equal(formatPropertyPrice({price:200000,transactionType:"rent",rentPeriod:"year"}),"Rent/Lease: ₹2,00,000 / Year");
+  assert.equal(formatPropertyPrice({price:15000,transactionType:"lease",rentPeriod:"month"}),"Rent/Lease: ₹15,000 / Month");
   assert.equal(formatPropertyPrice({price:25000,transactionType:"rent",amountBasis:"per_acre_year"}),"Rent/Lease: ₹25,000 / Acre / Year");
 });
 
 test("Rent/Lease period is validated and stored without a migration",()=>{
-  const valid=applicablePropertyDetails({rentPeriod:"year",propertyAge:"new",bedrooms:"2",bathrooms:"2",facing:"East"},"rent","apartment-flat");
-  assert.equal(valid.valid,true);assert.equal(valid.details.rent_period,"year");
+  for(const period of ["day","month","year"]){
+    const valid=applicablePropertyDetails({rentPeriod:period,propertyAge:"new",bedrooms:"2",bathrooms:"2",facing:"East"},"rent","apartment-flat");
+    assert.equal(valid.valid,true);assert.equal(valid.details.rent_period,period);
+  }
+  for(const period of ["sq_ft","sqft","acre"]){
+    assert.equal(applicablePropertyDetails({rentPeriod:period,propertyAge:"new",bedrooms:"2",bathrooms:"2",facing:"East"},"rent","apartment-flat").valid,false);
+  }
   assert.equal(applicablePropertyDetails({propertyAge:"new",bedrooms:"2",bathrooms:"2",facing:"East"},"rent","apartment-flat").valid,false);
+});
+
+test("Rent/Lease period dropdown contains only Day, Month and Year",async()=>{
+  const source=await read("../src/components/property-posting-fields.tsx");
+  const periodSelect=source.split('<select required name="rentPeriod"')[1]?.split("</select>")[0];
+  assert.ok(periodSelect);
+  assert.deepEqual([...periodSelect.matchAll(/<option value="([^"]+)">/g)].map((match)=>match[1]),["day","month","year"]);
 });
 
 test("shared listing count is based on renderable rows and final filter UI omits technical defaults",async()=>{

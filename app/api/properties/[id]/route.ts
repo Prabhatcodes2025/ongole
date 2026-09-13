@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { requestData } from "@/src/lib/request";
 import { youtubeVideoId } from "@/src/lib/youtube";
 import {applicablePropertyDetails,propertyDescriptionIsPublicSafe,propertyTitleIsProductionSafe,rentNearbyErrors} from "@/src/lib/properties/validation";
+import {POSTING_ENTITLEMENT_MESSAGE} from "@/src/lib/properties/posting-entitlement";
 
 const editSchema=z.object({action:z.literal("update"),title:z.string().trim().min(10).max(120).refine(propertyTitleIsProductionSafe,"Remove test, placeholder, code or technical content from the title."),description:z.string().trim().min(20,"Description must be at least 20 characters.").max(250,"Description must not exceed 250 characters.").refine(propertyDescriptionIsPublicSafe,"Description cannot contain phone numbers, email addresses, WhatsApp/social handles, links, test data or technical content."),locality:z.string().trim().min(2).max(120),city:z.string().trim().min(2).max(120),district:z.string().trim().min(2).max(120),state:z.string().trim().min(2).max(120),price:z.coerce.number().nonnegative(),areaValue:z.coerce.number().positive(),areaUnit:z.enum(["gadi","sq_ft","sq_yd","sq_m","acre","cent","gunta","hectare"]),youtubeUrl:z.string().trim().max(500).optional()}).passthrough();
 
@@ -20,6 +21,7 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
     return NextResponse.redirect(new URL("/dashboard?notice=deleted",request.url),303);
   }
   if(action==="duplicate"){if(!isOwner)return NextResponse.json({error:"Administrators cannot duplicate an owner's property."},{status:409});
+    const{data:permission,error:permissionError}=await supabase.rpc("check_property_posting_permission");if(permissionError||!(permission as {allowed?:boolean}|null)?.allowed)return wantsJson?NextResponse.json({error:POSTING_ENTITLEMENT_MESSAGE},{status:409}):NextResponse.redirect(new URL(`/dashboard/properties/${id}?notice=posting-limit`,request.url),303);
     const {data,error}=await supabase.rpc("duplicate_owner_property",{target_property:id});if(error)return wantsJson?NextResponse.json({error:"The property could not be duplicated."},{status:409}):NextResponse.redirect(new URL(`/dashboard/properties/${id}?notice=duplicate-failed`,request.url),303);
     const editUrl=`/dashboard/properties/${data.id}?notice=duplicated`;return wantsJson?NextResponse.json({id:data.id,editUrl}):NextResponse.redirect(new URL(editUrl,request.url),303);
   }

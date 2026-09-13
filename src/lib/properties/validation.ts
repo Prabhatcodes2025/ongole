@@ -23,7 +23,7 @@ export function applicablePropertyDetails(input:Record<string,unknown>,transacti
   if(isAgricultural&&!["sale","rent"].includes(transactionType))errors.transactionType="Agricultural land supports Sale or Rent only.";
   if(isPlot&&transactionType!=="sale")errors.transactionType="Open plots support Sale only.";
   const details:Record<string,unknown>={property_type_slug:type};
-  if(!isAgricultural&&["rent","lease"].includes(transactionType)){const period=text(input,"rentPeriod");if(!["month","year"].includes(period))errors.rentPeriod="Select Month or Year.";else details.rent_period=period}
+  if(!isAgricultural&&["rent","lease"].includes(transactionType)){const period=text(input,"rentPeriod");if(!["day","month","year"].includes(period))errors.rentPeriod="Select Day, Month or Year.";else details.rent_period=period}
   if(isBuilt){const age=text(input,"propertyAge");if(!age)errors.propertyAge="Select property age or New Property.";else details.property_age=age;details.floor=number(input,"floor");details.total_floors=number(input,"totalFloors")}
   if(isResidential){const bedrooms=number(input,"bedrooms"),bathrooms=number(input,"bathrooms"),facing=text(input,"facing");if(bedrooms===null)errors.bedrooms="Enter bedrooms.";else details.bedrooms=bedrooms;if(bathrooms===null)errors.bathrooms="Enter bathrooms.";else details.bathrooms=bathrooms;if(!facing)errors.facing="Select facing.";else details.facing=facing}
   if(isPlot){const facing=text(input,"facing");if(!facing)errors.facing="Select facing.";else details.facing=facing}

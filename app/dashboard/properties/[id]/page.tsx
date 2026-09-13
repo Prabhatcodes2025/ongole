@@ -9,10 +9,11 @@ import {resolvePropertyDashboardAccess} from "@/src/lib/properties/dashboard-acc
 import {getPublicPropertyCatalog} from "@/src/lib/masters/public";
 import {PropertyPostingFields} from "@/src/components/property-posting-fields";
 import {AsyncPropertyForm,AsyncSubmitProperty} from "@/src/components/property-posting-workflow";
+import {POSTING_ENTITLEMENT_MESSAGE} from "@/src/lib/properties/posting-entitlement";
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Manage property",robots:{index:false,follow:false}};
-const notices:Record<string,string>={created:"Draft created successfully.",updated:"Property details updated.",duplicated:"A new draft copy was created.","duplicate-failed":"The property could not be duplicated. Your original listing was not changed.",uploaded:"Image processed and uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
+const notices:Record<string,string>={created:"Draft created successfully.",updated:"Property details updated.",duplicated:"A new draft copy was created.","duplicate-failed":"The property could not be duplicated. Your original listing was not changed.","posting-limit":POSTING_ENTITLEMENT_MESSAGE,uploaded:"Image processed and uploaded.",remove:"Image removed.",cover:"Cover image updated.",up:"Image moved earlier.",down:"Image moved later."};
 
 export default async function ManagePropertyPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{media?:string;notice?:string}>}){
   const {id}=await params;const query=await searchParams;const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();
@@ -41,7 +42,7 @@ export default async function ManagePropertyPage({params,searchParams}:{params:P
   return <main id="main" className="portal-page"><div className="shell">
     <nav className="breadcrumbs"><Link href="/dashboard">Dashboard</Link><span>›</span><span>{property.reference_no}</span></nav>
     <div className="portal-title"><div><p className="eyebrow">{property.reference_no}{isAdmin?" · Administrator edit":""}</p><h1>{property.title}</h1><p><span className={`status status-${property.status}`}>{property.status.replaceAll("_"," ")}</span> · Updated {new Date(property.updated_at).toLocaleDateString("en-IN")}</p>{property.status==="expired"&&<p className="form-message">Status: EXPIRED. Contact OngoleProperty.com for offline renewal; renewal keeps this same property record.</p>}</div><div className="portal-actions"><Link className="button button-light" href={`/dashboard/properties/${id}/preview`}>Preview</Link>{ownerEditable&&<AsyncSubmitProperty action={`/api/properties/${id}/submit`} successUrl={`/dashboard/properties/${id}?notice=submitted`}/>}</div></div>
-    {notice&&<p className="form-message success" role="status">{notice}</p>}
+    {notice&&<p className={`form-message ${query.notice==="posting-limit"?"error":"success"}`} role="status">{notice}</p>}
     <div className="review-layout owner-manage"><section className="portal-section"><h2>Property information</h2>
       {editable?<AsyncPropertyForm action={`/api/properties/${id}`} successUrl={`/dashboard/properties/${id}?notice=updated`}><input type="hidden" name="action" value="update"/><PropertyPostingFields catalog={catalog} defaults={formDefaults} lockIdentity/></AsyncPropertyForm>:<dl className="review-facts"><div><dt>Location</dt><dd>{property.locality_text}, {property.city_text}</dd></div><div><dt>{detail.category==="dev-jv"?"Present Market Price":"Price"}</dt><dd>₹{Number(property.price_inr||0).toLocaleString("en-IN")}</dd></div><div><dt>Area</dt><dd>{property.area_value} {property.area_unit}</dd></div><div className="wide"><dt>Description</dt><dd>{property.description}</dd></div></dl>}
       <div className="section-heading-row"><h2>Property images</h2><span>{images.length}/6</span></div>
