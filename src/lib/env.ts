@@ -11,6 +11,7 @@ export const env = {
   redisUrl: process.env.REDIS_URL,
   redisToken: process.env.REDIS_TOKEN,
   googleMapsKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+  googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   sentryDsn: process.env.SENTRY_DSN,
   cronSecret: process.env.CRON_SECRET,

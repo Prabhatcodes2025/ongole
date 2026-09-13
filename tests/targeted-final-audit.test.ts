@@ -11,7 +11,7 @@ const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("registration supports Terms evidence, Google OAuth and safe validation logging",async()=>{
   const[route,callback,form,migration,correction]=await Promise.all([read("../app/api/auth/[action]/route.ts"),read("../app/auth/callback/route.ts"),read("../src/components/registration-form.tsx"),read("../supabase/migrations/202608130001_targeted_auth_terms_fix.sql"),read("../supabase/migrations/202608220001_non_home_corrections.sql")]);
-  assert.match(route,/signInWithOAuth\(\{provider:"google"/);assert.match(route,/registration_validation_failed/);assert.match(form,/Terms &amp; Conditions/);assert.match(migration,/claim_new_google_owner/);assert.match(migration,/insert into public\.agents/);assert.match(callback,/claim_new_google_account/);assert.match(correction,/requested_account_type not in \('buyer','owner','agent','pg_owner'\)/);assert.doesNotMatch(route,/service.role/i);
+  assert.doesNotMatch(route,/signInWithOAuth/);assert.match(route,/registration_validation_failed/);assert.match(form,/Terms &amp; Conditions/);assert.match(migration,/claim_new_google_owner/);assert.match(migration,/insert into public\.agents/);assert.match(route,/claim_new_google_account/);assert.match(callback,/claim_new_google_account/);assert.match(correction,/requested_account_type not in \('buyer','owner','agent','pg_owner'\)/);assert.doesNotMatch(route,/service.role/i);
   const errors=validateRegistrationFields({name:"",mobile:"123",email:"bad",accountType:"owner",password:"short",termsAccepted:""});
   for(const field of ["name","mobile","email","password","termsAccepted"] as const)assert.ok(errors[field]);
 });

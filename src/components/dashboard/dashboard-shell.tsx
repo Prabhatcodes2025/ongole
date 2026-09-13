@@ -1,7 +1,7 @@
 import type {ReactNode} from "react";
 import Link from "next/link";
 import {Bell,Building2,ChartNoAxesCombined,CreditCard,FileText,Home,HousePlus,LayoutDashboard,LogOut,Megaphone,Search,Users} from "lucide-react";
-import {createSupabaseServerClient} from "@/src/lib/supabase/server";
+import {getDashboardAuth} from "@/src/lib/dashboard/context";
 
 type NavItem={href:string;label:string;permission?:string;icon?:ReactNode};
 const ownerNav:NavItem[]=[
@@ -18,15 +18,14 @@ const adminNav:NavItem[]=[
 ];
 
 export async function DashboardShell({children,title,description,actions,variant="owner",breadcrumbs=[]}:{children:ReactNode;title:string;description?:string;actions?:ReactNode;variant?:"owner"|"admin";breadcrumbs?:{label:string;href?:string}[]}){
-  const supabase=await createSupabaseServerClient();
-  const {data:auth}=await supabase.auth.getUser();
+  const{supabase,user}=await getDashboardAuth();
   const [{data:profile},{data:context},{data:notifications,count}]=await Promise.all([
-    auth.user?supabase.from("profiles").select("full_name,email,account_type").eq("id",auth.user.id).maybeSingle():Promise.resolve({data:null,error:null,count:null,status:200,statusText:"OK"}),
+    user?supabase.from("profiles").select("full_name,email,account_type").eq("id",user.id).maybeSingle():Promise.resolve({data:null,error:null,count:null,status:200,statusText:"OK"}),
     supabase.rpc("get_current_auth_context"),supabase.from("notifications").select("id,title,body,action_url,read_at,created_at",{count:"exact"}).is("read_at",null).order("created_at",{ascending:false}).limit(8)
   ]);
   const permissions=Array.isArray((context as {permissions?:unknown}|null)?.permissions)?(context as {permissions:string[]}).permissions:[];
   const nav=(variant==="admin"?adminNav:ownerNav).filter((item)=>!item.permission||permissions.includes(item.permission));
-  return <main id="main" className={`dashboard-app dashboard-${variant}`}><aside className="dashboard-sidebar"><Link className="dashboard-brand" href="/"><span>OP</span><strong>OngoleProperty<small>{variant==="admin"?"Administration":"Owner workspace"}</small></strong></Link><DashboardSidebar items={nav}/><div className="sidebar-footer"><Link href="/">Public website</Link><form action="/api/auth/logout" method="post"><button><LogOut/>Sign out</button></form></div></aside><div className="dashboard-workspace"><DashboardHeader name={profile?.full_name||profile?.email||auth.user?.email||"Account"} count={count||0} notifications={notifications||[]} nav={nav}/><div className="dashboard-content">{breadcrumbs.length>0&&<nav className="dashboard-breadcrumbs">{breadcrumbs.map((item,index)=><span key={item.label}>{index>0&&<b>/</b>}{item.href?<Link href={item.href}>{item.label}</Link>:item.label}</span>)}</nav>}<div className="dashboard-page-title"><div><h1>{title}</h1>{description&&<p>{description}</p>}</div>{actions&&<div className="dashboard-title-actions">{actions}</div>}</div>{children}</div></div></main>;
+  return <main id="main" className={`dashboard-app dashboard-${variant}`}><aside className="dashboard-sidebar"><Link className="dashboard-brand" href="/"><span>OP</span><strong>OngoleProperty<small>{variant==="admin"?"Administration":"Owner workspace"}</small></strong></Link><DashboardSidebar items={nav}/><div className="sidebar-footer"><Link href="/">Public website</Link><form action="/api/auth/logout" method="post"><button><LogOut/>Sign out</button></form></div></aside><div className="dashboard-workspace"><DashboardHeader name={profile?.full_name||profile?.email||user?.email||"Account"} count={count||0} notifications={notifications||[]} nav={nav}/><div className="dashboard-content">{breadcrumbs.length>0&&<nav className="dashboard-breadcrumbs">{breadcrumbs.map((item,index)=><span key={item.label}>{index>0&&<b>/</b>}{item.href?<Link href={item.href}>{item.label}</Link>:item.label}</span>)}</nav>}<div className="dashboard-page-title"><div><h1>{title}</h1>{description&&<p>{description}</p>}</div>{actions&&<div className="dashboard-title-actions">{actions}</div>}</div>{children}</div></div></main>;
 }
 
 export function DashboardSidebar({items}:{items:NavItem[]}){return <nav className="dashboard-nav" aria-label="Dashboard">{items.map((item)=><Link key={item.href} href={item.href}>{item.icon}<span>{item.label}</span></Link>)}</nav>}

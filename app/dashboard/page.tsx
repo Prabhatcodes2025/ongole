@@ -4,7 +4,7 @@ import {redirect} from "next/navigation";
 import {BarChart3,Building2,CirclePlus,ClipboardList,Eye,Home,MessageSquare,MousePointerClick,Send} from "lucide-react";
 import {ActivityTimeline,ChartCard,DashboardShell,DataTable,EmptyState,PlanUsageCard,QuickActionCard,StatCard,StatusBadge} from "@/src/components/dashboard/dashboard-shell";
 import {env} from "@/src/lib/env";
-import {createSupabaseServerClient} from "@/src/lib/supabase/server";
+import {getDashboardAuth} from "@/src/lib/dashboard/context";
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Owner dashboard",robots:{index:false,follow:false}};
@@ -13,14 +13,12 @@ type DailyRow={day:string;event_type:string;event_count:number;entity_id:string|
 
 export default async function DashboardPage(){
   if(!env.isSupabaseConfigured)return <main id="main" className="portal-page"><div className="shell"><div className="config-warning"><h1>Dashboard configuration pending</h1><p>Add Supabase environment values and apply migrations.</p></div></div></main>;
-  const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();if(!auth.user)redirect("/login?returnTo=/dashboard");
+  const{supabase,user}=await getDashboardAuth();if(!user)redirect("/login?returnTo=/dashboard");
   const start=new Date();start.setDate(start.getDate()-29);start.setHours(0,0,0,0);
-  const {data:properties}=await supabase.from("properties").select("id,reference_no,title,status,updated_at,locality_text,details").eq("owner_id",auth.user.id).is("deleted_at",null).order("updated_at",{ascending:false});
+  const[{data:properties},{data:planContext},{data:analytics}]=await Promise.all([supabase.from("properties").select("id,reference_no,title,status,updated_at,locality_text,details").eq("owner_id",user.id).is("deleted_at",null).order("updated_at",{ascending:false}),supabase.rpc("get_my_plan_context"),supabase.from("analytics_daily").select("day,event_type,event_count,entity_id").eq("owner_id",user.id).gte("day",start.toISOString().slice(0,10))]);
   const propertyRows=(properties||[]) as PropertyRow[];const ids=propertyRows.map((item)=>item.id);
-  const [{data:planContext},{data:enquiries},{data:analytics},{data:history}]=await Promise.all([
-    supabase.rpc("get_my_plan_context"),
+  const [{data:enquiries},{data:history}]=await Promise.all([
     ids.length?supabase.from("enquiries").select("id,status,created_at,property_id").in("property_id",ids):Promise.resolve({data:[]}),
-    supabase.from("analytics_daily").select("day,event_type,event_count,entity_id").eq("owner_id",auth.user.id).gte("day",start.toISOString().slice(0,10)),
     ids.length?supabase.from("property_status_history").select("id,to_status,reason,created_at,property_id").in("property_id",ids).order("created_at",{ascending:false}).limit(8):Promise.resolve({data:[]})
   ]);
   const regular=propertyRows.filter((item)=>item.details?.listing_kind!=="paying_guest");const pgs=propertyRows.filter((item)=>item.details?.listing_kind==="paying_guest");

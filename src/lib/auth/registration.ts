@@ -2,8 +2,8 @@ import {isValidIndianMobile,normalizeMobile} from "@/src/lib/auth/mobile";
 
 export const registrationFieldMessages={
   name:"Full name is required and must contain at least 2 characters.",
-  mobile:"Please enter a valid mobile number.",
-  email:"Email address is invalid.",
+  mobile:"Please enter a valid 10-digit mobile number.",
+  email:"Invalid email format.",
   accountType:"Please select an account type.",
   password:"Password must contain at least 8 characters, including uppercase, lowercase, a number and a special character.",
   termsAccepted:"Please accept the Terms & Conditions.",
@@ -32,4 +32,14 @@ export function validateRegistrationFields(input:Record<string,FormDataEntryValu
 
 export function registrationFieldsFromIssues(paths:string[]){
   return [...new Set(paths.filter((path):path is RegistrationField=>path in registrationFieldMessages))];
+}
+
+export function registrationErrorCode(error:{code?:string;message?:string;status?:number}){
+  const code=(error.code||"").toLowerCase(),message=(error.message||"").toLowerCase();
+  if(code.includes("over_email_send_rate_limit")||code.includes("over_request_rate_limit")||error.status===429)return"rate_limited";
+  if(code.includes("user_already_exists")||code.includes("email_exists")||message.includes("already registered")||message.includes("already exists"))return"account_exists";
+  if(code.includes("email_address_invalid")||code.includes("validation_failed")&&message.includes("email")||message.includes("invalid email"))return"invalid_email";
+  if(code.includes("weak_password")||message.includes("password")&&(message.includes("weak")||message.includes("strength")))return"password_weak";
+  if(message.includes("profiles_mobile_unique_idx")||message.includes("duplicate key")&&message.includes("mobile"))return"mobile_unavailable";
+  return"registration_failed";
 }

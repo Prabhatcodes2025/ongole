@@ -10,6 +10,12 @@ export async function proxy(request:NextRequest){
     // insert application logic between client creation and this call.
     const{data:auth}=await supabase.auth.getUser();
     if(auth.user){
+      // GIS and recovery establish a fresh Supabase session before the app's
+      // own session-control cookies exist. Their handlers complete that setup.
+      const path=request.nextUrl.pathname;
+      if(path==="/reset-password"||path==="/api/auth/update-password"||path==="/api/auth/google"&&request.method==="POST"){
+        response.headers.set("x-request-id",requestId);return response;
+      }
       const timing=sessionTiming(request.cookies.get(SESSION_START_COOKIE)?.value,request.cookies.get(SESSION_ACTIVITY_COOKIE)?.value);
       const{data:profile}=await supabase.from("profiles").select("status").eq("id",auth.user.id).maybeSingle();
       if(timing.expired||profile?.status!=="active"){
