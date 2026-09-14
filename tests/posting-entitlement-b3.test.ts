@@ -43,13 +43,16 @@ test("opening the form or saving normal and PG drafts does not consume permissio
 });
 
 test("direct normal API draft and submit cannot bypass the server limit",async()=>{
-  const[draft,submit,duplicate,dashboard,entry]=await Promise.all([read("../app/api/properties/route.ts"),read("../app/api/properties/[id]/submit/route.ts"),read("../app/api/properties/[id]/route.ts"),read("../app/dashboard/properties/new/page.tsx"),read("../app/post-property/page.tsx")]);
+  const[draft,submit,pgSubmit,duplicate,dashboard,pgDashboard,entry]=await Promise.all([read("../app/api/properties/route.ts"),read("../app/api/properties/[id]/submit/route.ts"),read("../app/api/pg/[id]/submit/route.ts"),read("../app/api/properties/[id]/route.ts"),read("../app/dashboard/properties/new/page.tsx"),read("../app/dashboard/pg/new/page.tsx"),read("../app/post-property/page.tsx")]);
   assert.match(draft,/supabase\.rpc\("check_property_posting_permission"\)/);
   assert.match(draft,/if\(permissionError\|\|!permissionResult\?\.allowed\)return/);
   assert.match(submit,/supabase\.rpc\("submit_property_for_review"/);
   assert.match(submit,/PROPERTY_POSTING_LIMIT_REACHED"\?POSTING_ENTITLEMENT_MESSAGE/);
+  assert.match(pgSubmit,/PROPERTY_POSTING_LIMIT_REACHED"\?POSTING_ENTITLEMENT_MESSAGE/);
   assert.match(duplicate,/supabase\.rpc\("check_property_posting_permission"\)/);
   assert.match(dashboard,/check_property_posting_permission/);
+  assert.match(pgDashboard,/check_property_posting_permission/);
+  assert.match(pgDashboard,/\{POSTING_ENTITLEMENT_MESSAGE\}/);
   assert.match(entry,/auth\.getUser\(\)/);
   assert.equal(POSTING_ENTITLEMENT_MESSAGE,"You've used your free listing. To add another property, please contact our team at 7788998459 or admin@ongoleproperty.com — our admin will assist you.");
 });
