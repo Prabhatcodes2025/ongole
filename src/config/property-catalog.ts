@@ -27,7 +27,7 @@ export const propertyTypeLabels: Record<string, string> = {
 };
 
 export const fallbackLocations = ["Ongole", "Bhagya Nagar", "Bhagyanagar", "Gopal Nagar", "Pernamitta", "Lawyer Pet", "Mangamuru Road", "Kurnool Road", "Pelluru", "Chimakurthy", "Kandukur", "Tangutur", "Maddipadu", "Singarayakonda"];
-export const facingOptions = ["East", "West", "North", "South", "North East"];
+export const facingOptions = ["North", "South", "East", "West", "North East", "South East", "South West", "North West"];
 export const furnishingOptions = ["Unfurnished", "Semi Furnished", "Fully Furnished"];
 export const amenityOptions = ["Parking", "Power Backup", "Lift", "Security", "Water Supply", "Road Access"];
 export const transactionLabels: Record<TransactionType, string> = { sale: "Sale", rent: "Rent/Lease", lease: "Rent/Lease" };

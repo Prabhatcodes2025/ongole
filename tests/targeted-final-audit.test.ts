@@ -26,7 +26,7 @@ test("mobile validation rejects repeated patterns and accepts valid Indian and f
 
 test("property details are validated by transaction and property type",()=>{
   const house=applicablePropertyDetails({propertyAge:"new",bedrooms:"3",bathrooms:"2",facing:"East",parking:"true"},"sale","independent-house");assert.equal(house.valid,true);assert.equal(house.details.bedrooms,3);assert.equal("crop_type" in house.details,false);
-  const plot=applicablePropertyDetails({facing:"West",fencing:"Wall",electricityConnection:"available",roadAccess:"Blacktop"},"sale","open-plot");assert.equal(plot.valid,true);assert.equal("property_age" in plot.details,false);assert.equal("bedrooms" in plot.details,false);
+  const plot=applicablePropertyDetails({facing:"West",fencing:"Wall",electricityConnection:"available",roadAccess:"Blacktop",amountBasis:"total_property"},"sale","open-plot");assert.equal(plot.valid,true);assert.equal("property_age" in plot.details,false);assert.equal("bedrooms" in plot.details,false);
   const land=applicablePropertyDetails({cropType:"Paddy",soilType:"Black Soil",amountBasis:"per_acre_year",fencing:"Open",electricityConnection:"not_available",roadAccess:"Mud Road"},"rent","agricultural-land");assert.equal(land.valid,true);assert.equal(land.details.amount_basis,"per_acre_year");assert.equal(applicablePropertyDetails({},"lease","agricultural-land").valid,false);
 });
 

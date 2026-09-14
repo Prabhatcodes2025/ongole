@@ -2,6 +2,7 @@ import {z} from "zod";
 import {PG_AMENITIES,PG_CATEGORIES,PG_SHARING_TYPES} from "@/src/types/pg";
 import {youtubeVideoId} from "@/src/lib/youtube";
 import {propertyContentIsProductionSafe,propertyTitleIsProductionSafe} from "@/src/lib/properties/validation";
+import {facingOptions} from "@/src/config/property-catalog";
 
 const optionalNumber=z.union([z.coerce.number().nonnegative(),z.literal("").transform(()=>undefined)]).optional();
 const optionalCoordinate=z.union([z.coerce.number(),z.literal("").transform(()=>undefined)]).optional();
@@ -26,6 +27,7 @@ export const pgDraftSchema=z.object({
   house_rules:z.array(z.string().trim().min(2).max(250)).max(30).default([]),
   video_urls:z.array(z.string().url().max(500).refine((value)=>Boolean(youtubeVideoId(value)),"Only YouTube video URLs are allowed.")).max(10).default([]),
   landmark:z.string().trim().max(160).optional().default(""),
+  facing:z.string().trim().max(40).refine(value=>!value||facingOptions.includes(value),"Choose a valid facing.").optional().default(""),
   contact_name:z.string().trim().max(120).optional().default(""),
   contact_mobile:optionalPhone,
   contact_whatsapp:optionalPhone,

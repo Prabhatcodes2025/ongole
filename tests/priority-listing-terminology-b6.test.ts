@@ -74,5 +74,5 @@ test("internal fields and account and agent verification wording remain intact",
   assert.match(properties,/\["verify","Mark as Priority Listing"\]/);
   assert.match(plans,/name="verified_listing_allowance"/);
   assert.match(account,/Verified email/);
-  assert.match(agents,/Join a verified local real estate agent network/);
+  assert.match(agents,/Verified Agent Network\./);
 });

@@ -7,7 +7,7 @@ import {fallbackPropertyCatalog,typesFromCatalog} from "../src/config/property-c
 import {formatPropertyPrice,propertyPurposeLabel} from "../src/lib/format";
 import {applicablePropertyDetails} from "../src/lib/properties/validation";
 
-const plot={category:"dev-jv",facing:"East",fencing:"Open",electricityConnection:"available",roadAccess:"Concrete"};
+const plot={category:"dev-jv",facing:"East",fencing:"Open",electricityConnection:"available",roadAccess:"Concrete",amountBasis:"total_property"};
 
 test("Dev/JV validates Sale and Open Plot and preserves plot requirements",()=>{
   assert.equal(applicablePropertyDetails(plot,"sale","open-plot").valid,true);
@@ -22,7 +22,9 @@ test("saved Dev/JV form reuses price and area controls with only Open Plot",()=>
   for(const lockIdentity of [false,true]){
     const html=renderToStaticMarkup(createElement(PropertyPostingFields,{catalog:fallbackPropertyCatalog,lockIdentity,defaults:{...plot,transactionType:"sale",propertyType:"open-plot",price:5000000,areaValue:1,areaUnit:"gadi"}}));
     assert.match(html,/Present Market Price/);
-    assert.doesNotMatch(html,/Sale price|name="amountBasis"/);
+    assert.match(html,/Sale price basis/);
+    assert.match(html,/name="amountBasis"/);
+    assert.match(html,/Asking Price/);
     const priceInput=html.match(/<input[^>]*name="price"[^>]*>/)?.[0]||"";
     for(const attribute of ['class="dev-jv-price"','type="number"','min="0"','value="5000000"'])assert.ok(priceInput.includes(attribute));
     for(const unit of ["acre","sq_yd","sq_ft","gadi"])assert.ok(html.includes(`value="${unit}"`));
