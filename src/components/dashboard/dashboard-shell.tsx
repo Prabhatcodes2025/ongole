@@ -9,12 +9,14 @@ const ownerNav:NavItem[]=[
   {href:"/dashboard/pg",label:"Paying Guest",icon:<Building2/>},{href:"/dashboard/enquiries",label:"Enquiries",icon:<Users/>},
   {href:"/dashboard/analytics",label:"Analytics",icon:<ChartNoAxesCombined/>},{href:"/dashboard/billing",label:"Billing & Plan",icon:<CreditCard/>},
   {href:"/dashboard/promotions",label:"Promotions",icon:<Megaphone/>},
+  {href:"/dashboard/property-alerts",label:"My Property Alerts",icon:<Bell/>},
 ];
 const adminNav:NavItem[]=[
   {href:"/admin",label:"Overview",icon:<LayoutDashboard/>},{href:"/admin/properties",label:"Properties",permission:"properties.read",icon:<Home/>},
   {href:"/admin/pg",label:"Paying Guest",permission:"pg.read",icon:<Building2/>},{href:"/admin/enquiries",label:"Enquiries",permission:"enquiries.read",icon:<Users/>},
   {href:"/admin/billing",label:"Billing",permission:"subscriptions.read",icon:<CreditCard/>},{href:"/admin/promotions",label:"Promotions",permission:"promotions.read",icon:<Megaphone/>},
   {href:"/admin/analytics",label:"Analytics",permission:"analytics.read",icon:<ChartNoAxesCombined/>},{href:"/admin/reports",label:"Reports",permission:"reports.read",icon:<FileText/>},
+  {href:"/admin/push-notifications",label:"Push Notifications",permission:"notifications.manage",icon:<Bell/>},
 ];
 
 export async function DashboardShell({children,title,description,actions,variant="owner",breadcrumbs=[]}:{children:ReactNode;title:string;description?:string;actions?:ReactNode;variant?:"owner"|"admin";breadcrumbs?:{label:string;href?:string}[]}){

@@ -4,6 +4,7 @@ import {env} from "@/src/lib/env";
 import {processLegacyOutbox,processNotificationDeliveries,logQueueResult} from "@/src/lib/jobs/notifications";
 import {logEvent} from "@/src/lib/observability/logger";
 import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
+import {processPushQueue} from "@/src/lib/property-alerts/dispatch";
 
 export const dynamic="force-dynamic";
 export const runtime="nodejs";
@@ -45,6 +46,7 @@ export async function GET(request:NextRequest){
 
     const deliveries=await processNotificationDeliveries(service);
     const outbox=await processLegacyOutbox(service);
+    const push=await processPushQueue(service);
     logQueueResult("notification_deliveries",deliveries,requestId);
     logQueueResult("notification_outbox",outbox,requestId);
     logEvent("info","cron.maintenance_completed",{requestId,expiryNotifications:expiry.data,expiredProperties:liveExpiry.data,expiredPromotions:promotions.data,analyticsRows:analytics.data});
@@ -53,7 +55,7 @@ export async function GET(request:NextRequest){
       status:"ok",
       requestId,
       maintenance:{expiryNotifications:expiry.data,expiredProperties:liveExpiry.data,expiredPromotions:promotions.data,analyticsRows:analytics.data},
-      queues:{notificationDeliveries:deliveries,legacyOutbox:outbox},
+      queues:{notificationDeliveries:deliveries,legacyOutbox:outbox,push},
     },{headers:{"Cache-Control":"no-store"}});
   }catch(error){
     logEvent("error","cron.maintenance_failed",{requestId,error:error instanceof Error?error.message:"unknown"});
