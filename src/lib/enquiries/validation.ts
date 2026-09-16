@@ -8,18 +8,28 @@ export const enquirySchema=z.object({
   propertyReference:z.string().trim().max(40).optional().default(""),
   formContext:z.enum(["default","contact","nri"]).optional().default("default"),
   name:z.string().trim().min(2,"Please enter your name.").max(100),
-  mobile:z.string().trim().min(6,"Please enter a valid mobile number.").max(20),
+  mobile:z.string().trim().max(20).optional().default(""),
+  foreignMobile:z.string().trim().max(20).optional().default(""),
   isForeign:z.enum(["true","false"]).optional().default("false"),
   countryCode:z.string().trim().max(5).optional().default(""),
   email:z.union([z.literal(""),z.email("Please enter a valid email address.")]).optional().default(""),
   enquiryType:z.enum(["Buy / Sell Property","Rent / Lease","Paying Guest","NRI Services","Advertising / Business Enquiry","General Enquiry"]).optional(),
-  propertyRequirement:z.string().trim().max(200).optional().default(""),
+  propertyRequirement:z.string().trim().max(2000).optional().default(""),
+  consent:z.string().trim().optional().default(""),
   message:z.string().trim().min(5,"Please enter your message.").max(5000).refine(value=>words(value)<=250,"Please keep your message within 250 words."),
   website:z.string().max(200).optional().default(""),captchaToken:z.string().optional(),"cf-turnstile-response":z.string().optional(),
 }).superRefine((value,context)=>{
   if(value.formContext!=="default"&&!value.email)context.addIssue({code:"custom",path:["email"],message:"Please enter your email address."});
-  const digits=value.mobile.replace(/\D/g,"");
-  if(value.isForeign==="true"){
-    if(!/^\+[1-9][0-9]{0,3}$/.test(value.countryCode)||!/^[0-9]{6,14}$/.test(digits)||`${value.countryCode}${digits}`.replace(/\D/g,"").length>15)context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid international mobile number."});
-  }else if(!isValidIndianMobile(indianDigits(value.mobile)))context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid 10-digit Indian mobile number."});
-}).transform(value=>({...value,mobile:value.isForeign==="true"?`${value.countryCode}${value.mobile.replace(/\D/g,"")}`:indianDigits(value.mobile)}));
+  if(value.formContext==="nri"){
+    if(value.mobile&&!isValidIndianMobile(indianDigits(value.mobile)))context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid 10-digit Indian mobile number."});
+    if(value.propertyRequirement.length<3)context.addIssue({code:"custom",path:["propertyRequirement"],message:"Please describe your property requirement."});
+    if(value.consent!=="true")context.addIssue({code:"custom",path:["consent"],message:"You must confirm authorization and communication consent."});
+    const foreignDigits=value.foreignMobile.replace(/\D/g,"");
+    if(value.isForeign==="true"&&(!/^\+[1-9][0-9]{0,3}$/.test(value.countryCode)||!/^[0-9]{6,14}$/.test(foreignDigits)||`${value.countryCode}${foreignDigits}`.replace(/\D/g,"").length>15))context.addIssue({code:"custom",path:["foreignMobile"],message:"Please enter a valid international mobile number."});
+  }else{
+    const digits=value.mobile.replace(/\D/g,"");
+    if(value.isForeign==="true"){
+      if(!/^\+[1-9][0-9]{0,3}$/.test(value.countryCode)||!/^[0-9]{6,14}$/.test(digits)||`${value.countryCode}${digits}`.replace(/\D/g,"").length>15)context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid international mobile number."});
+    }else if(!isValidIndianMobile(indianDigits(value.mobile)))context.addIssue({code:"custom",path:["mobile"],message:"Please enter a valid 10-digit Indian mobile number."});
+  }
+}).transform(value=>{const indian=value.mobile?indianDigits(value.mobile):"",foreign=value.isForeign==="true"?`${value.countryCode}${value.foreignMobile.replace(/\D/g,"")}`:"";return{...value,mobile:value.formContext==="nri"?indian:value.isForeign==="true"?`${value.countryCode}${value.mobile.replace(/\D/g,"")}`:indian,foreignMobile:foreign}});

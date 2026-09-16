@@ -4,11 +4,14 @@ import {FormEvent,useEffect,useRef,useState} from "react";
 import {useRouter} from "next/navigation";
 import {PG_AMENITIES} from "@/src/types/pg";
 import {facingOptions} from "@/src/config/property-catalog";
+import {MandalTownAutocomplete} from "@/src/components/mandal-town-autocomplete";
+import {PropertyLocationPicker} from "@/src/components/property-location-picker";
 
 const STORAGE_KEY="ongoleproperty.pending-pg";
 type Values=Record<string,string>;
 type Failure={error?:string;fields?:Record<string,string|string[]>;editUrl?:string};
 function valuesFrom(form:HTMLFormElement){const values:Values={};for(const[key,value]of new FormData(form).entries())if(typeof value==="string")values[key]=value;return values}
+function foodTypeDefault(value:unknown){const normalized=String(value||"").trim().toLowerCase();if(!normalized)return"";if(normalized.includes("mixed"))return"Mixed";if(normalized.includes("non")&&normalized.includes("veg"))return"Non-Vegetarian";if(normalized.includes("veg"))return"Vegetarian";return""}
 
 export function PgFields({defaults}:{defaults?:Record<string,unknown>}){
   const amenities=Array.isArray(defaults?.amenities)?defaults.amenities as string[]:[];
@@ -18,15 +21,16 @@ export function PgFields({defaults}:{defaults?:Record<string,unknown>}){
     <label>Starting rent per bed<input required type="number" name="rent_per_bed" min="0" step="1" defaultValue={String(defaults?.rent_per_bed||0)}/></label><label>Rent basis<select aria-label="PG rent basis" value="per_bed_month" disabled><option value="per_bed_month">Per bed / month</option></select></label>
     <label className="wide">Description <span>(20–250 characters; no contact details, links or advertisements)</span><textarea required name="description" minLength={20} maxLength={250} rows={5} defaultValue={String(defaults?.description||"")}/></label>
     <label className="wide compact-field">Street address<textarea required name="address_line" rows={2} defaultValue={String(defaults?.address_line||"")}/></label>
-    <label>Locality<input required name="locality" placeholder="Gopal Nagar" defaultValue={String(defaults?.locality||"")}/></label><label>Mandal/Town<input required name="city" defaultValue={String(defaults?.city||"Ongole")}/></label>
+    <label>Locality<input required name="locality" placeholder="Gopal Nagar" defaultValue={String(defaults?.locality||"")}/></label><MandalTownAutocomplete required defaultValue={String(defaults?.city||"Ongole")}/>
     <label>District<input required name="district" defaultValue={String(defaults?.district||"Prakasam")}/></label><label>State<input required name="state" defaultValue={String(defaults?.state||"Andhra Pradesh")}/></label>
-    <label>Latitude<input name="latitude" type="number" step="any" defaultValue={String(defaults?.latitude||"")}/></label><label>Longitude<input name="longitude" type="number" step="any" defaultValue={String(defaults?.longitude||"")}/></label>
+    <PropertyLocationPicker latitude={defaults?.latitude} longitude={defaults?.longitude}/>
     <label>Nearby landmark <span>(optional)</span><input name="landmark" maxLength={160} defaultValue={String(defaults?.landmark||"")}/></label><label>Facing<select name="facing" defaultValue={String(defaults?.facing||"")}><option value="">Choose facing</option>{facingOptions.map(facing=><option key={facing}>{facing}</option>)}</select></label><label>Total capacity<input name="capacity" type="number" min="1" defaultValue={String(defaults?.capacity||"")}/></label>
-    <label>Food type<input name="food_type" maxLength={80} placeholder="Vegetarian / mixed" defaultValue={String(defaults?.food_type||"")}/></label><label className="check-label"><input type="checkbox" name="lunch_box_available" value="true" defaultChecked={defaults?.lunch_box_available===true||defaults?.lunch_box_available==="true"}/>Lunch Box Available</label>
+    <label>Food type<select name="food_type" defaultValue={foodTypeDefault(defaults?.food_type)}><option value="">Choose food type</option><option value="Vegetarian">Vegetarian</option><option value="Non-Vegetarian">Non-Vegetarian</option><option value="Mixed">Mixed</option></select></label><label className="check-label pg-inline-check"><input type="checkbox" name="lunch_box_available" value="true" defaultChecked={defaults?.lunch_box_available===true||defaults?.lunch_box_available==="true"}/>Lunch Box Available</label>
     <fieldset className="wide"><legend>Amenities</legend><div className="check-grid">{PG_AMENITIES.map(item=><label key={item}><input type="checkbox" name={`amenity_${item}`} value={item} defaultChecked={amenities.includes(item)||defaults?.[`amenity_${item}`]===item}/>{item}</label>)}</div></fieldset>
     <label className="wide">House rules (one per line)<textarea name="house_rules" rows={3} placeholder="Example: Gate closes at 10 PM, No smoking inside, Only vegetarian tenants" defaultValue={(defaults?.house_rules as string[]|undefined)?.join("\n")||String(defaults?.house_rules||"")}/></label>
     <label className="wide compact-field">YouTube video URLs only (one per line)<textarea name="video_urls" rows={2} defaultValue={(defaults?.video_urls as string[]|undefined)?.join("\n")||String(defaults?.video_urls||"")}/></label>
     <h2 className="wide">Contact information</h2><label>Contact name<input name="contact_name" defaultValue={String(defaults?.contact_name||"")}/></label><label>Mobile<input name="contact_mobile" inputMode="tel" defaultValue={String(defaults?.contact_mobile||"")}/></label><label>WhatsApp<input name="contact_whatsapp" inputMode="tel" defaultValue={String(defaults?.contact_whatsapp||"")}/></label><label>Email<input name="contact_email" type="email" defaultValue={String(defaults?.contact_email||"")}/></label>
+    <label className="check-label wide consent-field"><input required type="checkbox" name="consent" value="true"/>I confirm I am authorized to post this listing, and I consent to receive SMS, WhatsApp, and Email communications regarding this listing.</label>
   </>;
 }
 

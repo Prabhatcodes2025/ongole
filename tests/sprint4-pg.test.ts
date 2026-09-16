@@ -6,7 +6,7 @@ import {pgDraftSchema,pgRoomSchema} from "../src/lib/pg/validation";
 const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("PG draft and room validation enforce supported inventory",()=>{
-  assert.equal(pgDraftSchema.safeParse({pg_name:"Sai Residency",category:"womens",locality:"Ongole",city:"Ongole",district:"Prakasam",state:"Andhra Pradesh",rent_per_bed:6500,amenities:["WiFi"],house_rules:[],video_urls:[],description:"",address_line:""}).success,true);
+  assert.equal(pgDraftSchema.safeParse({pg_name:"Sai Residency",category:"womens",locality:"Ongole",city:"Ongole",district:"Prakasam",state:"Andhra Pradesh",rent_per_bed:6500,amenities:["WiFi"],house_rules:[],video_urls:[],description:"",address_line:"",consent:"true"}).success,true);
   assert.equal(pgDraftSchema.safeParse({pg_name:"PG",category:"unknown"}).success,false);
   assert.equal(pgRoomSchema.safeParse({name:"Double room",sharing_type:"double",capacity:2,available_beds:3,monthly_rent:7000}).success,false);
   assert.equal(pgRoomSchema.safeParse({name:"Double room",sharing_type:"double",capacity:2,available_beds:1,monthly_rent:7000}).success,true);

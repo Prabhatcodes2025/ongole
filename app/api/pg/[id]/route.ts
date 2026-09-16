@@ -30,6 +30,8 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   if(!parsed.success)return NextResponse.json({error:"Check the PG details and try again.",fields:parsed.error.flatten().fieldErrors},{status:400});
   const {error}=await supabase.rpc("update_pg_draft",{target_pg:id,pg_payload:parsed.data});
   if(error)return NextResponse.json({error:"The PG draft could not be updated.",detail:error.message},{status:409});
-  const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};const{error:landmarkError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available}}).eq("id",id);if(landmarkError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
+  const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};
+  const consent={accepted:true,accepted_at:new Date().toISOString(),accepted_by:auth.user.id,channels:["sms","whatsapp","email"]};
+  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }

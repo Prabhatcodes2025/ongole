@@ -22,15 +22,15 @@ export function matchingMandalTowns(value:string){
   return mandalTowns.filter(town=>town.toLowerCase().includes(query)||(query==="kan"&&town==="Karamchedu"));
 }
 
-export function MandalTownAutocomplete({defaultValue=""}:{defaultValue?:string}){
+export function MandalTownAutocomplete({defaultValue="",label="Mandal/Town",required=false}:{defaultValue?:string;label?:string;required?:boolean}){
   const id=useId();
   const [query,setQuery]=useState(defaultValue),[selected,setSelected]=useState(defaultValue);
   const [open,setOpen]=useState(false),[active,setActive]=useState(-1);
   const matches=matchingMandalTowns(query),expanded=open&&matches.length>0;
   function select(value:string){setQuery(value);setSelected(value);setOpen(false);setActive(-1)}
-  return <label className="mandal-town-autocomplete"><span>Mandal/Town</span>
+  return <label className="mandal-town-autocomplete"><span>{label}</span>
     <input type="hidden" name="city" value={selected}/>
-    <input role="combobox" autoComplete="off" placeholder="Type to search Mandal/Town"
+    <input role="combobox" required={required} autoComplete="off" placeholder={`Type to search ${label}`}
       value={query} aria-autocomplete="list" aria-expanded={expanded} aria-controls={`${id}-options`}
       aria-activedescendant={expanded&&active>=0?`${id}-${active}`:undefined}
       onFocus={()=>setOpen(true)} onBlur={()=>{setOpen(false);setQuery(selected);setActive(-1)}}

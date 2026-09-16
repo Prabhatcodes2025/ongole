@@ -5,7 +5,8 @@ import {propertyContentIsProductionSafe,propertyTitleIsProductionSafe} from "@/s
 import {facingOptions} from "@/src/config/property-catalog";
 
 const optionalNumber=z.union([z.coerce.number().nonnegative(),z.literal("").transform(()=>undefined)]).optional();
-const optionalCoordinate=z.union([z.coerce.number(),z.literal("").transform(()=>undefined)]).optional();
+const optionalLatitude=z.union([z.coerce.number().min(-90).max(90),z.literal("").transform(()=>undefined)]).optional();
+const optionalLongitude=z.union([z.coerce.number().min(-180).max(180),z.literal("").transform(()=>undefined)]).optional();
 const optionalPhone=z.string().trim().regex(/^[6-9][0-9]{9}$/).or(z.literal("")).optional();
 
 export const pgDraftSchema=z.object({
@@ -17,11 +18,11 @@ export const pgDraftSchema=z.object({
   city:z.string().trim().min(2).max(120).default("Ongole"),
   district:z.string().trim().min(2).max(120).default("Prakasam"),
   state:z.string().trim().min(2).max(120).default("Andhra Pradesh"),
-  latitude:optionalCoordinate,
-  longitude:optionalCoordinate,
+  latitude:optionalLatitude,
+  longitude:optionalLongitude,
   rent_per_bed:z.coerce.number().nonnegative().default(0),
   capacity:optionalNumber,
-  food_type:z.string().trim().max(80).optional().default(""),
+  food_type:z.enum(["Vegetarian","Non-Vegetarian","Mixed"]).or(z.literal("")).optional().default(""),
   lunch_box_available:z.coerce.boolean().optional().default(false),
   amenities:z.array(z.enum(PG_AMENITIES)).default([]),
   house_rules:z.array(z.string().trim().min(2).max(250)).max(30).default([]),
@@ -32,7 +33,8 @@ export const pgDraftSchema=z.object({
   contact_mobile:optionalPhone,
   contact_whatsapp:optionalPhone,
   contact_email:z.string().trim().email().or(z.literal("")).optional(),
-});
+  consent:z.literal("true",{error:"You must confirm authorization and communication consent."}),
+}).refine(value=>(value.latitude==null)===(value.longitude==null),{message:"Choose a location so both coordinates are captured.",path:["latitude"]});
 
 export const pgRoomSchema=z.object({
   name:z.string().trim().min(2).max(100),

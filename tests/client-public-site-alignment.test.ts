@@ -46,7 +46,7 @@ test("agent applications are pending, reviewable and permission protected",async
 
 test("locked PG requirements are enforced in validation, uploads and database",async()=>{
   assert.deepEqual([...PG_CATEGORIES],["mens","womens","co_living"]);
-  const base={pg_name:"Sri Sai Residency",category:"mens",locality:"Ongole",city:"Ongole",district:"Prakasam",state:"Andhra Pradesh",rent_per_bed:6500,amenities:[],house_rules:[],video_urls:[],description:"Clean accommodation near the town centre.",address_line:"Ongole"};
+  const base={pg_name:"Sri Sai Residency",category:"mens",locality:"Ongole",city:"Ongole",district:"Prakasam",state:"Andhra Pradesh",rent_per_bed:6500,amenities:[],house_rules:[],video_urls:[],description:"Clean accommodation near the town centre.",address_line:"Ongole",consent:"true"};
   assert.equal(pgDraftSchema.safeParse(base).success,true);
   for(const description of ["Call 9988767689 today","Visit https://example.com","Follow us @bestpg","Limited offer book now","This is shit advertising"]){
     assert.equal(pgDraftSchema.safeParse({...base,description}).success,false);

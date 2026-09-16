@@ -9,6 +9,11 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const supabase=await createSupabaseServerClient();
   const {data:auth}=await supabase.auth.getUser();
   if(!auth.user)return NextResponse.json({error:"Authentication required."},{status:401});if(!auth.user.email_confirmed_at)return NextResponse.json({error:"Verify your email address before submitting a PG listing."},{status:403});
+  const{data:pg}=await supabase.from("pg_listings").select("details,properties!inner(owner_id)").eq("id",id).eq("properties.owner_id",auth.user.id).maybeSingle();
+  if(!pg)return NextResponse.json({error:"PG listing not found."},{status:404});
+  const details=pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};
+  const consent=details.listing_communication_consent&&typeof details.listing_communication_consent==="object"&&!Array.isArray(details.listing_communication_consent)?details.listing_communication_consent as Record<string,unknown>:{};
+  if(consent.accepted!==true)return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=consent-required`,request.url),303);
   const {error}=await supabase.rpc("submit_pg_for_review",{target_pg:id});
   if(error)return NextResponse.json({error:error.message==="pg_incomplete"?"Add a complete description, address and at least one room before submitting.":error.message==="PROPERTY_POSTING_LIMIT_REACHED"?POSTING_ENTITLEMENT_MESSAGE:"The PG could not be submitted."},{status:409});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=submitted`,request.url),303);
