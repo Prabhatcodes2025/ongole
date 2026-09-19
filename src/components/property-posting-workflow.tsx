@@ -18,8 +18,9 @@ function valuesFrom(form:HTMLFormElement){
 
 function draftKey(){return crypto.randomUUID()}
 
-export function PublicPropertyPostingForm({catalog}:{catalog:PropertyCatalogData}){
-  const[submitting,setSubmitting]=useState(false),[message,setMessage]=useState("");
+export function PublicPropertyPostingForm({catalog,initialTransaction="sale"}:{catalog:PropertyCatalogData;initialTransaction?:"sale"|"rent"}){
+  const[defaults,setDefaults]=useState<Values|null>(null),[submitting,setSubmitting]=useState(false),[message,setMessage]=useState("");
+  useEffect(()=>{const timeout=window.setTimeout(()=>{try{const stored=sessionStorage.getItem(STORAGE_KEY),parsed=stored?JSON.parse(stored):null;setDefaults(parsed&&typeof parsed==="object"&&Object.keys(parsed).length?parsed:{transactionType:initialTransaction})}catch{setDefaults({transactionType:initialTransaction})}},0);return()=>window.clearTimeout(timeout)},[initialTransaction]);
   async function continueToAccount(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setSubmitting(true);setMessage("");
     const form=event.currentTarget;
@@ -31,7 +32,8 @@ export function PublicPropertyPostingForm({catalog}:{catalog:PropertyCatalogData
       window.location.assign(response.ok?"/dashboard/properties/new?restore=1":"/login?returnTo=%2Fdashboard%2Fproperties%2Fnew%3Frestore%3D1");
     }catch{setMessage("Your details are saved in this browser. Check your connection and try again.");setSubmitting(false)}
   }
-  return <form className="submission-form property-posting-form" onSubmit={continueToAccount}><PropertyPostingFields catalog={catalog}/><input type="hidden" name="draftKey"/><label className="consent"><input required type="checkbox" name="declaration" value="accepted"/> I confirm that I am authorised to submit this property and that the information is accurate.</label><CaptchaWidget/>{message&&<p className="form-message error" role="alert">{message}</p>}<button className="button" type="submit" disabled={submitting}>{submitting?"Continuing…":"Sign in / Create Account"}</button><p className="form-note"><strong>Sign-in required:</strong> Your entries are kept temporarily in this browser. Sign in or register and verify your email before a property draft is created.</p></form>;
+  if(!defaults)return <p role="status">Preparing the property form…</p>;
+  return <form className="submission-form property-posting-form" onSubmit={continueToAccount}><PropertyPostingFields catalog={catalog} defaults={defaults}/><input type="hidden" name="draftKey"/><label className="consent"><input required type="checkbox" name="declaration" value="accepted" defaultChecked={defaults.declaration==="accepted"}/> I confirm that I am authorised to submit this property and that the information is accurate.</label><CaptchaWidget/>{message&&<p className="form-message error" role="alert">{message}</p>}<button className="button" type="submit" disabled={submitting}>{submitting?"Continuing…":"Sign in / Create Account"}</button><p className="form-note"><strong>Sign-in required:</strong> Your entries are kept temporarily in this browser. Sign in or register and verify your email before a property draft is created.</p></form>;
 }
 
 export function DashboardPropertyDraftForm({catalog}:{catalog:PropertyCatalogData}){

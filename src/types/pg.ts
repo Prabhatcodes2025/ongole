@@ -1,6 +1,6 @@
 export const PG_CATEGORIES=["mens","womens","co_living"] as const;
 export const PG_SHARING_TYPES=["single","double","triple","four_sharing"] as const;
-export const PG_AMENITIES=["WiFi","AC","Laundry","Food","Power Backup","Parking","CCTV","Housekeeping","Lift","TV","Gym","Hot Water"] as const;
+export const PG_AMENITIES=["WiFi","AC","Laundry","Parking","CCTV","Power Backup","Food","Housekeeping","Hot Water","TV","Lift","Security","Gym"] as const;
 
 export type PgCategory=typeof PG_CATEGORIES[number];
 export type PgSharingType=typeof PG_SHARING_TYPES[number];

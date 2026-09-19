@@ -15,6 +15,23 @@ const text=(input:Record<string,unknown>,key:string)=>typeof input[key]==="strin
 const number=(input:Record<string,unknown>,key:string)=>{if(input[key]===undefined||input[key]===null||input[key]==="")return null;const value=Number(input[key]);return Number.isFinite(value)&&value>=0?value:null};
 const flag=(input:Record<string,unknown>,key:string)=>input[key]===true||input[key]==="true"||input[key]==="on";
 
+const nearbyKinds=[["nearbyRailwayStation","railway_station"],["nearbyBank","bank"],["nearbyAtm","atm"],["nearbyCollege","college"],["nearbyHospital","hospital"],["nearbyBusDepot","bus_depot"]] as const;
+export function nearbyPlacesFromInput(input:Record<string,unknown>){
+  const nearby:Record<string,unknown>={},errors:Record<string,string>={};
+  for(const[key,column]of nearbyKinds){const value=number(input,key),unit=text(input,`${key}Unit`);if(value!==null)nearby[column]={distance:value,unit:unit==="km"?"Km":"Meter"}}
+  const addNamed=(suffix:string,column:"other"|"custom")=>{const name=text(input,`nearbyOtherName${suffix}`),distance=number(input,`nearbyOtherDistance${suffix}`),unit=text(input,`nearbyOtherDistanceUnit${suffix}`);if((name&&distance===null)||(!name&&distance!==null)){errors[`nearbyOtherName${suffix}`]="Enter both the optional place name and distance.";return null}return name&&distance!==null?{name,distance,unit:unit==="km"?"Km":"Meter",column}:null};
+  const other=addNamed("","other");if(other)nearby.other={name:other.name,distance:other.distance,unit:other.unit};
+  const custom=[addNamed("2","custom"),addNamed("3","custom")].filter(Boolean).map(item=>({name:item!.name,distance:item!.distance,unit:item!.unit}));if(custom.length)nearby.custom=custom;
+  return{nearby,errors};
+}
+
+export function nearbyPlacesDefaults(value:unknown){
+  const nearby=value&&typeof value==="object"&&!Array.isArray(value)?value as Record<string,unknown>:{},defaults:Record<string,unknown>={};
+  for(const[key,column]of nearbyKinds){const item=nearby[column]&&typeof nearby[column]==="object"&&!Array.isArray(nearby[column])?nearby[column] as Record<string,unknown>:{};defaults[key]=item.distance;defaults[`${key}Unit`]=String(item.unit||"").toLowerCase()==="km"?"km":"meter"}
+  const named=[nearby.other,...(Array.isArray(nearby.custom)?nearby.custom.slice(0,2):[])];for(const[index,item]of named.entries()){if(item&&typeof item==="object"&&!Array.isArray(item)){const entry=item as Record<string,unknown>,suffix=index===0?"":String(index+1);defaults[`nearbyOtherName${suffix}`]=entry.name;defaults[`nearbyOtherDistance${suffix}`]=entry.distance;defaults[`nearbyOtherDistanceUnit${suffix}`]=String(entry.unit||"").toLowerCase()==="km"?"km":"meter"}}
+  return defaults;
+}
+
 export function applicablePropertyDetails(input:Record<string,unknown>,transactionType:string,typeValue:string){
   const type=propertyTypeSlug(typeValue),isAgricultural=agriculturalTypes.has(type),isPlot=plotTypes.has(type),isResidential=residentialTypes.has(type),isCommercial=commercialTypes.has(type),isBuilt=isResidential||isCommercial;
   const errors:Record<string,string>={};
@@ -32,8 +49,7 @@ export function applicablePropertyDetails(input:Record<string,unknown>,transacti
   if(isPlot||isAgricultural){for(const[key,column]of [["fencing","fencing"],["electricityConnection","electricity_connection"],["roadAccess","road_access"]] as const){const value=text(input,key);if(!value)errors[key]=`Select ${key.replace(/([A-Z])/g," $1").toLowerCase()}.`;else details[column]=value}}
   if(isBuilt){for(const key of ["parking","powerBackup","generator","security","cctv","lift","fireSafety","wasteManagement","balcony","poojaRoom","storeRoom","servantRoom","gasPipeline"]){if(flag(input,key))details[key.replace(/[A-Z]/g,letter=>`_${letter.toLowerCase()}`)]=true}}
   const googleMapsUrl=text(input,"googleMapsUrl"),youtubeUrl=text(input,"youtubeUrl");if(googleMapsUrl){try{const host=new URL(googleMapsUrl).hostname.toLowerCase();if(host==="maps.app.goo.gl"||host==="goo.gl"||host==="google.com"||host.endsWith(".google.com"))details.google_maps_url=googleMapsUrl;else errors.googleMapsUrl="Enter a valid Google Maps link."}catch{errors.googleMapsUrl="Enter a valid Google Maps link."}}if(youtubeUrl)details.youtube_url=youtubeUrl;
-  const nearby:Record<string,unknown>={};for(const[key,column]of [["nearbyRailwayStation","railway_station"],["nearbyBank","bank"],["nearbyCollege","college"],["nearbyHospital","hospital"],["nearbyBusDepot","bus_depot"]] as const){const value=number(input,key),unit=text(input,`${key}Unit`);if(value!==null)nearby[column]={distance:value,unit:unit==="km"?"Km":"Meter"}}
-  const otherName=text(input,"nearbyOtherName"),otherDistance=number(input,"nearbyOtherDistance"),otherUnit=text(input,"nearbyOtherDistanceUnit");if((otherName&&otherDistance===null)||(!otherName&&otherDistance!==null))errors.nearbyOtherName="Enter both the optional place name and distance.";else if(otherName&&otherDistance!==null)nearby.other={name:otherName,distance:otherDistance,unit:otherUnit==="km"?"Km":"Meter"};const custom=[];for(const index of [2,3]){const name=text(input,`nearbyOtherName${index}`),distance=number(input,`nearbyOtherDistance${index}`),unit=text(input,`nearbyOtherDistanceUnit${index}`);if((name&&distance===null)||(!name&&distance!==null))errors[`nearbyOtherName${index}`]="Enter both the optional place name and distance.";else if(name&&distance!==null)custom.push({name,distance,unit:unit==="km"?"Km":"Meter"})}if(custom.length)nearby.custom=custom;if(Object.keys(nearby).length)details.nearby_places=nearby;
+  const parsedNearby=nearbyPlacesFromInput(input);Object.assign(errors,parsedNearby.errors);if(Object.keys(parsedNearby.nearby).length)details.nearby_places=parsedNearby.nearby;
   return{details,errors,valid:Object.keys(errors).length===0,type,isAgricultural,isPlot,isResidential,isCommercial};
 }
 

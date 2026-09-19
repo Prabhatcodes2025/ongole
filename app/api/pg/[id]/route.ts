@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
 import {requestData} from "@/src/lib/request";
 import {formList,pgDraftSchema} from "@/src/lib/pg/validation";
+import {nearbyPlacesFromInput} from "@/src/lib/properties/validation";
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;const wantsJson=request.headers.get("accept")?.includes("application/json")===true;
@@ -26,12 +27,13 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
     return NextResponse.redirect(new URL("/dashboard/pg?notice=deleted",request.url),303);
   }
   const checked=Object.entries(raw).filter(([key,value])=>key.startsWith("amenity_")&&typeof value==="string").map(([,value])=>value as string);
+  const nearby=nearbyPlacesFromInput(raw);if(Object.keys(nearby.errors).length)return NextResponse.json({error:"Check the nearby places and try again.",fields:nearby.errors},{status:400});
   const parsed=pgDraftSchema.safeParse({...raw,amenities:[...new Set(checked)],house_rules:formList(raw.house_rules),video_urls:formList(raw.video_urls)});
   if(!parsed.success)return NextResponse.json({error:"Check the PG details and try again.",fields:parsed.error.flatten().fieldErrors},{status:400});
   const {error}=await supabase.rpc("update_pg_draft",{target_pg:id,pg_payload:parsed.data});
   if(error)return NextResponse.json({error:"The PG draft could not be updated.",detail:error.message},{status:409});
   const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};
   const consent={accepted:true,accepted_at:new Date().toISOString(),accepted_by:auth.user.id,channels:["sms","whatsapp","email"]};
-  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
+  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,nearby_places:nearby.nearby,listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }

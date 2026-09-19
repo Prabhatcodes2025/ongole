@@ -4,6 +4,7 @@ import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
 import {PgForm} from "@/src/components/pg-posting-workflow";
+import {nearbyPlacesDefaults} from "@/src/lib/properties/validation";
 
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Manage PG listing",robots:{index:false,follow:false}};
@@ -24,7 +25,7 @@ export default async function ManagePgPage({params,searchParams}:{params:Promise
   const media=[...(property.property_media||[])].sort((a,b)=>a.sort_order-b.sort_order);
   const {data:signed}=media.length?await supabase.storage.from("property-media").createSignedUrls(media.map((item)=>item.storage_path),3600):{data:[]};
   const editable=["draft","changes_requested"].includes(property.status);
-  const details=pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};const consent=details.listing_communication_consent&&typeof details.listing_communication_consent==="object"&&!Array.isArray(details.listing_communication_consent)?details.listing_communication_consent as Record<string,unknown>:{};const hasConsent=consent.accepted===true;const defaults={...pg,id,landmark:details.landmark,facing:details.facing,description:property.description,locality:property.locality_text,city:property.city_text,district:property.district_text,state:property.state_text,latitude:property.latitude,longitude:property.longitude};
+  const details=pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};const consent=details.listing_communication_consent&&typeof details.listing_communication_consent==="object"&&!Array.isArray(details.listing_communication_consent)?details.listing_communication_consent as Record<string,unknown>:{};const hasConsent=consent.accepted===true;const defaults={...pg,...nearbyPlacesDefaults(details.nearby_places),id,landmark:details.landmark,facing:details.facing,description:property.description,locality:property.locality_text,city:property.city_text,district:property.district_text,state:property.state_text,latitude:property.latitude,longitude:property.longitude};
   const notice=notices[query.notice||query.media||""];
   return <main id="main" className="portal-page"><div className="shell">
     <nav className="breadcrumbs"><Link href="/dashboard/pg">PG dashboard</Link><span>›</span><span>{property.reference_no}</span></nav>
