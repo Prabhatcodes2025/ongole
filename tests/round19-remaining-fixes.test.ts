@@ -46,7 +46,7 @@ test("searchable Rent property type reopens the current category's full catalog"
 test("PG amenities use the compact primary set without removing the existing Gym option",async()=>{
   const css=await read("../app/globals.css");
   for(const item of ["WiFi","AC","Laundry","Parking","CCTV","Power Backup","Food","Housekeeping","Hot Water","TV","Lift","Security","Gym"])assert.ok(PG_AMENITIES.includes(item as typeof PG_AMENITIES[number]));
-  assert.match(css,/\.pg-amenities \.check-grid\{display:grid;grid-template-columns:repeat\(6/);assert.match(css,/max-width:1000px[\s\S]*repeat\(4/);assert.match(css,/max-width:420px[\s\S]*repeat\(2/);
+  assert.match(css,/\.pg-amenities \.check-grid\{display:grid;grid-template-columns:repeat\(6/);assert.match(css,/max-width:1000px[\s\S]*repeat\(4/);assert.match(css,/max-width:720px[\s\S]*\.pg-amenities \.check-grid\{grid-template-columns:repeat\(2/);assert.match(css,/max-width:340px[\s\S]*grid-template-columns:1fr/);assert.match(css,/\.pg-amenities \.check-grid input\{width:auto!important;min-height:0;padding:0/);assert.match(css,/white-space:normal;word-break:normal;overflow-wrap:normal/);
 });
 
 test("PG nearby places share the Sale/Rent structure and survive save/restore/display",async()=>{
