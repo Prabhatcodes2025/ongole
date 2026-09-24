@@ -1,5 +1,6 @@
 import {z} from "zod";
-import {PG_AMENITIES,PG_CATEGORIES,PG_SHARING_TYPES} from "@/src/types/pg";
+import {PG_AMENITIES,PG_CATEGORIES,PG_RENT_BASES,PG_SHARING_TYPES} from "@/src/types/pg";
+import {safeGoogleMapsUrl} from "@/src/lib/google-maps";
 import {youtubeVideoId} from "@/src/lib/youtube";
 import {propertyContentIsProductionSafe,propertyTitleIsProductionSafe} from "@/src/lib/properties/validation";
 import {facingOptions} from "@/src/config/property-catalog";
@@ -21,6 +22,9 @@ export const pgDraftSchema=z.object({
   latitude:optionalLatitude,
   longitude:optionalLongitude,
   rent_per_bed:z.coerce.number().nonnegative().default(0),
+  rent_basis:z.enum(PG_RENT_BASES).default("per_bed_month"),
+  google_maps_url:z.string().trim().max(1000).refine(value=>!value||Boolean(safeGoogleMapsUrl(value)),"Enter a valid Google Maps location link.").optional().default(""),
+  client_draft_key:z.string().uuid().optional(),
   capacity:optionalNumber,
   food_type:z.enum(["Vegetarian","Non-Vegetarian","Mixed"]).or(z.literal("")).optional().default(""),
   lunch_box_available:z.coerce.boolean().optional().default(false),

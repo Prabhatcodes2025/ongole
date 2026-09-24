@@ -18,7 +18,7 @@ const moreItems = [
   { label: "Contact Us", href: "/contact" },
 ];
 
-export function PublicNavigation() {
+export function PublicNavigation({account}:{account:{name:string}|null}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopMenu, setDesktopMenu] = useState(false);
@@ -82,7 +82,7 @@ export function PublicNavigation() {
         <button type="button" aria-expanded={mobileMenu} aria-controls="mobile-more" onClick={() => setMobileMenu(!mobileMenu)}>More<ChevronDown size={16} aria-hidden="true"/></button>
         {mobileMenu && <div id="mobile-more" className="mobile-more-items">{moreItems.map(({ label, href }) => <Link key={href} href={href} aria-current={current(href) ? "page" : undefined} onClick={closeAll}>{label}</Link>)}</div>}
       </div>
-      <div className="mobile-nav-actions"><Link href="/login" onClick={closeAll}>Sign in</Link><Link className="button" href="/post-property" onClick={closeAll}>Post property</Link></div>
+      <div className="mobile-nav-actions">{account?<><strong>{account.name}</strong><Link href="/dashboard" onClick={closeAll}>Dashboard</Link><Link href="/dashboard/profile" onClick={closeAll}>Edit Profile</Link><form action="/api/auth/logout" method="post"><button>Sign out</button></form></>:<><Link href="/login" onClick={closeAll}>Sign in</Link><Link className="button" href="/post-property" onClick={closeAll}>Post property</Link></>}</div>
     </nav>
   </>;
 }

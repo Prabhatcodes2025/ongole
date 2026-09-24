@@ -54,12 +54,14 @@ test("locked PG requirements are enforced in validation, uploads and database",a
   assert.equal(pgDraftSchema.safeParse({...base,video_urls:["https://example.com/video"]}).success,false);
   assert.equal(pgDraftSchema.safeParse({...base,video_urls:["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]}).success,true);
 
-  const[upload,owner,publicService,list,detail,migration]=await Promise.all([
-    read("../app/api/properties/[id]/media/route.ts"),read("../app/dashboard/pg/[id]/page.tsx"),read("../src/lib/pg/public.ts"),
+  const[upload,mediaAction,owner,publicService,list,detail,migration]=await Promise.all([
+    read("../app/api/properties/[id]/media/route.ts"),read("../app/api/properties/[id]/media/[mediaId]/route.ts"),read("../app/dashboard/pg/[id]/page.tsx"),read("../src/lib/pg/public.ts"),
     read("../app/paying-guest/page.tsx"),read("../app/paying-guest/[slug]/page.tsx"),read("../supabase/migrations/202608090001_client_public_site_alignment.sql")
   ]);
   for(const marker of ["www.ongoleproperty.com Call 7788998459","limit=6","webp"])assert.match(upload,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
-  assert.match(owner,/Select the cover image after upload/);
+  assert.match(owner,/name="action" value="cover">Make cover/);
+  assert.match(owner,/image\.is_cover\?"Cover image"/);
+  for(const marker of ["auth.getUser()","eq(\"owner_id\",auth.user.id)","action===\"cover\"","update({is_cover:true})"])assert.ok(mediaAction.includes(marker));
   assert.match(publicService,/paidOwners/);
   assert.match(publicService,/contactLabel:entitled/);
   for(const source of [list,detail])assert.doesNotMatch(source,/security_deposit|<dt>Security Deposit|<h2>Security Deposit|room sharing|family PG/i);

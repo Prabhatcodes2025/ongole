@@ -6,9 +6,9 @@ import {applicablePropertyDetails} from "../src/lib/properties/validation";
 
 const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
-test("Sale Rent and PG share the six-photo optimized watermarked pipeline",async()=>{
+test("Sale Rent stay watermarked while PG uses optimized watermark-free images",async()=>{
   const source=await read("../app/api/properties/[id]/media/route.ts");
-  for(const marker of ["files.length>6","const limit=6","width:1200","width:400","webp({quality:82","webp({quality:78","www.ongoleproperty.com Call 7788998459","context\")===\"pg\""])assert.match(source,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  for(const marker of ["files.length>6","const limit=6","width:1200","width:400","www.ongoleproperty.com Call 7788998459","context\")===\"pg\"","isPg?baseImage:baseImage.composite","quality:isPg?88:82"])assert.match(source,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
   assert.match(source,/property-media/);
 });
 

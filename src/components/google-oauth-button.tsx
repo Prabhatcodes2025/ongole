@@ -7,7 +7,7 @@ import {createSupabaseBrowserClient} from "@/src/lib/supabase/browser";
 type CredentialResponse={credential?:string};
 declare global{interface Window{google?:{accounts:{id:{initialize:(options:{client_id:string;callback:(response:CredentialResponse)=>void;auto_select:boolean})=>void;renderButton:(element:HTMLElement,options:{theme:string;size:string;width:number})=>void}}}}}
 
-export function GoogleOAuthButton({returnTo,accountType,accountLabel,showKeepSignedIn=false}:{returnTo:string;accountType?:string;accountLabel?:string;showKeepSignedIn?:boolean}){
+export function GoogleOAuthButton({returnTo,accountType,accountLabel,showKeepSignedIn=false,agentApplication}:{returnTo:string;accountType?:string;accountLabel?:string;showKeepSignedIn?:boolean;agentApplication?:Record<string,string>}){
   const startingRef=useRef(false);
   const buttonRef=useRef<HTMLDivElement>(null);
   const [starting,setStarting]=useState(false);
@@ -28,12 +28,12 @@ export function GoogleOAuthButton({returnTo,accountType,accountLabel,showKeepSig
     try{
     const{error:tokenError}=await supabase.auth.signInWithIdToken({provider:"google",token:response.credential});
     if(tokenError){stop("Google sign-in could not be completed. Please try again.");return}
-    const result=await fetch("/api/auth/google",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({returnTo,accountType,termsAccepted:requiresTerms?"accepted":undefined,keepSignedIn:keepSignedIn?"accepted":undefined})}).catch(()=>null);
+    const result=await fetch("/api/auth/google",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({returnTo,accountType,termsAccepted:requiresTerms?"accepted":undefined,keepSignedIn:keepSignedIn?"accepted":undefined,...(accountType==="agent"?agentApplication:{})})}).catch(()=>null);
     const payload=await result?.json().catch(()=>null) as {redirectTo?:string;error?:string}|null;
     if(!result?.ok||!payload?.redirectTo){await supabase.auth.signOut();stop(payload?.error||"Google sign-in could not be completed. Please try again.");return}
     window.location.assign(payload.redirectTo);
     }catch{stop("Google sign-in could not be completed. Check your connection and try again.")}
-  },[returnTo,accountType,requiresTerms,keepSignedIn,stop]);
+  },[returnTo,accountType,requiresTerms,keepSignedIn,agentApplication,stop]);
 
   useEffect(()=>{
     if(!clientId||!gisReady||requiresTerms&&!termsAccepted||!buttonRef.current||!window.google)return;

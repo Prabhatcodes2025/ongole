@@ -34,12 +34,12 @@ test("NRI form has the exact always-visible Indian phone and hidden-by-default f
   assert.match(html,/Property Requirement[\s\S]*textarea/);assert.match(html,/I confirm I am authorized to submit this enquiry/);assert.match(html,/Send Your Requirement/);
 });
 
-test("PG and public search share the Mandal source and PG uses one coordinate picker",async()=>{
-  const[pg,search,filter,picker,api,submitApi]=await Promise.all([read("../src/components/pg-posting-workflow.tsx"),read("../src/components/property-search.tsx"),read("../src/components/property-filter-form.tsx"),read("../src/components/property-location-picker.tsx"),read("../app/api/pg/route.ts"),read("../app/api/pg/[id]/submit/route.ts")]);
+test("PG and public search share the Mandal source while PG accepts a safe Maps link",async()=>{
+  const[pg,search,filter,api,submitApi]=await Promise.all([read("../src/components/pg-posting-workflow.tsx"),read("../src/components/property-search.tsx"),read("../src/components/property-filter-form.tsx"),read("../app/api/pg/route.ts"),read("../app/api/pg/[id]/submit/route.ts")]);
   for(const source of [pg,search,filter])assert.match(source,/MandalTownAutocomplete/);
   assert.match(search,/label="Town\/Mandal"/);assert.match(filter,/label="Town\/Mandal"/);
-  assert.match(pg,/PropertyLocationPicker/);assert.doesNotMatch(pg,/>Latitude<input|>Longitude<input/);
-  assert.match(picker,/name="latitude"/);assert.match(picker,/name="longitude"/);assert.match(api,/listing_communication_consent/);assert.match(submitApi,/consent\.accepted!==true/);
+  assert.match(pg,/Google Maps Location Link/);assert.doesNotMatch(pg,/PropertyLocationPicker|>Latitude<input|>Longitude<input/);
+  assert.match(api,/safeGoogleMapsUrl/);assert.match(api,/listing_communication_consent/);assert.match(submitApi,/consent\.accepted!==true/);
 });
 
 test("NRI page contracts include compact grid, anchors, closed accordion, and secured existing backend",async()=>{

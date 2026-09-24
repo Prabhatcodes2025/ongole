@@ -3,6 +3,7 @@ import {createSupabaseServerClient} from "@/src/lib/supabase/server";
 import {requestData} from "@/src/lib/request";
 import {formList,pgDraftSchema} from "@/src/lib/pg/validation";
 import {nearbyPlacesFromInput} from "@/src/lib/properties/validation";
+import {safeGoogleMapsUrl} from "@/src/lib/google-maps";
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;const wantsJson=request.headers.get("accept")?.includes("application/json")===true;
@@ -31,9 +32,9 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const parsed=pgDraftSchema.safeParse({...raw,amenities:[...new Set(checked)],house_rules:formList(raw.house_rules),video_urls:formList(raw.video_urls)});
   if(!parsed.success)return NextResponse.json({error:"Check the PG details and try again.",fields:parsed.error.flatten().fieldErrors},{status:400});
   const {error}=await supabase.rpc("update_pg_draft",{target_pg:id,pg_payload:parsed.data});
-  if(error)return NextResponse.json({error:"The PG draft could not be updated.",detail:error.message},{status:409});
+  if(error){console.error("PG draft update failed",{pgId:id,userId:auth.user.id,code:error.code});return NextResponse.json({error:"The PG draft could not be updated. Please retry."},{status:409})}
   const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};
   const consent={accepted:true,accepted_at:new Date().toISOString(),accepted_by:auth.user.id,channels:["sms","whatsapp","email"]};
-  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,nearby_places:nearby.nearby,listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
+  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,nearby_places:nearby.nearby,rent_basis:parsed.data.rent_basis,google_maps_url:safeGoogleMapsUrl(parsed.data.google_maps_url),listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }
