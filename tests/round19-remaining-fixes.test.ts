@@ -34,7 +34,7 @@ test("posting entitlement dead ends include Admin, Dashboard and Home actions",a
 test("Rent entry defaults Rent/Lease while restored transaction remains authoritative",async()=>{
   const[listing,entry,workflow,fields]=await Promise.all([read("../src/components/public-property-listing-page.tsx"),read("../app/post-property/page.tsx"),read("../src/components/property-posting-workflow.tsx"),read("../src/components/property-posting-fields.tsx")]);
   assert.match(listing,/purpose==="rent"\?"rent":"sale"/);assert.match(entry,/query\.transaction==="rent"\?"rent":"sale"/);
-  assert.match(workflow,/Object\.keys\(parsed\)\.length\?parsed:\{transactionType:initialTransaction\}/);assert.match(fields,/<option value="rent">Rent<\/option>/);
+  assert.match(workflow,/Object\.keys\(saved\)\.length\?saved:\{transactionType:initialTransaction\}/);assert.match(fields,/<option value="rent">Rent<\/option>/);
 });
 
 test("searchable Rent property type reopens the current category's full catalog",async()=>{

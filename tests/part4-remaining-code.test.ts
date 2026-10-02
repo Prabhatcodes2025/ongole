@@ -34,8 +34,8 @@ test("Open Plot uses land area and agricultural sale price basis",async()=>{
 
 test("guest Sale and Rent continuation preserves transaction and prevents duplicate drafts",async()=>{
   const[workflow,create,login,register]=await Promise.all([read("../src/components/property-posting-workflow.tsx"),read("../app/api/properties/route.ts"),read("../app/login/page.tsx"),read("../app/register/page.tsx")]);
-  assert.match(workflow,/sessionStorage\.setItem\(STORAGE_KEY,JSON\.stringify\(values\)\)/);
-  assert.match(workflow,/setDefaults\(\{\.\.\.parsed,draftKey:parsed\.draftKey\|\|draftKey\(\)\}\)/);
+  assert.match(workflow,/savePropertyDraft\(values\)/);
+  assert.match(workflow,/const parsed=readPropertyDraft\(\);const values=\{\.\.\.parsed,draftKey:parsed\.draftKey\|\|draftKey\(\)\};setDefaults\(values\);savePropertyDraft\(values\)/);
   assert.match(create,/client_draft_key:value\.draftKey/);
   assert.match(create,/reused:true/);
   assert.match(login,/register\?returnTo=/);
