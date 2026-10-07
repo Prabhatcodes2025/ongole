@@ -58,10 +58,11 @@ test("IndexedDB and other browser-only helpers are not executed during SSR",()=>
 });
 
 test("posting entitlement is not required merely to view the guest PG form",async()=>{
-  const[page,workflow]=await Promise.all([read("../app/post-pg/page.tsx"),read("../src/components/pg-posting-workflow.tsx")]);
+  const[page,workflow,hero]=await Promise.all([read("../app/post-pg/page.tsx"),read("../src/components/pg-posting-workflow.tsx"),read("../src/components/pg-hero.tsx")]);
   assert.ok(page.includes("<PublicPgPostingForm/>"));
   assert.ok(!page.includes("check_property_posting_permission"));
   assert.ok(workflow.includes("Continue to Sign In / Register"));
+  assert.ok(hero.includes('href="/post-pg"'));
 });
 
 test("final authenticated PG submission protections remain intact",async()=>{

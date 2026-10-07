@@ -9,6 +9,7 @@ test("agent guest application captures identity and all supported application fi
  for(const field of ['name="name"','name="mobile"','name="email"','name="yearsExperience"','name="workingTowns"','name="officeAddress"','name="specializations"','name="about"'])assert.ok(form.includes(field),`missing guest field ${field}`);
  assert.ok(form.includes("localStorage.setItem(AGENT_DRAFT_KEY"));assert.ok(form.includes("Continue to Sign In / Register"));
  assert.ok(registration.includes("localStorage.getItem(AGENT_DRAFT_KEY"));assert.ok(registration.includes("value={isAgent?agentDraft.name:undefined}"));
+ assert.ok(registration.includes('updateAgentDraft("workingTowns"'));assert.ok(registration.includes("localStorage.setItem(AGENT_DRAFT_KEY"));
  assert.ok(submit.includes("/api/agents/application"));assert.ok(submit.includes("localStorage.removeItem(AGENT_DRAFT_KEY)"));
 });
 

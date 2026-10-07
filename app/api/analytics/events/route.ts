@@ -15,6 +15,9 @@ export async function POST(request:NextRequest){
   if(!entityId&&["property","pg"].includes(parsed.data.entityType||"")&&typeof parsed.data.metadata?.slug==="string"){const{data}=await service.from("properties").select("id").eq("slug",parsed.data.metadata.slug).eq("status","published").is("deleted_at",null).maybeSingle();entityId=data?.id}
   if(["property","pg"].includes(parsed.data.entityType||"")){if(!entityId)return new NextResponse(null,{status:204});const{data}=await service.from("properties").select("id,status,deleted_at").eq("id",entityId).eq("status","published").is("deleted_at",null).maybeSingle();if(!data)return new NextResponse(null,{status:204})}
   const sessionHash=createHash("sha256").update(`${new Date().toISOString().slice(0,10)}:${requestIp(request)}`).digest("hex").slice(0,32);
-  await service.from("analytics_events").insert({event_type:parsed.data.eventType,entity_type:parsed.data.entityType||null,entity_id:entityId||null,session_hash:sessionHash,metadata:parsed.data.metadata||{}});
+  const cityHeader=request.headers.get("x-vercel-ip-city");let city:string|undefined;try{city=cityHeader?decodeURIComponent(cityHeader).slice(0,100):undefined}catch{city=cityHeader?.slice(0,100)}
+  const approximateLocation={country:request.headers.get("x-vercel-ip-country")||undefined,region:request.headers.get("x-vercel-ip-country-region")||undefined,city};
+  const metadata={...(parsed.data.metadata||{}),...Object.fromEntries(Object.entries(approximateLocation).filter(([,value])=>value))};
+  await service.from("analytics_events").insert({event_type:parsed.data.eventType,entity_type:parsed.data.entityType||null,entity_id:entityId||null,session_hash:sessionHash,metadata});
   return new NextResponse(null,{status:204});
 }
