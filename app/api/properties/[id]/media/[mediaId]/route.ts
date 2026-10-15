@@ -1,11 +1,12 @@
 import { NextRequest,NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { requestData } from "@/src/lib/request";
+import {canManagePropertyMedia} from "@/src/lib/properties/media-authorization";
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string;mediaId:string}>}){
   const {id,mediaId}=await params;const origin=request.headers.get("origin");if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:"Invalid request origin."},{status:403});
   const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();if(!auth.user)return NextResponse.json({error:"Authentication required."},{status:401});
-  const {data:property}=await supabase.from("properties").select("id,reference_no,status").eq("id",id).eq("owner_id",auth.user.id).maybeSingle();if(!property||!["draft","changes_requested"].includes(property.status))return NextResponse.json({error:"Media is locked."},{status:403});
+  const isPg=request.nextUrl.searchParams.get("context")==="pg";const{data:ownedProperty}=await supabase.from("properties").select("id,reference_no,status,owner_id").eq("id",id).eq("owner_id",auth.user.id).maybeSingle();let property=ownedProperty,canManage=canManagePropertyMedia({isOwner:Boolean(ownedProperty),ownerEditable:Boolean(ownedProperty&&["draft","changes_requested"].includes(ownedProperty.status)),hasPropertiesManage:false,hasPgManage:false,isPgListing:false,requestedPgContext:isPg});if(!property){const[{data:adminProperty},{data:propertiesManage},{data:pgManage},{data:pgListing}]=await Promise.all([supabase.from("properties").select("id,reference_no,status,owner_id").eq("id",id).maybeSingle(),supabase.rpc("has_permission",{required_permission:"properties.manage"}),supabase.rpc("has_permission",{required_permission:"pg.manage"}),supabase.from("pg_listings").select("id").eq("property_id",id).maybeSingle()]);canManage=canManagePropertyMedia({isOwner:false,ownerEditable:false,hasPropertiesManage:propertiesManage===true,hasPgManage:pgManage===true,isPgListing:Boolean(pgListing),requestedPgContext:isPg});property=adminProperty||(pgListing?{id,reference_no:id,status:"",owner_id:""}:null)}if(!property||!canManage)return NextResponse.json({error:"Media is locked."},{status:403});
   const {data:media}=await supabase.from("property_media").select("id,storage_path,is_cover,sort_order,variants").eq("id",mediaId).eq("property_id",id).maybeSingle();if(!media)return NextResponse.json({error:"Image not found."},{status:404});
   const payload=await requestData(request);const action=typeof payload.action==="string"?payload.action:"";
   if(action==="remove"){

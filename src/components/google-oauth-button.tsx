@@ -5,6 +5,7 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {createSupabaseBrowserClient} from "@/src/lib/supabase/browser";
 
 type CredentialResponse={credential?:string};
+const withTimeout=<T,>(promise:PromiseLike<T>,ms=15000)=>Promise.race<T>([Promise.resolve(promise),new Promise<T>((_,reject)=>window.setTimeout(()=>reject(new Error("timeout")),ms))]);
 declare global{interface Window{google?:{accounts:{id:{initialize:(options:{client_id:string;callback:(response:CredentialResponse)=>void;auto_select:boolean})=>void;renderButton:(element:HTMLElement,options:{theme:string;size:string;width:number})=>void}}}}}
 
 export function GoogleOAuthButton({returnTo,accountType,accountLabel,showKeepSignedIn=false,agentApplication}:{returnTo:string;accountType?:string;accountLabel?:string;showKeepSignedIn?:boolean;agentApplication?:Record<string,string>}){
@@ -26,9 +27,9 @@ export function GoogleOAuthButton({returnTo,accountType,accountLabel,showKeepSig
     const supabase=createSupabaseBrowserClient();
     if(!supabase){stop("Google sign-in is not configured. Please use email and password.");return}
     try{
-    const{error:tokenError}=await supabase.auth.signInWithIdToken({provider:"google",token:response.credential});
+    const tokenResult=await withTimeout(supabase.auth.signInWithIdToken({provider:"google",token:response.credential}));const tokenError=(tokenResult as{error?:unknown}).error;
     if(tokenError){stop("Google sign-in could not be completed. Please try again.");return}
-    const result=await fetch("/api/auth/google",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({returnTo,accountType,termsAccepted:requiresTerms?"accepted":undefined,keepSignedIn:keepSignedIn?"accepted":undefined,...(accountType==="agent"?agentApplication:{})})}).catch(()=>null);
+    const controller=new AbortController(),timer=window.setTimeout(()=>controller.abort(),15000);const result=await fetch("/api/auth/google",{method:"POST",headers:{"content-type":"application/json","accept":"application/json"},body:JSON.stringify({returnTo,accountType,termsAccepted:requiresTerms?"accepted":undefined,keepSignedIn:keepSignedIn?"accepted":undefined,...(accountType==="agent"?agentApplication:{})}),signal:controller.signal}).catch(()=>null).finally(()=>window.clearTimeout(timer));
     const payload=await result?.json().catch(()=>null) as {redirectTo?:string;error?:string}|null;
     if(!result?.ok||!payload?.redirectTo){await supabase.auth.signOut();stop(payload?.error||"Google sign-in could not be completed. Please try again.");return}
     window.location.assign(payload.redirectTo);

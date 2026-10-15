@@ -20,8 +20,9 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
     return NextResponse.redirect(new URL(`/dashboard/pg/${(data as {id:string}).id}?notice=duplicated`,request.url),303);
   }
   if(typeof raw.description!=="string"||raw.description.trim().length<20)return NextResponse.json({error:"Check the PG details and try again.",fields:{description:["Description must be at least 20 characters."]}},{status:400});
-  const {data:pg}=await supabase.from("pg_listings").select("property_id,details,properties!inner(owner_id,status)").eq("id",id).eq("properties.owner_id",auth.user.id).maybeSingle();
+  const [{data:pg},{data:canManage}]=await Promise.all([supabase.from("pg_listings").select("property_id,details,properties!inner(owner_id,status)").eq("id",id).maybeSingle(),supabase.rpc("has_permission",{required_permission:"pg.manage"})]);
   if(!pg)return NextResponse.json({error:"PG listing not found."},{status:404});
+  const property=Array.isArray(pg.properties)?pg.properties[0]:pg.properties;const isAdmin=canManage===true&&property?.owner_id!==auth.user.id;if(property?.owner_id!==auth.user.id&&!isAdmin)return NextResponse.json({error:"PG listing not found."},{status:404});
   if(action==="delete"){
     const {error}=await supabase.rpc("owner_soft_delete_property",{target_property:pg.property_id});
     if(error)return NextResponse.json({error:"This PG cannot be deleted in its current state."},{status:409});
@@ -36,5 +37,5 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};
   const consent={accepted:true,accepted_at:new Date().toISOString(),accepted_by:auth.user.id,channels:["sms","whatsapp","email"]};
   const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,nearby_places:nearby.nearby,rent_basis:parsed.data.rent_basis,google_maps_url:safeGoogleMapsUrl(parsed.data.google_maps_url),listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
-  return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=updated`,request.url),303);
+  return NextResponse.redirect(new URL(isAdmin?`/admin/pg/${id}`:`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }

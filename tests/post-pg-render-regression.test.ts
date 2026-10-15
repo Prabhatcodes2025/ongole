@@ -67,6 +67,6 @@ test("posting entitlement is not required merely to view the guest PG form",asyn
 
 test("final authenticated PG submission protections remain intact",async()=>{
   const[createRoute,mediaRoute]=await Promise.all([read("../app/api/pg/route.ts"),read("../app/api/properties/[id]/media/route.ts")]);
-  for(const marker of ["auth.getUser()","email_confirmed_at","check_property_posting_permission","Invalid request origin."])assert.ok(createRoute.includes(marker));
+  for(const marker of ["auth.getUser()","email_confirmed_at","check_pg_posting_permission","Invalid request origin."])assert.ok(createRoute.includes(marker));
   for(const marker of ["auth.getUser()","email_confirmed_at","eq(\"owner_id\",auth.user.id)"])assert.ok(mediaRoute.includes(marker));
 });

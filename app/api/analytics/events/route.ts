@@ -4,7 +4,7 @@ import {z} from "zod";
 import {requestIp} from "@/src/lib/request";
 import {checkRateLimit} from "@/src/lib/security/rate-limit";
 import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
-const events=["page_view","listing_view","search_impression","enquiry_submitted","phone_click","whatsapp_click","share_click","favorite","promotion_impression","promotion_click"] as const;
+const events=["page_view","listing_view","search_impression","enquiry_submitted","phone_click","whatsapp_click","map_click","form_start","form_submit","client_error","slow_load","share_click","favorite","promotion_impression","promotion_click"] as const;
 const schema=z.object({eventType:z.enum(events),entityType:z.enum(["property","pg","promotion","page"]).optional(),entityId:z.string().uuid().optional(),metadata:z.record(z.string(),z.union([z.string().max(100),z.number(),z.boolean()])).optional()});
 export async function POST(request:NextRequest){
   const rate=await checkRateLimit(`analytics:${requestIp(request)}`,120,60_000);if(!rate.allowed)return new NextResponse(null,{status:204});

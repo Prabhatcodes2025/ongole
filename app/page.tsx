@@ -6,9 +6,10 @@ import { HeroSlider } from "@/src/components/hero-slider";
 import { PropertyCard } from "@/src/components/property-card";
 import { EmptyState } from "@/src/components/public-states";
 import { SectionHeading } from "@/src/components/section-heading";
-import { getFeaturedProperties } from "@/src/lib/properties/public";
-import {getPublicPropertyCatalog} from "@/src/lib/masters/public";
-import {getActiveAdvertisement} from "@/src/lib/advertisements/public";
+import { getFeaturedProperties as getFeaturedPropertiesRaw } from "@/src/lib/properties/public";
+import {getPublicPropertyCatalog as getPublicPropertyCatalogRaw} from "@/src/lib/masters/public";
+import {getActiveAdvertisement as getActiveAdvertisementRaw,type PublicAdvertisement} from "@/src/lib/advertisements/public";
+import {fallbackPropertyCatalog} from "@/src/config/property-catalog";
 
 export const revalidate=300;
 const homeTitle="Ongole Real Estate | Trusted Real Estate Agents in Ongole | OngoleProperty.com";
@@ -16,6 +17,10 @@ const homeDescription="Buy, sell and rent plots, houses, apartments and commerci
 export const metadata:Metadata={title:{absolute:homeTitle},description:homeDescription,alternates:{canonical:"/"},openGraph:{title:homeTitle,description:homeDescription,url:"/",type:"website",images:[{url:"/images/real-estate-agents-in-ongole-ongoleproperty.webp",width:1344,height:768,alt:"Real Estate Agents in Ongole - OngoleProperty.com"}]},twitter:{card:"summary_large_image",title:homeTitle,description:homeDescription,images:["/images/real-estate-agents-in-ongole-ongoleproperty.webp"]}};
 
 const reasons=[{Icon:BadgeCheck,title:"Responsible property listings",copy:"Only manually reviewed and published records enter the public catalogue."},{Icon:UserRoundCheck,title:"Genuine property information",copy:"Owner details and listing information can be reviewed before publication."},{Icon:Network,title:"Professional coordination",copy:"A locally focused platform connecting owners, buyers, tenants, investors and agents."},{Icon:SearchCheck,title:"Easy property search",copy:"Search by purpose, category, type, location, price and practical details."},{Icon:MapPinned,title:"Local market expertise",copy:"Dedicated to property opportunities across Ongole and Prakasam District."}];
+const within=<T,>(promise:Promise<T>,fallback:T,ms=8000)=>Promise.race([promise.catch(()=>fallback),new Promise<T>(resolve=>setTimeout(()=>resolve(fallback),ms))]);
+const getFeaturedProperties=(limit:number)=>within(getFeaturedPropertiesRaw(limit),[]);
+const getPublicPropertyCatalog=()=>within(getPublicPropertyCatalogRaw(),fallbackPropertyCatalog);
+const getActiveAdvertisement=(slot:PublicAdvertisement["slot"])=>within(getActiveAdvertisementRaw(slot),null);
 
 export default async function Home(){const [featured,catalog,scrollingAd,heroAd,flashAd]=await Promise.all([getFeaturedProperties(6),getPublicPropertyCatalog(),getActiveAdvertisement("scrolling"),getActiveAdvertisement("hero"),getActiveAdvertisement("flash")]);const structuredData={"@context":"https://schema.org","@type":["RealEstateAgent","LocalBusiness"],name:"OngoleProperty.com",url:"https://www.ongoleproperty.com",image:"https://www.ongoleproperty.com/images/real-estate-agents-in-ongole-ongoleproperty.webp",telephone:"+91 77889 98459",email:"enquiry@ongoleproperty.com",areaServed:[{"@type":"City",name:"Ongole"},{"@type":"AdministrativeArea",name:"Prakasam District"}],description:homeDescription};return <main id="main"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structuredData).replace(/</g,"\\u003c")}}/>
   {scrollingAd&&<div className="top-ad shell"><AdSlot title={scrollingAd.title} image={scrollingAd.image} alt={scrollingAd.alt} href={scrollingAd.href} className="ad-scroll"/></div>}

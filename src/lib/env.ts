@@ -14,6 +14,7 @@ export const env = {
   googleMapsKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+  metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID,
   sentryDsn: process.env.SENTRY_DSN,
   cronSecret: process.env.CRON_SECRET,
   razorpay:{keyId:process.env.RAZORPAY_KEY_ID,keySecret:process.env.RAZORPAY_KEY_SECRET,webhookSecret:process.env.RAZORPAY_WEBHOOK_SECRET},

@@ -14,7 +14,7 @@ export async function POST(request:NextRequest){
   const {data:auth}=await supabase.auth.getUser();
   if(!auth.user)return wantsJson?NextResponse.json({error:"Authentication required."},{status:401}):NextResponse.redirect(new URL("/login?returnTo=/dashboard/pg/new?restore=1",request.url),303);
   if(!auth.user.email_confirmed_at)return NextResponse.json({error:"Verify your email address before creating a PG listing."},{status:403});
-  const {data:permission,error:permissionError}=await supabase.rpc("check_property_posting_permission");
+  const {data:permission,error:permissionError}=await supabase.rpc("check_pg_posting_permission");
   if(permissionError||!(permission as {allowed?:boolean}|null)?.allowed)return NextResponse.json({error:"ONE FREE PROPERTY PER REGISTERED USER. Contact OngoleProperty.com for an additional posting permission."},{status:409});
   const raw=await requestData(request);
   const nearby=nearbyPlacesFromInput(raw);if(Object.keys(nearby.errors).length)return NextResponse.json({error:"Check the nearby places and try again.",fields:nearby.errors},{status:400});
