@@ -7,9 +7,10 @@ export function isDevelopmentJv(property: {transactionType: string; categorySlug
 }
 
 export const propertyCategories = [
-  { value: "residential", label: "Residential", types: ["independent-house", "apartment-flat", "villa", "open-plot"] },
+  { value: "residential", label: "Residential", types: ["apartment-flat", "independent-house", "villa", "penthouse", "open-plot"] },
   { value: "commercial", label: "Commercial", types: ["shop", "office", "shopping-complex", "commercial-open-plot"] },
   { value: "agricultural", label: "Agricultural", types: ["agricultural-land", "farm-land"] },
+  { value: "industrial", label: "Industrial", types: ["warehouse", "factory", "industrial-land"] },
   { value: DEV_JV_CATEGORY, label: DEV_JV_LABEL, types: ["open-plot"] },
 ] as const;
 
@@ -17,6 +18,7 @@ export const propertyTypeLabels: Record<string, string> = {
   "independent-house": "Independent House",
   "apartment-flat": "Apartment / Flat",
   villa: "Villa",
+  penthouse: "Penthouse",
   "open-plot": "Open Plot",
   shop: "Shop",
   office: "Office",
@@ -24,6 +26,9 @@ export const propertyTypeLabels: Record<string, string> = {
   "commercial-open-plot": "Commercial Open Plot",
   "agricultural-land": "Agricultural Land",
   "farm-land": "Farm Land",
+  warehouse: "Warehouse",
+  factory: "Factory",
+  "industrial-land": "Industrial Land",
 };
 
 export const fallbackLocations = ["Ongole", "Bhagya Nagar", "Bhagyanagar", "Gopal Nagar", "Pernamitta", "Lawyer Pet", "Mangamuru Road", "Kurnool Road", "Pelluru", "Chimakurthy", "Kandukur", "Tangutur", "Maddipadu", "Singarayakonda"];

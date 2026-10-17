@@ -5,6 +5,7 @@ import { PublicNavigation } from "@/src/components/public-navigation";
 import { siteConfig } from "@/src/config/site";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
 import {env} from "@/src/lib/env";
+import {AccountMenu} from "@/src/components/account-menu";
 
 const socials = [
   { label: "Facebook", href: siteConfig.social.facebook, Icon: Facebook },
@@ -21,7 +22,7 @@ export async function SiteHeader() {
     <div className="shell nav-row">
       <Link className="brand" href="/" aria-label="OngoleProperty.com home"><Image src="/ongole-property-logo.png" width={54} height={54} alt="OngoleProperty.com" priority /><span><strong>OngoleProperty</strong><small>Trusted since 2002</small></span></Link>
       <PublicNavigation account={account} />
-      <div className="nav-actions">{account?<details className="public-profile-menu"><summary aria-label="Open account menu"><span>{account.name.slice(0,1).toUpperCase()}</span><b>{account.name}</b></summary><div><Link href="/dashboard">Dashboard</Link><Link href="/dashboard/profile">Edit Profile</Link><form action="/api/auth/logout" method="post"><button>Sign out</button></form></div></details>:<><Link className="text-link" href="/login">Sign in</Link><Link className="button button-small" href="/post-property">Post property</Link></>}</div>
+      <div className="nav-actions">{account?<AccountMenu className="public-profile-menu" name={account.name} showDashboard/>:<><Link className="text-link" href="/login">Sign in</Link><Link className="button button-small" href="/post-property?transaction=sale">Post property</Link></>}</div>
     </div>
   </header>;
 }

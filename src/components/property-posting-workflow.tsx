@@ -29,7 +29,7 @@ async function clearGuestMedia(){const db=await mediaDatabase();await new Promis
 
 export function PublicPropertyPostingForm({catalog,initialTransaction="sale"}:{catalog:PropertyCatalogData;initialTransaction?:"sale"|"rent"}){
   const formRef=useRef<HTMLFormElement>(null),saveTimer=useRef<number|undefined>(undefined),[defaults,setDefaults]=useState<Values|null>(null),[submitting,setSubmitting]=useState(false),[message,setMessage]=useState(""),[mediaCount,setMediaCount]=useState(0);
-  useEffect(()=>{const timeout=window.setTimeout(()=>{const saved=readPropertyDraft();const values=Object.keys(saved).length?saved:{transactionType:initialTransaction};setDefaults(values);void readGuestMedia().then(files=>setMediaCount(files.length)).catch(()=>undefined)},0);return()=>window.clearTimeout(timeout)},[initialTransaction]);
+  useEffect(()=>{const timeout=window.setTimeout(()=>{const saved=readPropertyDraft(),compatible=saved.transactionType===initialTransaction;const values={...(compatible?saved:{}),transactionType:initialTransaction};setDefaults(values);void readGuestMedia().then(files=>setMediaCount(files.length)).catch(()=>undefined)},0);return()=>window.clearTimeout(timeout)},[initialTransaction]);
   function autosave(){window.clearTimeout(saveTimer.current);saveTimer.current=window.setTimeout(()=>{if(formRef.current)savePropertyDraft(valuesFrom(formRef.current))},250)}
   async function continueToAccount(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setSubmitting(true);setMessage("");

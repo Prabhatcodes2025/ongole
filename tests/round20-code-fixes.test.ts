@@ -37,8 +37,8 @@ test("PG maps rent basis watermark and deterrence are correctly scoped",async()=
 });
 
 test("global public header uses server auth and preserves the GIS flow",async()=>{
-  const[header,navigation,google]=await Promise.all([read("../src/components/site-header.tsx"),read("../src/components/public-navigation.tsx"),read("../src/components/google-oauth-button.tsx")]);
-  for(const marker of ["auth.getUser()","Dashboard","Edit Profile","/api/auth/logout"])assert.ok(header.includes(marker));assert.ok(navigation.includes("account?"));
+  const[header,accountMenu,navigation,google]=await Promise.all([read("../src/components/site-header.tsx"),read("../src/components/account-menu.tsx"),read("../src/components/public-navigation.tsx"),read("../src/components/google-oauth-button.tsx")]);
+  assert.ok(header.includes("auth.getUser()"));for(const marker of ["Dashboard","Edit profile","/api/auth/logout"])assert.ok(accountMenu.includes(marker));assert.ok(navigation.includes("account?"));
   assert.equal((google.match(/gsi\/client/g)||[]).length,1);assert.ok(google.includes("signInWithIdToken"));assert.ok(!google.includes("signInWithOAuth"));
 });
 

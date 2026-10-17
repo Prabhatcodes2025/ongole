@@ -2,6 +2,7 @@ import type {ReactNode} from "react";
 import Link from "next/link";
 import {Bell,Building2,ChartNoAxesCombined,CreditCard,FileText,Home,HousePlus,LayoutDashboard,LogOut,Megaphone,Search,Users} from "lucide-react";
 import {getDashboardAuth} from "@/src/lib/dashboard/context";
+import {AccountMenu} from "@/src/components/account-menu";
 
 type NavItem={href:string;label:string;permission?:string;icon?:ReactNode};
 const ownerNav:NavItem[]=[
@@ -33,7 +34,7 @@ export async function DashboardShell({children,title,description,actions,variant
 export function DashboardSidebar({items}:{items:NavItem[]}){return <nav className="dashboard-nav" aria-label="Dashboard">{items.map((item)=><Link key={item.href} href={item.href}>{item.icon}<span>{item.label}</span></Link>)}</nav>}
 
 export function DashboardHeader({name,role,count,notifications,nav}:{name:string;role:string;count:number;notifications:{id:string;title:string;body:string;action_url:string|null;created_at:string}[];nav:NavItem[]}){
-  return <header className="dashboard-header"><details className="dashboard-mobile-menu"><summary>Menu</summary><DashboardSidebar items={nav}/></details><form className="dashboard-search" action="/properties"><Search/><input name="q" aria-label="Search listings" placeholder="Search listings…"/></form><div className="dashboard-header-actions"><NotificationDropdown count={count} items={notifications}/><details className="profile-menu"><summary><span>{name.slice(0,1).toUpperCase()}</span><b>{name}<small>{role}</small></b></summary><div><Link href="/dashboard/profile">Edit profile</Link><form action="/api/auth/logout" method="post"><button>Sign out</button></form></div></details></div></header>;
+  return <header className="dashboard-header"><details className="dashboard-mobile-menu"><summary>Menu</summary><DashboardSidebar items={nav}/></details><form className="dashboard-search" action="/properties"><Search/><input name="q" aria-label="Search listings" placeholder="Search listings…"/></form><div className="dashboard-header-actions"><NotificationDropdown count={count} items={notifications}/><AccountMenu name={name} role={role}/></div></header>;
 }
 
 export function NotificationDropdown({count,items}:{count:number;items:{id:string;title:string;body:string;action_url:string|null;created_at:string}[]}){

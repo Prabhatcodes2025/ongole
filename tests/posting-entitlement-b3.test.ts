@@ -37,7 +37,7 @@ test("opening the form or saving normal and PG drafts does not consume permissio
   const[entry,normalDraft,pgDraft,sql]=await Promise.all([read("../app/post-property/page.tsx"),read("../app/api/properties/route.ts"),read("../app/api/pg/route.ts"),read("../supabase/migrations/202607270002_sprint4_paying_guest_module.sql")]);
   assert.match(entry,/check_property_posting_permission/);
   assert.match(normalDraft,/check_property_posting_permission/);
-  assert.match(pgDraft,/check_property_posting_permission/);
+  assert.match(pgDraft,/check_pg_posting_permission/);
   assert.doesNotMatch(entry+normalDraft+pgDraft,/consume_property_posting_permission|property_posting_uses/);
   assert.doesNotMatch(functionBody(sql,"create_pg_draft"),/consume_property_posting_permission|property_posting_uses/);
 });
