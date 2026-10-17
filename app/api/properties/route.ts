@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     logEvent("error","property.draft_create_failed",{requestId,route:"POST /api/properties",action:"property.draft.create",userId:auth.user.id,code:error.code,message:error.message,details:error.details,hint:error.hint,payloadKeys:Object.keys(insertPayload).sort()});
     const failure={error:"PROPERTY_DRAFT_CREATE_FAILED",message:"The property draft could not be created. Retry or contact support with the request ID.",requestId};
     if(wantsJson)return NextResponse.json(failure,{status:500,headers:{"x-request-id":requestId}});
-    return NextResponse.redirect(new URL(`/post-property?error=${failure.error}&requestId=${encodeURIComponent(requestId)}`,request.url),303);
+    return NextResponse.redirect(new URL(`/post-property?transaction=${value.transactionType==="rent"?"rent":"sale"}&error=${failure.error}&requestId=${encodeURIComponent(requestId)}`,request.url),303);
   }
   const {error:auditError}=await supabase.rpc("record_audit_event",{event_action:"property.create",event_type:"property",event_reference:data.reference_no,event_new:{status:"draft"}});
   if(auditError)logEvent("warn","property.draft_audit_failed",{requestId,route:"POST /api/properties",userId:auth.user.id,propertyId:data.id,code:auditError.code,message:auditError.message});

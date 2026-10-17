@@ -3,14 +3,18 @@ import {createPublicSupabaseClient} from "@/src/lib/supabase/public";
 
 type Row={id:string;name:string;slug:string;category_id?:string;type?:string};
 
-function mergeRequiredCatalog(categories:PropertyCatalogData["categories"]){
-  const safe=categories.filter(category=>category.value!=="rental-lease"&&category.label.trim().toLowerCase()!=="rental & lease");
-  const bySlug=new Map(safe.map(category=>[category.value,category]));
+const normalizedSlug=(value:string)=>value.trim().toLowerCase();
+const normalizedName=(value:string)=>value.trim().toLowerCase().replace(/\s+/g," ");
+function uniqueTypes(types:PropertyCatalogData["categories"][number]["types"]){const slugs=new Set<string>(),names=new Set<string>();return types.filter(type=>{const slug=normalizedSlug(type.value),name=normalizedName(type.label);if(slugs.has(slug)||names.has(name))return false;slugs.add(slug);names.add(name);return true})}
+
+export function mergeRequiredCatalog(categories:PropertyCatalogData["categories"]){
+  const safe:PropertyCatalogData["categories"]=[],bySlug=new Map<string,PropertyCatalogData["categories"][number]>(),byName=new Map<string,PropertyCatalogData["categories"][number]>();
+  for(const category of categories){const slug=normalizedSlug(category.value),name=normalizedName(category.label);if(slug==="rental-lease"||name==="rental & lease"||bySlug.has(slug)||byName.has(name))continue;const current={...category,types:uniqueTypes(category.types)};safe.push(current);bySlug.set(slug,current);byName.set(name,current)}
   for(const fallback of fallbackPropertyCatalog.categories){
-    const current=bySlug.get(fallback.value);
-    if(!current){safe.push({...fallback,types:[...fallback.types]});continue}
-    const known=new Set(current.types.map(type=>type.value));
-    current.types.push(...fallback.types.filter(type=>!known.has(type.value)));
+    const slug=normalizedSlug(fallback.value),name=normalizedName(fallback.label),current=bySlug.get(slug)||byName.get(name);
+    if(!current){const added={...fallback,types:uniqueTypes(fallback.types)};safe.push(added);bySlug.set(slug,added);byName.set(name,added);continue}
+    const knownSlugs=new Set(current.types.map(type=>normalizedSlug(type.value))),knownNames=new Set(current.types.map(type=>normalizedName(type.label)));
+    current.types.push(...fallback.types.filter(type=>!knownSlugs.has(normalizedSlug(type.value))&&!knownNames.has(normalizedName(type.label))));
   }
   return safe.sort((a,b)=>a.value===DEV_JV_CATEGORY?1:b.value===DEV_JV_CATEGORY?-1:0);
 }

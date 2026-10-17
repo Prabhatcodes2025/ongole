@@ -6,23 +6,22 @@ do $$
 declare
   item record;
   existing_category public.property_categories%rowtype;
+  matched_existing boolean;
 begin
   for item in select * from (values ('Residential','residential',10),('Commercial','commercial',20),('Agricultural','agricultural',30),('Industrial','industrial',40)) wanted(name,slug,sort_order) loop
-    existing_category:=null;
-    select * into existing_category
-    from public.property_categories
-    where slug=item.slug or lower(name)=lower(item.name)
-    order by (slug=item.slug) desc
-    limit 1;
-
-    if found then
+    matched_existing:=false;
+    for existing_category in select * from public.property_categories
+      where slug=item.slug or lower(name)=lower(item.name)
+      order by (slug=item.slug) desc loop
+      matched_existing:=true;
       if existing_category.slug is distinct from item.slug
         or existing_category.name is distinct from item.name
         or existing_category.is_active is distinct from true then
         raise warning 'Canonical property category % (%) conflicts with existing row % (name=%, slug=%, active=%); existing row preserved',
           item.name,item.slug,existing_category.id,existing_category.name,existing_category.slug,existing_category.is_active;
       end if;
-    else
+    end loop;
+    if not matched_existing then
       insert into public.property_categories(name,slug,is_active,sort_order)
       values(item.name,item.slug,true,item.sort_order)
       on conflict do nothing;
@@ -39,24 +38,22 @@ declare
   item record;
   expected_category_id uuid;
   existing_type public.property_types%rowtype;
+  matched_existing boolean;
 begin
   for item in select * from (values
     ('residential','Apartment / Flat','apartment-flat'),('residential','Independent House','independent-house'),
-    ('residential','Villa','villa'),('residential','Penthouse','penthouse'),('residential','Residential Plot','open-plot'),
+    ('residential','Villa','villa'),('residential','Penthouse','penthouse'),('residential','Open Plot','open-plot'),
     ('commercial','Shop','shop'),('commercial','Office','office'),('commercial','Shopping Complex','shopping-complex'),
     ('commercial','Commercial Open Plot','commercial-open-plot'),('agricultural','Agricultural Land','agricultural-land'),
     ('agricultural','Farm Land','farm-land'),('industrial','Warehouse','warehouse'),('industrial','Factory','factory'),
     ('industrial','Industrial Land','industrial-land')
   ) wanted(category_slug,name,slug) loop
     select id into expected_category_id from public.property_categories where slug=item.category_slug;
-    existing_type:=null;
-    select * into existing_type
-    from public.property_types
-    where slug=item.slug or lower(name)=lower(item.name)
-    order by (slug=item.slug) desc
-    limit 1;
-
-    if found then
+    matched_existing:=false;
+    for existing_type in select * from public.property_types
+      where slug=item.slug or lower(name)=lower(item.name)
+      order by (slug=item.slug) desc loop
+      matched_existing:=true;
       if existing_type.slug is distinct from item.slug
         or existing_type.name is distinct from item.name
         or existing_type.category_id is distinct from expected_category_id
@@ -64,6 +61,9 @@ begin
         raise warning 'Canonical property type % (%) conflicts with existing row % (name=%, slug=%, category_id=%, active=%); existing row preserved',
           item.name,item.slug,existing_type.id,existing_type.name,existing_type.slug,existing_type.category_id,existing_type.is_active;
       end if;
+    end loop;
+    if matched_existing then
+      null;
     elsif expected_category_id is null then
       raise warning 'Canonical property type % (%) was not inserted because category % is unavailable; existing rows preserved',item.name,item.slug,item.category_slug;
     else
