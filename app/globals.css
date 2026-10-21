@@ -208,6 +208,7 @@ h2 { margin:0; font-size:clamp(2rem,4vw,3.6rem); line-height:1.08; }
 .review-actions label { display:grid; gap:7px; font-weight:700; }
 .review-actions textarea { width:100%; padding:12px; border:1px solid var(--line); background:#fff; }
 .danger-button { min-height:46px; border:1px solid #b54437; background:#fff; color:#a1362d; font-weight:750; cursor:pointer; }
+.property-delete-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.property-delete-controls.compact{margin-top:8px}.property-delete-controls.compact .danger-button,.property-delete-controls.compact .button{min-height:34px;padding:6px 10px;font-size:.78rem}.property-delete-controls dialog{width:min(520px,calc(100vw - 32px));padding:28px;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 20px 60px #0004}.property-delete-controls dialog::backdrop{background:#071b16a8}.dialog-close{float:right;border:0;background:transparent;font-size:1.5rem;cursor:pointer}.admin-status-filters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.admin-status-filters a{padding:7px 12px;border:1px solid var(--line);background:var(--surface);text-decoration:none}.admin-status-filters a.active{background:var(--forest);color:#fff}
 .form-message { margin:18px 0; padding:14px 16px; border:1px solid var(--line); background:#fff; font-weight:700; }
 .form-message.success { border-color:#8ca47b; background:#f1f6ed; color:#355027; }
 .form-message.error { border-color:#d6a29b; background:#fff3f1; color:#8e332a; }

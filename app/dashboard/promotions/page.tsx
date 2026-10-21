@@ -15,11 +15,11 @@ export default async function PromotionsPage({searchParams}:{searchParams:Promis
   if(!auth.user)redirect("/login?returnTo=/dashboard/promotions");
   const[{data:products},{data:properties},{data:activations}]=await Promise.all([
     supabase.from("promotion_products").select("*").eq("is_active",true).order("display_order"),
-    supabase.from("properties").select("id,title,reference_no,details,status").eq("owner_id",auth.user.id).is("deleted_at",null),
+    supabase.from("properties").select("id,title,reference_no,status,pg_listings(id)").eq("owner_id",auth.user.id).is("deleted_at",null),
     supabase.from("promotion_activations").select("id,starts_at,ends_at,status,property_id,promotion_products(name,promotion_type)").eq("user_id",auth.user.id).order("created_at",{ascending:false}),
   ]);
   const selected=properties?.find((item)=>item.id===params.property)||properties?.[0];
-  const eligibleType=selected?.details?.listing_kind==="paying_guest"?"pg":"property";
+  const eligibleType=(Array.isArray(selected?.pg_listings)?selected.pg_listings.length>0:Boolean(selected?.pg_listings))?"pg":"property";
   return <DashboardShell title="Promotions" description="Increase visibility with time-bound, auditable activation records." breadcrumbs={[{label:"Dashboard",href:"/dashboard"},{label:"Promotions"}]}>
     <form className="filter-bar">
       <label>Listing <select name="property" defaultValue={selected?.id}>{properties?.map((item)=><option value={item.id} key={item.id}>{item.title} ({item.reference_no})</option>)}</select></label>

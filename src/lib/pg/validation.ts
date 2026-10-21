@@ -21,7 +21,7 @@ export const pgDraftSchema=z.object({
   state:z.string().trim().min(2).max(120).default("Andhra Pradesh"),
   latitude:optionalLatitude,
   longitude:optionalLongitude,
-  rent_per_bed:z.coerce.number().nonnegative().default(0),
+  rent_per_bed:z.coerce.number().min(100,"Starting rent must be at least ₹100."),
   rent_basis:z.enum(PG_RENT_BASES).default("per_bed_month"),
   google_maps_url:z.string().trim().max(1000).refine(value=>!value||Boolean(safeGoogleMapsUrl(value)),"Enter a valid Google Maps location link.").optional().default(""),
   client_draft_key:z.string().uuid().optional(),
@@ -45,7 +45,7 @@ export const pgRoomSchema=z.object({
   sharing_type:z.enum(PG_SHARING_TYPES),
   capacity:z.coerce.number().int().positive().max(1000),
   available_beds:z.coerce.number().int().nonnegative().max(1000),
-  monthly_rent:z.coerce.number().nonnegative(),
+  monthly_rent:z.coerce.number().min(100,"Monthly rent must be at least ₹100."),
 }).refine((room)=>room.available_beds<=room.capacity,{message:"Available beds cannot exceed capacity.",path:["available_beds"]});
 
 export function formList(value:unknown){

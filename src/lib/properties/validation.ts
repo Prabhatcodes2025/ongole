@@ -6,6 +6,8 @@ export function propertyTitleIsProductionSafe(value:string){return propertyConte
 export function propertyDescriptionIsPublicSafe(value:string){return!prohibitedPublicContent.test(value)&&propertyContentIsProductionSafe(value)}
 export function propertyPublicRecordIsSafe(title:string,description:string){return propertyTitleIsProductionSafe(title)&&propertyDescriptionIsPublicSafe(description)}
 export function propertyTypeSlug(value:string){return value.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")}
+export function minimumPropertyPrice(transactionType:string){return transactionType==="sale"?1000:100}
+export function propertyPriceError(value:unknown,transactionType:string){const price=Number(value),minimum=minimumPropertyPrice(transactionType);return Number.isFinite(price)&&price>=minimum?null:`Enter an amount of at least ₹${minimum.toLocaleString("en-IN")}.`}
 
 const agriculturalTypes=new Set(["agricultural-land","farm-land"]);
 const plotTypes=new Set(["open-plot","commercial-open-plot"]);

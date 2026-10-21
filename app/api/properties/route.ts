@@ -8,7 +8,7 @@ import {checkRateLimit} from "@/src/lib/security/rate-limit";
 import {verifyCaptcha} from "@/src/lib/security/captcha";
 import {requestIp} from "@/src/lib/request";
 import {logEvent} from "@/src/lib/observability/logger";
-import {applicablePropertyDetails,completePropertyPostingErrors,propertyDescriptionIsPublicSafe,propertyTitleIsProductionSafe,propertyTypeSlug as normalizePropertyTypeSlug,rentNearbyErrors} from "@/src/lib/properties/validation";
+import {applicablePropertyDetails,completePropertyPostingErrors,propertyDescriptionIsPublicSafe,propertyPriceError,propertyTitleIsProductionSafe,propertyTypeSlug as normalizePropertyTypeSlug,rentNearbyErrors} from "@/src/lib/properties/validation";
 import {youtubeVideoId} from "@/src/lib/youtube";
 import {POSTING_ENTITLEMENT_MESSAGE} from "@/src/lib/properties/posting-entitlement";
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const {data:permission,error:permissionError}=await supabase.rpc("check_property_posting_permission");
   const permissionResult=permission as {allowed?:boolean;consumed?:number;limit?:number}|null;
   if(permissionError||!permissionResult?.allowed)return NextResponse.json({error:"LISTING_LIMIT_REACHED",message:POSTING_ENTITLEMENT_MESSAGE},{status:409});
-  const value = parsed.data;const applicable=applicablePropertyDetails(value,value.transactionType,value.propertyType),nearbyErrors=rentNearbyErrors(value,value.transactionType),completeErrors=completePropertyPostingErrors(value,applicable);if(!applicable.valid||Object.keys(nearbyErrors).length||Object.keys(completeErrors).length)return NextResponse.json({error:"Complete the fields applicable to this property type.",fields:{...applicable.errors,...nearbyErrors,...completeErrors}},{status:400});const youtubeUrl=typeof value.youtubeUrl==="string"?value.youtubeUrl.trim():"";if(youtubeUrl&&!youtubeVideoId(youtubeUrl))return NextResponse.json({error:"Enter a supported YouTube video URL."},{status:400});const baseSlug = propertySlug({ title: value.title, transactionType: value.transactionType, locality: value.locality, city: value.city });
+  const value = parsed.data,priceError=propertyPriceError(value.price,value.transactionType);if(priceError)return NextResponse.json({error:"Enter a realistic property amount.",fields:{price:[priceError]}},{status:400});const applicable=applicablePropertyDetails(value,value.transactionType,value.propertyType),nearbyErrors=rentNearbyErrors(value,value.transactionType),completeErrors=completePropertyPostingErrors(value,applicable);if(!applicable.valid||Object.keys(nearbyErrors).length||Object.keys(completeErrors).length)return NextResponse.json({error:"Complete the fields applicable to this property type.",fields:{...applicable.errors,...nearbyErrors,...completeErrors}},{status:400});const youtubeUrl=typeof value.youtubeUrl==="string"?value.youtubeUrl.trim():"";if(youtubeUrl&&!youtubeVideoId(youtubeUrl))return NextResponse.json({error:"Enter a supported YouTube video URL."},{status:400});const baseSlug = propertySlug({ title: value.title, transactionType: value.transactionType, locality: value.locality, city: value.city });
   const propertyTypeSlug=normalizePropertyTypeSlug(value.propertyType);
   const [{data:category},{data:propertyType}]=await Promise.all([supabase.from("property_categories").select("id").eq("slug",value.category).maybeSingle(),supabase.from("property_types").select("id,name,slug").eq("slug",propertyTypeSlug).maybeSingle()]);
   // Sale retains the strict legacy guard: if(!category||!propertyType)return.

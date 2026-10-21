@@ -26,7 +26,7 @@ test("saved Dev/JV form reuses price and area controls with only Open Plot",()=>
     assert.match(html,/name="amountBasis"/);
     assert.match(html,/Asking Price/);
     const priceInput=html.match(/<input[^>]*name="price"[^>]*>/)?.[0]||"";
-    for(const attribute of ['class="dev-jv-price"','type="number"','min="0"','value="5000000"'])assert.ok(priceInput.includes(attribute));
+    for(const attribute of ['class="dev-jv-price"','type="number"','min="1000"','value="5000000"'])assert.ok(priceInput.includes(attribute));
     for(const unit of ["acre","sq_yd","sq_ft","gadi"])assert.ok(html.includes(`value="${unit}"`));
     assert.match(html,/name="description"/);
     if(!lockIdentity){

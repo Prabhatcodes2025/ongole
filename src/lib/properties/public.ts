@@ -12,6 +12,19 @@ type Row = Record<string, unknown>;
 function object(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function strings(value: unknown) { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : []; }
 
+async function getPgPropertyIds() {
+  const service=createSupabaseServiceClient();
+  if(!service)return null;
+  const ids=new Set<string>();
+  for(let from=0;;from+=1000){
+    const{data,error}=await service.from("pg_listings").select("property_id").range(from,from+999);
+    if(error)return null;
+    const rows=data||[];for(const row of rows)ids.add(String(row.property_id));
+    if(rows.length<1000)break;
+  }
+  return ids;
+}
+
 async function hydrateMedia(rows: Row[]) {
   const service = createSupabaseServiceClient();
   const result=new Map<string,PropertyMedia[]>();
@@ -59,6 +72,7 @@ export function sortProperties(properties: PublicProperty[], sort: PropertyFilte
 export async function listPublicProperties(filters: PropertyFilters): Promise<PropertyListResult> {
   const supabase = createPublicSupabaseClient();
   if (!supabase) { const filtered = sortProperties(filterDemo(demoProperties, filters), filters.sort); const page=Math.min(filters.page,Math.max(1,Math.ceil(filtered.length/filters.pageSize)));const start = (page - 1) * filters.pageSize; return { properties: filtered.slice(start, start + filters.pageSize), total: filtered.length, page, pageSize: filters.pageSize, source: "demo" }; }
+  const pgPropertyIds=await getPgPropertyIds();if(!pgPropertyIds)return{properties:[],total:0,page:1,pageSize:filters.pageSize,source:"supabase",error:"Properties are temporarily unavailable."};
   const buildQuery=()=>{let query = supabase.from("properties").select(SELECT).in("status", ["published","expired"]).is("deleted_at", null);
   if (filters.purpose) query = filters.purpose==="rent"?query.in("transaction_type",["rent","lease"]):query.eq("transaction_type", filters.purpose);
   if (filters.category) query = query.contains("details", { category: filters.category });
@@ -85,7 +99,7 @@ export async function listPublicProperties(filters: PropertyFilters): Promise<Pr
   const sortMap: Record<PropertyFilters["sort"], [string, boolean]> = { newest:["published_at",false], oldest:["published_at",true], "price-asc":["price_inr",true], "price-desc":["price_inr",false], "area-asc":["area_sq_ft",true], "area-desc":["area_sq_ft",false] };
   const [column, ascending] = sortMap[filters.sort];return query.order("is_pinned", { ascending:false }).order(column, { ascending, nullsFirst: false })};
   const rows:Row[]=[];for(let from=0;;from+=1000){const{data,error}=await buildQuery().range(from,from+999);if(error)return{properties:[],total:0,page:1,pageSize:filters.pageSize,source:"supabase",error:"Properties are temporarily unavailable."};const batch=(data||[])as Row[];rows.push(...batch);if(batch.length<1000)break}
-  const renderableRows=rows.filter((row)=>propertyPublicRecordIsSafe(String(row.title||""),String(row.description||"")));const total=renderableRows.length;const page=Math.min(filters.page,Math.max(1,Math.ceil(total/filters.pageSize)));const start=(page-1)*filters.pageSize;
+  const renderableRows=rows.filter((row)=>!pgPropertyIds.has(String(row.id))&&propertyPublicRecordIsSafe(String(row.title||""),String(row.description||"")));const total=renderableRows.length;const page=Math.min(filters.page,Math.max(1,Math.ceil(total/filters.pageSize)));const start=(page-1)*filters.pageSize;
   return { properties: await mapRows(renderableRows.slice(start,start+filters.pageSize)), total, page, pageSize: filters.pageSize, source: "supabase" };
 }
 
@@ -96,8 +110,9 @@ export async function getPublicProperty(slug: string) {
   if (!supabase) return demoProperties.find((item) => item.slug === slug || item.reference.toLowerCase() === slug.toLowerCase()) || null;
   const safeSlug=slug.replace(/[^a-zA-Z0-9-]/g,"");
   if(!safeSlug)return null;
+  const pgPropertyIds=await getPgPropertyIds();if(!pgPropertyIds)return null;
   const { data } = await supabase.from("properties").select(SELECT).in("status", ["published","expired"]).is("deleted_at", null).or(`slug.eq.${safeSlug},reference_no.eq.${safeSlug}`).maybeSingle();
-  return data ? (await mapRows([data as Row]))[0] : null;
+  return data&&!pgPropertyIds.has(String(data.id)) ? (await mapRows([data as Row]))[0] : null;
 }
 
 export async function getSimilarProperties(property: PublicProperty, limit = 4) {
@@ -129,6 +144,7 @@ export async function getPublicPropertyMap(property: PublicProperty) {
 export async function getPublicPropertySlugs(limit = 1000) {
   const supabase = createPublicSupabaseClient();
   if (!supabase) return [];
-  const { data } = await supabase.from("properties").select("slug,published_at,title,description").in("status", ["published","expired"]).is("deleted_at", null).not("slug", "is", null).order("published_at", { ascending:false }).limit(limit);
-  return (data || []).filter((row)=>propertyPublicRecordIsSafe(String(row.title||""),String(row.description||""))).map((row) => ({ slug: row.slug as string, publishedAt: row.published_at as string | null }));
+  const pgPropertyIds=await getPgPropertyIds();if(!pgPropertyIds)return [];
+  const { data } = await supabase.from("properties").select("id,slug,published_at,title,description").in("status", ["published","expired"]).is("deleted_at", null).not("slug", "is", null).order("published_at", { ascending:false }).limit(limit);
+  return (data || []).filter((row)=>!pgPropertyIds.has(String(row.id))&&propertyPublicRecordIsSafe(String(row.title||""),String(row.description||""))).map((row) => ({ slug: row.slug as string, publishedAt: row.published_at as string | null }));
 }
