@@ -2,9 +2,9 @@
 
 import {useRef} from "react";
 
-export function PropertyDeletionControls({id,reference,title,deleted=false,allowPermanent=false,compact=false}:{id:string;reference:string;title:string;deleted?:boolean;allowPermanent?:boolean;compact?:boolean}){
+export function PropertyDeletionControls({id,reference,title,deleted=false,allowPermanent=false,compact=false,actionUrl}:{id:string;reference:string;title:string;deleted?:boolean;allowPermanent?:boolean;compact?:boolean;actionUrl?:string}){
   const lifecycleDialog=useRef<HTMLDialogElement>(null),permanentDialog=useRef<HTMLDialogElement>(null);
-  const action=deleted?"restore":"soft_delete";
+  const action=deleted?"restore":"soft_delete",endpoint=actionUrl||`/api/admin/properties/${id}/deletion`;
   return <div className={compact?"property-delete-controls compact":"property-delete-controls"}>
     <button className={deleted?"button button-light":"danger-button"} type="button" onClick={()=>lifecycleDialog.current?.showModal()}>{deleted?"Restore":"Delete property"}</button>
     <dialog ref={lifecycleDialog} aria-labelledby={`property-lifecycle-${id}`}>
@@ -12,9 +12,9 @@ export function PropertyDeletionControls({id,reference,title,deleted=false,allow
       <h2 id={`property-lifecycle-${id}`}>{deleted?"Restore property":"Delete property"}</h2>
       <p><strong>{reference}</strong><br/>{title}</p>
       <p>{deleted?"The property will return as a private draft and require review before publication.":"This safely archives the property. Public pages and active Admin counts will no longer include it, and it can be restored."}</p>
-      <form className="stack-form" action={`/api/admin/properties/${id}/deletion`} method="post">
+      <form className="stack-form" action={endpoint} method="post">
         <input type="hidden" name="action" value={action}/>
-        <label>Type <strong>{reference}</strong> to confirm<input required name="confirmation" autoComplete="off"/></label>
+        <label>Type <strong>{reference}</strong> to confirm<input required name="confirmation" autoComplete="off" spellCheck={false} autoCapitalize="characters"/></label>
         <button className={deleted?"button":"danger-button"}>{deleted?"Restore property":"Archive property"}</button>
       </form>
     </dialog>
@@ -23,9 +23,9 @@ export function PropertyDeletionControls({id,reference,title,deleted=false,allow
       <h2 id={`property-permanent-${id}`}>Permanently delete property</h2>
       <p><strong>{reference}</strong><br/>{title}</p>
       <p>This super-administrator action cannot be undone. It is refused when enquiries, payments, promotion history or posting-retention records depend on the property.</p>
-      <form className="stack-form" action={`/api/admin/properties/${id}/deletion`} method="post">
+      <form className="stack-form" action={endpoint} method="post">
         <input type="hidden" name="action" value="permanent_delete"/>
-        <label>Type <strong>DELETE {reference}</strong> to confirm<input required name="confirmation" autoComplete="off"/></label>
+        <label>Type <strong>DELETE {reference}</strong> to confirm<input required name="confirmation" autoComplete="off" spellCheck={false} autoCapitalize="characters"/></label>
         <button className="danger-button">Permanently delete</button>
       </form>
     </dialog></>}

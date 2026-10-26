@@ -7,8 +7,10 @@ export function safeReturnPath(value:unknown,fallback="/dashboard"){
 }
 
 export async function reconcileAuthenticatedProfile(supabase:SupabaseClient,user:User){
-  const {data:existing}=await supabase.from("profiles").select("id,status").eq("id",user.id).maybeSingle();
-  const {data:profile,error}=await supabase.rpc("reconcile_current_profile");
+  const [{data:existing},{data:profile,error}]=await Promise.all([
+    supabase.from("profiles").select("id,status").eq("id",user.id).maybeSingle(),
+    supabase.rpc("reconcile_current_profile"),
+  ]);
   if(error||!profile)return{ok:false as const,repaired:false,status:null,errorCode:error?.code||"profile_reconciliation_failed"};
   const status=typeof profile.status==="string"?profile.status:null;
   return{ok:status==="active",repaired:!existing,status,errorCode:status==="active"?null:"account_inactive"};

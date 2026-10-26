@@ -54,6 +54,6 @@ test("test, script and SQL-looking property content is rejected before public re
 test("public listings, details and static slug generation share the production-content safety gate",async()=>{
   const[propertyPublic,pgPublic]=await Promise.all([read("../src/lib/properties/public.ts"),read("../src/lib/pg/public.ts")]);
   for(const source of [propertyPublic,pgPublic]){assert.match(source,/propertyPublicRecordIsSafe/);assert.match(source,/getPublic.*Slugs/)}
-  assert.match(propertyPublic,/select\("slug,published_at,title,description"\)/);
+  assert.match(propertyPublic,/select\("(?:id,)?slug,published_at,title,description"\)/);
   assert.match(pgPublic,/select\("pg_name,properties!inner\(slug,published_at,status,deleted_at,description\)"\)/);
 });

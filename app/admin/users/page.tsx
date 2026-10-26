@@ -20,7 +20,10 @@ export default async function AdminUsers({ searchParams }: { searchParams: Promi
     const { data: ownerRows } = await supabase.from("properties").select("owner_id,pg_listings()").is("deleted_at", null).is("pg_listings", null);
     ownerIds = [...new Set((ownerRows || []).map(row => row.owner_id))];
   }
-  let query = supabase.from("profiles").select("id,reference_no,full_name,email,mobile,account_type,status,email_verified,mobile_verified,created_at,user_roles(roles(code,name))", { count: "exact" }).order("created_at", { ascending: false }).range((page - 1) * size, page * size - 1);
+  // Roles are intentionally loaded only on the user detail page. Nesting the
+  // protected role tables here makes the entire profile query fail for Admins
+  // who may read users but may not manage roles.
+  let query = supabase.from("profiles").select("id,reference_no,full_name,email,mobile,account_type,status,email_verified,mobile_verified,created_at", { count: "exact" }).order("created_at", { ascending: false }).range((page - 1) * size, page * size - 1);
   if (ownerIds) query = query.in("id", ownerIds.length ? ownerIds : ["00000000-0000-0000-0000-000000000000"]);
   if (types.includes(params.accountType || "")) query = query.eq("account_type", params.accountType);
   if (statuses.includes(params.status || "")) query = query.eq("status", params.status);

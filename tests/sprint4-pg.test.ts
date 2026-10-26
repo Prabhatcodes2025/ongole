@@ -29,7 +29,7 @@ test("owner, public and admin PG workflows are connected",async()=>{
   assert.doesNotMatch(publicList,/Room sharing|family/i);
   for(const marker of ["Accommodation","EnquiryForm","WhatsApp","Similar Paying Guests","ClickToLoadMap"])assert.match(details,new RegExp(marker));
   assert.doesNotMatch(details,/security_deposit|<dt>Security Deposit|<h2>Security Deposit/i);
-  for(const marker of ["Approve PG","Request changes","Reject","Publish PG","Soft delete"])assert.match(admin,new RegExp(marker));
+  for(const marker of ["Approve PG","Request changes","Reject","Publish PG","PropertyDeletionControls"])assert.match(admin,new RegExp(marker));
   assert.match(statusApi,/required_permission:"pg.manage"/);
   assert.match(sitemap,/getPublicPgSlugs/);
 });
