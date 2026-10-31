@@ -3,13 +3,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminNavigation } from "@/src/components/admin-navigation";
 import { PropertyDeletionControls } from "@/src/components/admin/property-deletion-controls";
+import { BulkActionControls } from "@/src/components/admin/bulk-action-controls";
 import { logEvent } from "@/src/lib/observability/logger";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Property administration", robots: { index: false, follow: false } };
 const statuses=["draft","pending_review","changes_requested","approved","published","rejected","archived","sold","rented","leased"];
-const bulkActions=[["publish","Publish approved"],["archive","Archive"],["activate","Activate archived"],["deactivate","Deactivate"],["feature","Feature"],["unfeature","Remove feature"],["verify","Mark as Priority Listing"],["unverify","Remove Priority Listing"],["pin","Pin"],["unpin","Unpin"]]as const;
+const bulkActions=[["publish","Publish approved"],["archive","Archive"],["activate","Restore archived"],["deactivate","Deactivate"],["feature","Feature"],["unfeature","Remove feature"],["verify","Mark as Priority Listing"],["unverify","Remove Priority Listing"],["pin","Pin"],["unpin","Unpin"]]as const;
 const quickStatuses = [["", "All"], ["pending_review", "Pending"], ["approved", "Approved"], ["published", "Published"], ["rejected", "Rejected"], ["archived", "Archived"]] as const;
 type Params = { status?: string; q?: string; owner?: string; transaction?: string; category?: string; type?: string; district?: string; city?: string; locality?: string; verified?: string; featured?: string; contact?: string; map?: string; deleted?: string; from?: string; to?: string; page?: string };
 
@@ -70,11 +71,11 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
       <select name="deleted" defaultValue={params.deleted || ""}><option value="">Active records</option><option value="yes">Soft deleted</option><option value="all">All records</option></select><input type="date" name="from" defaultValue={params.from} aria-label="Created from"/><input type="date" name="to" defaultValue={params.to} aria-label="Created to"/>
       <button className="button button-small">Apply filters</button><Link href="/admin/properties">Clear</Link>
     </form>
-    <form id="property-bulk-form" action="/api/admin/properties/bulk" method="post"><div className="bulk-toolbar"><select required name="action" defaultValue=""><option value="" disabled>Bulk action</option>{bulkActions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button className="button button-small">Apply</button><Link href={exportHref("csv")}>Export CSV</Link><Link href={exportHref("xlsx")}>Export XLSX</Link></div></form>
-    <section className="portal-section admin-table-wrap">{properties?.length ? <div className="admin-table property-admin-table"><div className="admin-row admin-head"><span>Select</span><span>Property</span><span>Owner</span><span>Location</span><span>Status</span><span>Flags</span><span/></div>{properties.map(property => { const owner = Array.isArray(property.profiles) ? property.profiles[0] : property.profiles; return <div className="admin-row" key={property.id}>
-      <span><input form="property-bulk-form" type="checkbox" name="ids" value={property.id} aria-label={`Select ${property.reference_no}`}/></span><span><strong>{property.title}</strong><small>{property.reference_no} · {property.transaction_type}</small></span><span>{owner?.full_name || "—"}<small>{owner?.mobile || owner?.email}</small></span><span>{property.locality_text}, {property.city_text}</span><span><i className={`status status-${property.status}`}>{property.status.replaceAll("_", " ")}</i></span>
+    <div className="bulk-toolbar"><Link href={exportHref("csv")}>Export CSV</Link><Link href={exportHref("xlsx")}>Export XLSX</Link></div>
+    <BulkActionControls endpoint="/api/admin/properties/bulk" actions={bulkActions} entityLabel="property"><section className="portal-section admin-table-wrap">{properties?.length ? <div className="admin-table property-admin-table"><div className="admin-row admin-head"><span>Select</span><span>Property</span><span>Owner</span><span>Location</span><span>Status</span><span>Flags</span><span/></div>{properties.map(property => { const owner = Array.isArray(property.profiles) ? property.profiles[0] : property.profiles; return <div className="admin-row" key={property.id}>
+      <span><input data-bulk-id="true" type="checkbox" value={property.id} aria-label={`Select ${property.reference_no}`}/></span><span><strong>{property.title}</strong><small>{property.reference_no} · {property.transaction_type}</small></span><span>{owner?.full_name || "—"}<small>{owner?.mobile || owner?.email}</small></span><span>{property.locality_text}, {property.city_text}</span><span><i className={`status status-${property.status}`}>{property.status.replaceAll("_", " ")}</i></span>
       <span className="flag-list">{property.is_verified && <b>Priority Listing</b>}{property.is_featured && <b>Featured</b>}{property.is_pinned && <b>Pinned</b>}{property.is_premium && <b>Map</b>}<b>{property.contact_visibility}</b>{property.deleted_at && <b>Deleted</b>}</span><span><Link href={`/admin/properties/${property.id}`}>Manage →</Link>{canManage&&<PropertyDeletionControls id={property.id} reference={property.reference_no} title={property.title} deleted={Boolean(property.deleted_at)} allowPermanent={isSuperAdmin} compact />}</span>
-    </div>; })}</div> : <div className="empty-state"><h2>No matching properties</h2></div>}</section>
+    </div>; })}</div> : <div className="empty-state"><h2>No matching properties</h2></div>}</section></BulkActionControls>
     <nav className="pagination">{page > 1 && <Link href={pageHref(page - 1)}>Previous</Link>}<span>Page {page} of {pages}</span>{page < pages && <Link href={pageHref(page + 1)}>Next</Link>}</nav>
   </div></main>;
 }
