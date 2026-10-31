@@ -36,9 +36,9 @@ test("PG maps rent basis watermark and deterrence are correctly scoped",async()=
   assert.ok(css.includes("repeat(2,minmax(0,1fr))"));assert.ok(css.includes("white-space:normal;word-break:normal;overflow-wrap:normal"));
 });
 
-test("global public header uses server auth and preserves the GIS flow",async()=>{
-  const[header,accountMenu,navigation,google]=await Promise.all([read("../src/components/site-header.tsx"),read("../src/components/account-menu.tsx"),read("../src/components/public-navigation.tsx"),read("../src/components/google-oauth-button.tsx")]);
-  assert.ok(header.includes("auth.getUser()"));for(const marker of ["Dashboard","Edit profile","/api/auth/logout"])assert.ok(accountMenu.includes(marker));assert.ok(navigation.includes("account?"));
+test("global public header keeps static pages cacheable while auth remains server verified",async()=>{
+  const[header,session,context,accountMenu,navigation,google]=await Promise.all([read("../src/components/site-header.tsx"),read("../src/components/public-header-session.tsx"),read("../app/api/auth/context/route.ts"),read("../src/components/account-menu.tsx"),read("../src/components/public-navigation.tsx"),read("../src/components/google-oauth-button.tsx")]);
+  assert.doesNotMatch(header,/createSupabaseServerClient|auth\.getUser|cookies\(/);assert.match(session,/\/api\/auth\/context/);assert.match(session,/cache:"no-store"/);assert.match(context,/auth\.getUser\(\)/);assert.match(context,/"Cache-Control":"no-store"/);for(const marker of ["Dashboard","Edit profile","/api/auth/logout"])assert.ok(accountMenu.includes(marker));assert.ok(navigation.includes("account?"));
   assert.equal((google.match(/gsi\/client/g)||[]).length,1);assert.ok(google.includes("signInWithIdToken"));assert.ok(!google.includes("signInWithOAuth"));
 });
 
