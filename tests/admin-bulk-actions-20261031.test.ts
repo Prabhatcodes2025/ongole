@@ -17,11 +17,14 @@ test("property, PG and enquiry lists expose controlled multi-selection",async()=
   for(const source of[properties,pg,enquiries]){assert.match(source,/BulkActionControls/);assert.match(source,/data-bulk-id="true"/)}
 });
 
-test("bulk APIs return per-record results and never offer permanent deletion",async()=>{
+test("bulk APIs return per-record results and permanent deletion is property-only and separately safeguarded",async()=>{
   const[property,pg,enquiry]=await Promise.all([read("../app/api/admin/properties/bulk/route.ts"),read("../app/api/admin/pg/bulk/route.ts"),read("../app/api/admin/enquiries/bulk/route.ts")]);
-  for(const source of[property,pg,enquiry]){assert.match(source,/results/);assert.match(source,/succeeded/);assert.match(source,/failed/);assert.doesNotMatch(source,/permanent_delete/)}
+  for(const source of[property,pg,enquiry]){assert.match(source,/results/);assert.match(source,/succeeded/);assert.match(source,/failed/)}
+  assert.match(property,/permanent_delete/);assert.match(property,/admin_manage_property_deletion/);assert.match(property,/confirmations\?\.\[id\]/);assert.match(property,/verification\.data/);assert.match(property,/isSuperAdmin/);assert.doesNotMatch(pg+enquiry,/permanent_delete/);
   assert.match(property,/target_properties:\[id\]/);assert.match(pg,/admin_bulk_pg_action/);assert.match(enquiry,/target_ids:\[id\]/);
 });
+
+test("single property and PG deletion report success only after database absence verification",async()=>{const[control,property,pg]=await Promise.all([read("../src/components/admin/property-deletion-controls.tsx"),read("../app/api/admin/properties/[id]/deletion/route.ts"),read("../app/api/admin/pg/[id]/deletion/route.ts")]);assert.match(control,/physicallyDeleted/);for(const source of[property,pg]){assert.match(source,/verification\.data/);assert.match(source,/physicallyDeleted:true/);assert.match(source,/verification_failed/)}});
 
 test("PG bulk migration uses pg.manage and remains authenticated-only",async()=>{
   const sql=await read("../supabase/migrations/202610310001_admin_bulk_actions.sql");assert.match(sql,/has_permission\('pg\.manage'\)/);assert.match(sql,/revoke all on function public\.admin_bulk_pg_action\(uuid\[\],text\)/);assert.match(sql,/grant execute on function public\.admin_bulk_pg_action\(uuid\[\],text\) to authenticated/);assert.doesNotMatch(sql,/grant execute[^;]+service_role/);

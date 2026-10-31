@@ -15,7 +15,7 @@ export function PropertyDeletionControls({id,reference,title,deleted=false,allow
     setBusy(true);setMessage("");
     try{
       const response=await fetch(endpoint,{method:"POST",body:new FormData(event.currentTarget),credentials:"same-origin",headers:{Accept:"application/json"}});
-      if(response.ok){setMessage("The listing was permanently deleted.");window.location.assign(response.url);return}
+      if(response.ok){const result=await response.json().catch(()=>null) as {physicallyDeleted?:boolean}|null;if(!result?.physicallyDeleted){setMessage("The server response did not confirm physical deletion.");return}setMessage("The listing was permanently deleted and verified absent.");window.location.assign(actionUrl?"/admin/pg":"/admin/properties");return}
       const result=await response.json().catch(()=>null) as {error?:string}|null;
       setMessage(result?.error||"Permanent deletion failed. The record was not changed.");
     }catch{setMessage("Permanent deletion could not be completed. Check the connection and try again.")}
