@@ -17,8 +17,13 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
   const supabase = await createSupabaseServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login?returnTo=/admin/properties");
-  const { data: allowed } = await supabase.rpc("has_permission",{required_permission:"properties.read"});
+  const [{ data: allowed },{data:canManage},{data:context}] = await Promise.all([
+    supabase.rpc("has_permission",{required_permission:"properties.read"}),
+    supabase.rpc("has_permission",{required_permission:"properties.manage"}),
+    supabase.rpc("get_current_auth_context")
+  ]);
   if (!allowed) redirect("/dashboard");
+  const roles=Array.isArray(context?.roles)?context.roles:[],isSuperAdmin=roles.some((role:unknown)=>typeof role==="string"?role==="super_admin":Boolean(role&&typeof role==="object"&&"code" in role&&(role as{code:string}).code==="super_admin"));
   const params = await searchParams, page = Math.max(1, Number(params.page) || 1), size = 20;
   const safe = (value: string) => value.replace(/[%(),]/g, "");
   let query = supabase.from("properties")
@@ -68,7 +73,7 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
     <form id="property-bulk-form" action="/api/admin/properties/bulk" method="post"><div className="bulk-toolbar"><select required name="action" defaultValue=""><option value="" disabled>Bulk action</option>{bulkActions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button className="button button-small">Apply</button><Link href={exportHref("csv")}>Export CSV</Link><Link href={exportHref("xlsx")}>Export XLSX</Link></div></form>
     <section className="portal-section admin-table-wrap">{properties?.length ? <div className="admin-table property-admin-table"><div className="admin-row admin-head"><span>Select</span><span>Property</span><span>Owner</span><span>Location</span><span>Status</span><span>Flags</span><span/></div>{properties.map(property => { const owner = Array.isArray(property.profiles) ? property.profiles[0] : property.profiles; return <div className="admin-row" key={property.id}>
       <span><input form="property-bulk-form" type="checkbox" name="ids" value={property.id} aria-label={`Select ${property.reference_no}`}/></span><span><strong>{property.title}</strong><small>{property.reference_no} · {property.transaction_type}</small></span><span>{owner?.full_name || "—"}<small>{owner?.mobile || owner?.email}</small></span><span>{property.locality_text}, {property.city_text}</span><span><i className={`status status-${property.status}`}>{property.status.replaceAll("_", " ")}</i></span>
-      <span className="flag-list">{property.is_verified && <b>Priority Listing</b>}{property.is_featured && <b>Featured</b>}{property.is_pinned && <b>Pinned</b>}{property.is_premium && <b>Map</b>}<b>{property.contact_visibility}</b>{property.deleted_at && <b>Deleted</b>}</span><span><Link href={`/admin/properties/${property.id}`}>Manage →</Link><PropertyDeletionControls id={property.id} reference={property.reference_no} title={property.title} deleted={Boolean(property.deleted_at)} compact /></span>
+      <span className="flag-list">{property.is_verified && <b>Priority Listing</b>}{property.is_featured && <b>Featured</b>}{property.is_pinned && <b>Pinned</b>}{property.is_premium && <b>Map</b>}<b>{property.contact_visibility}</b>{property.deleted_at && <b>Deleted</b>}</span><span><Link href={`/admin/properties/${property.id}`}>Manage →</Link>{canManage&&<PropertyDeletionControls id={property.id} reference={property.reference_no} title={property.title} deleted={Boolean(property.deleted_at)} allowPermanent={isSuperAdmin} compact />}</span>
     </div>; })}</div> : <div className="empty-state"><h2>No matching properties</h2></div>}</section>
     <nav className="pagination">{page > 1 && <Link href={pageHref(page - 1)}>Previous</Link>}<span>Page {page} of {pages}</span>{page < pages && <Link href={pageHref(page + 1)}>Next</Link>}</nav>
   </div></main>;

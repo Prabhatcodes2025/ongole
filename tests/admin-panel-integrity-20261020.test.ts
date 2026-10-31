@@ -17,7 +17,7 @@ test("ordinary Admin property queues exclude PG backing records and expose safe 
   for (const label of ["All", "Pending", "Approved", "Published", "Rejected", "Archived"]) assert.ok(list.includes(label));
   assert.match(list, /PropertyDeletionControls/); assert.match(detail, /PropertyDeletionControls/);
   assert.match(control, /Type <strong>\{reference\}<\/strong> to confirm/);
-  assert.match(control, /DELETE \{reference\}/); assert.match(control, /allowPermanent&&deleted/);
+  assert.match(control, /DELETE \$\{reference\}/); assert.doesNotMatch(control, /allowPermanent&&deleted/);
   assert.match(route, /admin_manage_property_deletion/); assert.match(route, /pg_listings\(id\)/); assert.match(route, /property\.pg_listings/);
   assert.doesNotMatch(bulk, /"delete"/);
 });

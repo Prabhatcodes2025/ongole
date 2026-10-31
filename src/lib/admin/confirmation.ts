@@ -3,5 +3,5 @@ export function normalizeAdminConfirmation(value:unknown){
 }
 
 export function propertyConfirmation(reference:string,permanent=false){
-  return normalizeAdminConfirmation(`${permanent?"DELETE ":""}${reference}`);
+  return `${permanent?"DELETE ":""}${reference}`;
 }
