@@ -1,0 +1,41 @@
+import {readFile} from "node:fs/promises";
+import {pathToFileURL} from "node:url";
+
+const modulePath=process.env.PGLITE_MODULE;
+if(!modulePath)throw new Error("PGLITE_MODULE must point to the installed @electric-sql/pglite module.");
+const{PGlite}=await import(pathToFileURL(modulePath).href),db=new PGlite(),admin="00000000-0000-0000-0000-000000000001",owner="00000000-0000-0000-0000-000000000002";
+await db.exec(`
+create schema auth;
+create role authenticated;create role anon;create role service_role;
+create or replace function auth.uid() returns uuid language sql stable as $$select '${admin}'::uuid$$;
+create type public.property_status as enum('draft','pending_review','changes_requested','approved','published','rejected','archived','expired','sold','rented','leased');
+create table public.profiles(id uuid primary key);
+insert into public.profiles values('${admin}'),('${owner}');
+create table public.roles(id uuid primary key default gen_random_uuid(),code text unique);
+create table public.user_roles(user_id uuid,role_id uuid);
+insert into public.roles(code) values('super_admin');insert into public.user_roles select '${admin}',id from public.roles;
+create or replace function public.has_permission(text) returns boolean language sql stable as $$select true$$;
+create table public.properties(id uuid primary key,reference_no text unique not null,owner_id uuid references public.profiles(id),title text,description text,status public.property_status not null,deleted_at timestamptz,published_at timestamptz,expires_at timestamptz,is_featured boolean default false,is_verified boolean default false,is_pinned boolean default false);
+create table public.pg_listings(id uuid primary key default gen_random_uuid(),property_id uuid references public.properties(id) on delete cascade);
+create table public.property_status_history(id bigint generated always as identity primary key,property_id uuid references public.properties(id) on delete cascade,from_status public.property_status,to_status public.property_status,changed_by uuid,reason text);
+create table public.audit_logs(id bigint generated always as identity primary key,actor_id uuid,action text,entity_type text,entity_reference text,old_values jsonb,new_values jsonb);
+create table public.property_posting_uses(property_id uuid primary key references public.properties(id) on delete restrict,user_id uuid not null references public.profiles(id),consumed_at timestamptz default now());
+create table public.enquiries(id uuid primary key default gen_random_uuid(),property_id uuid references public.properties(id));
+create table public.promotion_activations(id uuid primary key default gen_random_uuid(),property_id uuid not null references public.properties(id));
+create table public.payment_orders(id uuid primary key default gen_random_uuid(),metadata jsonb not null default '{}');
+`);
+const ids={draft:"10000000-0000-0000-0000-000000000001",pending:"10000000-0000-0000-0000-000000000002",published:"10000000-0000-0000-0000-000000000003",posting:"10000000-0000-0000-0000-000000000004",enquiry:"10000000-0000-0000-0000-000000000005",promotion:"10000000-0000-0000-0000-000000000006",payment:"10000000-0000-0000-0000-000000000007"};
+for(const[name,id]of Object.entries(ids))await db.query("insert into public.properties(id,reference_no,owner_id,title,description,status) values($1,$2,$3,$4,$5,$6)",[id,`PROP-${name.toUpperCase()}`,owner,name==="published"?"Test Property":"Valid home",name==="published"?"debug: legacy":"Valid description",name==="published"?"published":name==="pending"?"pending_review":"draft"]);
+await db.query("insert into public.property_posting_uses(property_id,user_id) values($1,$2)",[ids.posting,owner]);
+await db.query("insert into public.enquiries(property_id) values($1)",[ids.enquiry]);await db.query("insert into public.promotion_activations(property_id) values($1)",[ids.promotion]);await db.query("insert into public.payment_orders(metadata) values(jsonb_build_object('property_id',$1::text))",[ids.payment]);
+await db.exec(await readFile(new URL("../supabase/migrations/202610310002_property_admin_action_repair.sql",import.meta.url),"utf8"));
+const action=async(id,value)=>Number((await db.query("select public.admin_bulk_property_action(array[$1::uuid],$2) affected",[id,value])).rows[0].affected);
+const row=async id=>(await db.query("select status,deleted_at,title,description from public.properties where id=$1",[id])).rows[0];
+if(await action(ids.published,"archive")!==1||(await row(ids.published)).status!=="archived")throw new Error("status-only archive failed for legacy content");
+if(await action(ids.published,"restore")!==1||(await row(ids.published)).status!=="draft")throw new Error("restore failed");
+if(await action(ids.pending,"soft_delete")!==1||!(await row(ids.pending)).deleted_at)throw new Error("soft delete failed");
+if(await action(ids.pending,"restore")!==1||(await row(ids.pending)).deleted_at)throw new Error("soft-delete restore failed");
+let contentBlocked=false;try{await db.query("update public.properties set title='Test Property' where id=$1",[ids.draft])}catch(error){contentBlocked=String(error).includes("property_title_prohibited_content")}if(!contentBlocked)throw new Error("content validation regression");
+await action(ids.posting,"soft_delete");await db.query("select public.admin_manage_property_deletion($1,'permanent_delete',$2)",[ids.posting,"DELETE PROP-POSTING"]);if((await db.query("select 1 from public.properties where id=$1",[ids.posting])).rows.length)throw new Error("posting-ledger property remained");const usage=(await db.query("select property_id,property_reference from public.property_posting_uses")).rows[0];if(usage.property_id!==null||usage.property_reference!=="PROP-POSTING")throw new Error("posting ledger was not preserved");
+for(const[type,id,reference]of [["enquiries",ids.enquiry,"PROP-ENQUIRY"],["promotions",ids.promotion,"PROP-PROMOTION"],["payments",ids.payment,"PROP-PAYMENT"]]){await action(id,"soft_delete");let blocked=false;try{await db.query("select public.admin_manage_property_deletion($1,'permanent_delete',$2)",[id,`DELETE ${reference}`])}catch(error){blocked=String(error).includes(`retention_required:${type}`)}if(!blocked)throw new Error(`${type} retention was not enforced`);if(!(await row(id)))throw new Error(`${type} property was deleted`)}
+console.log(JSON.stringify({status:"PASS",archive:true,restore:true,softDelete:true,contentTrigger:true,postingLedgerPreserved:true,retentionBlockers:["enquiries","promotions","payments"]}));

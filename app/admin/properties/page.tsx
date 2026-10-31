@@ -10,7 +10,7 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Property administration", robots: { index: false, follow: false } };
 const statuses=["draft","pending_review","changes_requested","approved","published","rejected","archived","sold","rented","leased"];
-const bulkActions=[["publish","Publish approved"],["archive","Archive"],["activate","Restore archived"],["deactivate","Deactivate"],["feature","Feature"],["unfeature","Remove feature"],["verify","Mark as Priority Listing"],["unverify","Remove Priority Listing"],["pin","Pin"],["unpin","Unpin"]]as const;
+const bulkActions=[["publish","Publish approved"],["archive","Archive (status only)"],["soft_delete","Soft Delete (recoverable)"],["activate","Restore archived / soft-deleted"],["feature","Feature"],["unfeature","Remove feature"],["verify","Mark as Priority Listing"],["unverify","Remove Priority Listing"],["pin","Pin"],["unpin","Unpin"]]as const;
 const quickStatuses = [["", "All"], ["pending_review", "Pending"], ["approved", "Approved"], ["published", "Published"], ["rejected", "Rejected"], ["archived", "Archived"]] as const;
 type Params = { status?: string; q?: string; owner?: string; transaction?: string; category?: string; type?: string; district?: string; city?: string; locality?: string; verified?: string; featured?: string; contact?: string; map?: string; deleted?: string; from?: string; to?: string; page?: string };
 
@@ -25,7 +25,6 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
   ]);
   if (!allowed) redirect("/dashboard");
   const roles=Array.isArray(context?.roles)?context.roles:[],isSuperAdmin=roles.some((role:unknown)=>typeof role==="string"?role==="super_admin":Boolean(role&&typeof role==="object"&&"code" in role&&(role as{code:string}).code==="super_admin"));
-  const availableBulkActions=isSuperAdmin?[...bulkActions,["permanent_delete","Permanently Delete"] as const]:bulkActions;
   const params = await searchParams, page = Math.max(1, Number(params.page) || 1), size = 20;
   const safe = (value: string) => value.replace(/[%(),]/g, "");
   let query = supabase.from("properties")
@@ -73,7 +72,7 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
       <button className="button button-small">Apply filters</button><Link href="/admin/properties">Clear</Link>
     </form>
     <div className="bulk-toolbar"><Link href={exportHref("csv")}>Export CSV</Link><Link href={exportHref("xlsx")}>Export XLSX</Link></div>
-    <BulkActionControls endpoint="/api/admin/properties/bulk" actions={availableBulkActions} entityLabel="property"><section className="portal-section admin-table-wrap">{properties?.length ? <div className="admin-table property-admin-table"><div className="admin-row admin-head"><span>Select</span><span>Property</span><span>Owner</span><span>Location</span><span>Status</span><span>Flags</span><span/></div>{properties.map(property => { const owner = Array.isArray(property.profiles) ? property.profiles[0] : property.profiles; return <div className="admin-row" key={property.id}>
+    <BulkActionControls endpoint="/api/admin/properties/bulk" actions={bulkActions} entityLabel="property"><section className="portal-section admin-table-wrap">{properties?.length ? <div className="admin-table property-admin-table"><div className="admin-row admin-head"><span>Select</span><span>Property</span><span>Owner</span><span>Location</span><span>Status</span><span>Flags</span><span/></div>{properties.map(property => { const owner = Array.isArray(property.profiles) ? property.profiles[0] : property.profiles; return <div className="admin-row" key={property.id}>
       <span><input data-bulk-id="true" data-reference={property.reference_no} data-title={property.title} data-deleted={Boolean(property.deleted_at)} type="checkbox" value={property.id} aria-label={`Select ${property.reference_no}`}/></span><span><strong>{property.title}</strong><small>{property.reference_no} · {property.transaction_type}</small></span><span>{owner?.full_name || "—"}<small>{owner?.mobile || owner?.email}</small></span><span>{property.locality_text}, {property.city_text}</span><span><i className={`status status-${property.status}`}>{property.status.replaceAll("_", " ")}</i></span>
       <span className="flag-list">{property.is_verified && <b>Priority Listing</b>}{property.is_featured && <b>Featured</b>}{property.is_pinned && <b>Pinned</b>}{property.is_premium && <b>Map</b>}<b>{property.contact_visibility}</b>{property.deleted_at && <b>Deleted</b>}</span><span><Link href={`/admin/properties/${property.id}`}>Manage →</Link>{canManage&&<PropertyDeletionControls id={property.id} reference={property.reference_no} title={property.title} deleted={Boolean(property.deleted_at)} allowPermanent={isSuperAdmin} compact />}</span>
     </div>; })}</div> : <div className="empty-state"><h2>No matching properties</h2></div>}</section></BulkActionControls>

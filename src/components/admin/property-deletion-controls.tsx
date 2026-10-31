@@ -23,24 +23,24 @@ export function PropertyDeletionControls({id,reference,title,deleted=false,allow
   }
 
   return <div className={compact?"property-delete-controls compact":"property-delete-controls"}>
-    <button className={deleted?"button button-light":"danger-button"} type="button" onClick={()=>lifecycleDialog.current?.showModal()}>{deleted?"Restore":"Archive"}</button>
+    <button className={deleted?"button button-light":"danger-button"} type="button" onClick={()=>lifecycleDialog.current?.showModal()}>{deleted?"Restore":"Soft Delete"}</button>
     <dialog ref={lifecycleDialog} aria-labelledby={`property-lifecycle-${id}`}>
       <form method="dialog"><button className="dialog-close" aria-label="Close confirmation">×</button></form>
-      <h2 id={`property-lifecycle-${id}`}>{deleted?"Restore listing":"Archive listing"}</h2>
+      <h2 id={`property-lifecycle-${id}`}>{deleted?"Restore listing":"Soft Delete listing"}</h2>
       <p><strong>{title}</strong><br/>{reference}</p>
-      <p>{deleted?"The listing will return as a private draft and require review before publication.":"This safely archives the listing. Public pages and active Admin counts will no longer include it, and it can be restored."}</p>
+      <p>{deleted?"The listing will return as a private draft and require review before publication.":"This marks the listing deleted and archives it. Public pages and active Admin counts will no longer include it, and it can be restored. The bulk Archive action changes status only."}</p>
       <form className="stack-form" action={endpoint} method="post">
         <input type="hidden" name="action" value={action}/>
         <label>Type <strong>{reference}</strong> to confirm exactly<input required name="confirmation" autoComplete="off" spellCheck={false}/></label>
-        <button className={deleted?"button":"danger-button"}>{deleted?"Restore":"Archive"}</button>
+        <button className={deleted?"button":"danger-button"}>{deleted?"Restore":"Soft Delete"}</button>
       </form>
     </dialog>
     {allowPermanent?<><button className="danger-button permanent-delete-button" type="button" onClick={()=>{setConfirmation("");setMessage("");permanentDialog.current?.showModal()}}>Permanently Delete</button><dialog ref={permanentDialog} aria-labelledby={`property-permanent-${id}`}>
       <form method="dialog"><button className="dialog-close" aria-label="Close permanent deletion confirmation">×</button></form>
       <h2 id={`property-permanent-${id}`}>Permanently Delete</h2>
       <p><strong>{title}</strong><br/>Reference: <strong>{reference}</strong></p>
-      <p>This action is irreversible. The server will refuse it unless the listing is archived and no enquiries, payments, promotions, or posting-retention records depend on it.</p>
-      {!deleted&&<p className="form-message" role="status">Archive this listing first. You may still submit to see the server safety response.</p>}
+      <p>This action is irreversible. The server will refuse it unless the listing is soft-deleted and no enquiries, payment orders, or promotion history depend on it. Posting-usage and audit ledgers are preserved separately.</p>
+      {!deleted&&<p className="form-message" role="status">Soft Delete this listing first. You may still submit to see the server safety response.</p>}
       <form className="stack-form" action={endpoint} method="post" onSubmit={submitPermanent}>
         <input type="hidden" name="action" value="permanent_delete"/>
         <label>Type <strong>{expected}</strong> exactly<input required name="confirmation" value={confirmation} onChange={event=>setConfirmation(event.target.value)} autoComplete="off" spellCheck={false}/></label>

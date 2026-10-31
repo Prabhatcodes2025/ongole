@@ -42,7 +42,7 @@ The site uses the existing Pixel/Dataset ID `723324339565605`. Meta scripts load
 
 ## Deletion and restore
 
-Soft delete is the normal administrative action and is recoverable through Restore. Permanent deletion is intentionally unavailable until a written retention/backup period and dependent-record procedure are approved. Never bulk-delete real user data. Do not delete or deactivate an administrator account through ordinary user controls.
+Archive changes lifecycle status without marking the row deleted. Soft Delete is a separate recoverable bulk or row action; Restore returns either form of archived record to a private draft. Permanent Delete is never a bulk action: it is available only to a Super Administrator on an individual archived, soft-deleted property after exact typed confirmation. Enquiries, promotion history, and payment orders block permanent deletion and are never removed automatically. Posting-usage and audit ledgers are preserved independently with the property reference. Never use permanent deletion on real business records for testing, and never delete or deactivate an administrator account through ordinary user controls.
 
 ## Account safety
 
