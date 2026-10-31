@@ -13,7 +13,7 @@ test("JSON bulk payload preserves every selected id",async()=>{
 
 test("property, PG and enquiry lists expose controlled multi-selection",async()=>{
   const[control,properties,pg,enquiries]=await Promise.all([read("../src/components/admin/bulk-action-controls.tsx"),read("../app/admin/properties/page.tsx"),read("../app/admin/pg/page.tsx"),read("../app/admin/enquiries/page.tsx")]);
-  for(const marker of["Select All","Deselect All","selected","Applying…","bulk-failures","router.refresh()","JSON.stringify({action,ids"])assert.ok(control.includes(marker),marker);
+  for(const marker of["Select All","Deselect All","selected","Applying…","bulk-failures","router.refresh()","JSON.stringify({action,ids","failedIds.has(box.value)"])assert.ok(control.includes(marker),marker);
   for(const source of[properties,pg,enquiries]){assert.match(source,/BulkActionControls/);assert.match(source,/data-bulk-id="true"/)}
 });
 
@@ -21,6 +21,7 @@ test("bulk APIs return per-record success, failure and skipped results without p
   const[property,pg,enquiry]=await Promise.all([read("../app/api/admin/properties/bulk/route.ts"),read("../app/api/admin/pg/bulk/route.ts"),read("../app/api/admin/enquiries/bulk/route.ts")]);
   for(const source of[property,pg,enquiry]){assert.match(source,/results/);assert.match(source,/succeeded/);assert.match(source,/failed/)}
   assert.match(property,/soft_delete/);assert.match(property,/skipped/);assert.match(property,/persistence_mismatch/);assert.doesNotMatch(property+pg+enquiry,/permanent_delete/);
+  assert.match(property,/const actions=\["publish","archive","soft_delete","activate"\]/);for(const removed of["deactivate","feature","unfeature","verify","unverify","pin","unpin"])assert.doesNotMatch(property,new RegExp(`"${removed}"`));
   assert.match(property,/target_properties:\[id\]/);assert.match(pg,/admin_bulk_pg_action/);assert.match(enquiry,/target_ids:\[id\]/);
 });
 
@@ -31,3 +32,5 @@ test("PG bulk migration uses pg.manage and remains authenticated-only",async()=>
 });
 
 test("property Admin repair preserves content checks while fixing lifecycle and retention semantics",async()=>{const sql=await read("../supabase/migrations/202610310002_property_admin_action_repair.sql");assert.match(sql,/before insert or update of title,description on public\.properties/);assert.doesNotMatch(sql,/update of title,description,status/);for(const marker of["property_title_prohibited_content","property_description_prohibited_content","soft_delete","restore","property\.bulk_","retention_required:enquiries","retention_required:promotions","retention_required:payments","on delete set null","property_reference"])assert.ok(sql.includes(marker),marker);assert.doesNotMatch(sql,/retention_required:posting/)});
+
+test("property bulk UI exposes only the four lifecycle actions",async()=>{const page=await read("../app/admin/properties/page.tsx");for(const action of[["publish","Publish Approved"],["archive","Archive"],["soft_delete","Soft Delete (recoverable)"],["activate","Restore"]])assert.ok(page.includes(`["${action[0]}","${action[1]}"]`));for(const removed of["Feature","Remove feature","Priority Listing","Pin","Unpin"])assert.doesNotMatch(page,new RegExp(`\\[\\"[^\\"]+\\",\\"${removed}`))});

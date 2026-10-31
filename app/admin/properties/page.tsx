@@ -10,7 +10,7 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Property administration", robots: { index: false, follow: false } };
 const statuses=["draft","pending_review","changes_requested","approved","published","rejected","archived","sold","rented","leased"];
-const bulkActions=[["publish","Publish approved"],["archive","Archive (status only)"],["soft_delete","Soft Delete (recoverable)"],["activate","Restore archived / soft-deleted"],["feature","Feature"],["unfeature","Remove feature"],["verify","Mark as Priority Listing"],["unverify","Remove Priority Listing"],["pin","Pin"],["unpin","Unpin"]]as const;
+const bulkActions=[["publish","Publish Approved"],["archive","Archive"],["soft_delete","Soft Delete (recoverable)"],["activate","Restore"]]as const;
 const quickStatuses = [["", "All"], ["pending_review", "Pending"], ["approved", "Approved"], ["published", "Published"], ["rejected", "Rejected"], ["archived", "Archived"]] as const;
 type Params = { status?: string; q?: string; owner?: string; transaction?: string; category?: string; type?: string; district?: string; city?: string; locality?: string; verified?: string; featured?: string; contact?: string; map?: string; deleted?: string; from?: string; to?: string; page?: string };
 

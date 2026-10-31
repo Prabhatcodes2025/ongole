@@ -16,12 +16,12 @@ export function BulkActionControls({endpoint,actions,children,entityLabel}:Props
   async function execute(ids:string[]){
     setBusy(true);setMessage("");setFailures([]);
     try{
-      const response=await fetch(endpoint,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({action,ids,confirmation:action.toUpperCase()})});
+      const response=await fetch(endpoint,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({action,ids})});
       const result=await response.json().catch(()=>null) as {error?:string;results?:BulkResult[];succeeded?:number;failed?:number;skipped?:number}|null;
       if(!response.ok&&!result?.results){setMessage(result?.error||"The bulk action failed. No success response was returned.");return}
       const failed=(result?.results||[]).filter(item=>!item.ok);
       setFailures(failed);setMessage(`${result?.succeeded||0} succeeded; ${result?.failed||0} failed; ${result?.skipped||0} skipped.`);
-      for(const box of boxes())box.checked=false;setSelected(0);router.refresh();
+      const failedIds=new Set(failed.map(item=>item.id));for(const box of boxes())box.checked=failedIds.has(box.value);setSelected(failedIds.size);router.refresh();
     }catch{setMessage("The bulk action could not reach the server. No success was assumed.")}
     finally{setBusy(false)}
   }
