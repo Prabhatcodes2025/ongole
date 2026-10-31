@@ -598,3 +598,59 @@ input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin
     white-space: normal;
   }
 }
+/* Admin deletion dialogs — isolated modal styling */
+.property-delete-controls dialog {
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(460px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: 24px;
+  background: #ffffff;
+  color: #172b25;
+  border: 1px solid #d6ded9;
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+}
+
+.property-delete-controls dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.property-delete-controls dialog h2,
+.property-delete-controls dialog p,
+.property-delete-controls dialog label {
+  color: #172b25;
+}
+
+.property-delete-controls dialog .stack-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.property-delete-controls dialog input {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 8px;
+  background: #ffffff;
+  color: #172b25;
+}
+
+.property-delete-controls dialog .danger-button {
+  width: 100%;
+  white-space: normal;
+}
+
+@media (max-width: 640px) {
+  .property-delete-controls dialog {
+    padding: 18px;
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+}
