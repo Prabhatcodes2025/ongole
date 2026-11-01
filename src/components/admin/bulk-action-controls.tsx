@@ -33,13 +33,13 @@ export function BulkActionControls({endpoint,actions,children,entityLabel}:Props
     await execute(ids);
   }
 
-  return <div ref={form} className="admin-bulk-action-form" onChange={recount}>
+  return <div ref={form} className="admin-bulk-action-form" onChange={recount} aria-busy={busy}>
     <div className="bulk-toolbar" role="group" aria-label={`${entityLabel} bulk actions`}>
       <button type="button" className="button button-light button-small" onClick={()=>chooseAll(true)}>Select All</button>
       <button type="button" className="button button-light button-small" onClick={()=>chooseAll(false)} disabled={!selected}>Deselect All</button>
       <strong aria-live="polite">{selected} selected</strong>
       <select required value={action} onChange={event=>setAction(event.target.value)} aria-label="Bulk action"><option value="" disabled>Bulk action</option>{actions.map(([value,label])=><option value={value} key={value}>{label}</option>)}</select>
-      <button type="button" onClick={submit} className="button button-small" disabled={busy||!selected||!action}>{busy?"Applying…":"Apply"}</button>
+      <button type="button" onClick={submit} className="button button-small" disabled={busy||!selected||!action} aria-busy={busy}>{busy&&<i className="pending-spinner" aria-hidden="true"/>}{busy?"Applying…":"Apply"}</button>
     </div>
     {message&&<p className={failures.length?"form-message error":"form-message"} role="status" aria-live="polite">{message}</p>}
     {failures.length>0&&<ul className="bulk-failures" role="alert">{failures.map(item=><li key={item.id}><strong>{item.reference||item.id}</strong>: {item.skipped?"Skipped — ":""}{item.error}{item.code?` (${item.code})`:""}</li>)}</ul>}

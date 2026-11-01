@@ -3,6 +3,7 @@ import Link from "next/link";
 import {Bell,Building2,ChartNoAxesCombined,CreditCard,FileText,Home,HousePlus,LayoutDashboard,LogOut,Megaphone,Search,Users} from "lucide-react";
 import {getDashboardAuth} from "@/src/lib/dashboard/context";
 import {AccountMenu} from "@/src/components/account-menu";
+import {PendingLink} from "@/src/components/pending-link";
 
 type NavItem={href:string;label:string;permission?:string;icon?:ReactNode};
 const ownerNav:NavItem[]=[
@@ -31,7 +32,7 @@ export async function DashboardShell({children,title,description,actions,variant
   return <main id="main" className={`dashboard-app dashboard-${variant}`}><aside className="dashboard-sidebar"><Link className="dashboard-brand" href="/"><span>OP</span><strong>OngoleProperty<small>{variant==="admin"?roleLabel:"Owner workspace"}</small></strong></Link><DashboardSidebar items={nav}/><div className="sidebar-footer"><Link href="/">Public website</Link><form action="/api/auth/logout" method="post"><button><LogOut/>Sign out</button></form></div></aside><div className="dashboard-workspace"><DashboardHeader name={profile?.full_name||profile?.email||user?.email||"Account"} role={roleLabel} count={count||0} notifications={notifications||[]} nav={nav}/><div className="dashboard-content">{breadcrumbs.length>0&&<nav className="dashboard-breadcrumbs">{breadcrumbs.map((item,index)=><span key={item.label}>{index>0&&<b>/</b>}{item.href?<Link href={item.href}>{item.label}</Link>:item.label}</span>)}</nav>}<div className="dashboard-page-title"><div><h1>{title}</h1>{description&&<p>{description}</p>}</div>{actions&&<div className="dashboard-title-actions">{actions}</div>}</div>{children}</div></div></main>;
 }
 
-export function DashboardSidebar({items}:{items:NavItem[]}){return <nav className="dashboard-nav" aria-label="Dashboard">{items.map((item)=><Link key={item.href} href={item.href}>{item.icon}<span>{item.label}</span></Link>)}</nav>}
+export function DashboardSidebar({items}:{items:NavItem[]}){return <nav className="dashboard-nav" aria-label="Dashboard">{items.map((item)=><PendingLink key={item.href} href={item.href}>{item.icon}<span>{item.label}</span></PendingLink>)}</nav>}
 
 export function DashboardHeader({name,role,count,notifications,nav}:{name:string;role:string;count:number;notifications:{id:string;title:string;body:string;action_url:string|null;created_at:string}[];nav:NavItem[]}){
   return <header className="dashboard-header"><details className="dashboard-mobile-menu"><summary>Menu</summary><DashboardSidebar items={nav}/></details><form className="dashboard-search" action="/properties"><Search/><input name="q" aria-label="Search listings" placeholder="Search listings…"/></form><div className="dashboard-header-actions"><NotificationDropdown count={count} items={notifications}/><AccountMenu name={name} role={role}/></div></header>;

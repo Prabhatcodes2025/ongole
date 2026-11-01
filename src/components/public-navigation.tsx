@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BedDouble, ChevronDown, House, KeyRound, Menu, Plane, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {PendingLink as Link} from "@/src/components/pending-link";
 
 const menus = [
   { label: "Sale", href: "/properties-for-sale", Icon: KeyRound },

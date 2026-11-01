@@ -62,16 +62,18 @@ test("promotion UI translates legacy verified products without changing internal
   assert.match(migration,/\('Verified Property','verified-property','verified'/);
 });
 
-test("internal fields and account and agent verification wording remain intact",async()=>{
-  const [properties,plans,account,agents]=await Promise.all([
+test("internal fields and individual priority controls remain intact",async()=>{
+  const [properties,property,plans,account,agents]=await Promise.all([
     read("../app/admin/properties/page.tsx"),
+    read("../app/admin/properties/[id]/page.tsx"),
     read("../app/admin/billing/plans/page.tsx"),
     read("../src/components/account-deactivation-form.tsx"),
     read("../src/components/public/agents-page.tsx"),
   ]);
   assert.match(properties,/params\.verified==="yes"/);
   assert.match(properties,/query\.eq\("is_verified",true\)/);
-  assert.match(properties,/\["verify","Mark as Priority Listing"\]/);
+  assert.match(property,/value=\{p\.is_verified \? "unverify" : "verify"\}/);
+  assert.match(property,/Mark as Priority Listing/);
   assert.match(plans,/name="verified_listing_allowance"/);
   assert.match(account,/Verified email/);
   assert.match(agents,/Verified Agent Network\./);

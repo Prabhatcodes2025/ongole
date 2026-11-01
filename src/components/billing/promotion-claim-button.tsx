@@ -15,8 +15,8 @@ export function PromotionClaimButton({propertyId,promotionType}:{propertyId:stri
     setStatus("success");setMessage(`${promotionType==="featured"?"Featured":"Priority Listing"} promotion activated.`);
     router.refresh();
   }
-  return <div className="promotion-claim">
-    <button className="button button-light" type="button" disabled={status==="loading"} onClick={claim}>{status==="loading"?"Activating…":`Use ${promotionType==="verified"?"Priority Listing":promotionType} allowance`}</button>
+  return <div className="promotion-claim" aria-busy={status==="loading"}>
+    <button className="button button-light" type="button" disabled={status==="loading"} aria-busy={status==="loading"} onClick={claim}>{status==="loading"&&<i className="pending-spinner" aria-hidden="true"/>}{status==="loading"?"Activating…":`Use ${promotionType==="verified"?"Priority Listing":promotionType} allowance`}</button>
     {message?<p className={status==="error"?"form-error":"form-success"} role="status">{message}</p>:null}
   </div>;
 }

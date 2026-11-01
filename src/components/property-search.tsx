@@ -4,6 +4,7 @@ import {MandalTownAutocomplete} from "./mandal-town-autocomplete";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { fallbackPropertyCatalog, typesFromCatalog, type PropertyCatalogData } from "@/src/config/property-catalog";
+import {PendingSubmitButton} from "@/src/components/pending-submit-button";
 
 export function PropertySearch({compact=false,catalog=fallbackPropertyCatalog,basePath="/properties",fixedPurpose}:{compact?:boolean;catalog?:PropertyCatalogData;basePath?:string;fixedPurpose?:"sale"|"rent"}){
   const [category,setCategory]=useState(""),[type,setType]=useState("");const types=useMemo(()=>typesFromCatalog(catalog,category),[catalog,category]);
@@ -14,6 +15,6 @@ export function PropertySearch({compact=false,catalog=fallbackPropertyCatalog,ba
     <MandalTownAutocomplete label="Town/Mandal"/><label className="search-location"><span>Location</span><input name="locality" autoComplete="off" placeholder="e.g. Bhagya Nagar" maxLength={100}/></label>
     <label><span>Budget from (₹)</span><input name="minPrice" type="number" min="0" step="10000" inputMode="numeric" placeholder="e.g. 20,00,000" aria-label="Budget from in rupees"/></label>
     <label><span>Budget to (₹)</span><input name="maxPrice" type="number" min="0" step="10000" inputMode="numeric" placeholder="e.g. 80,00,000" aria-label="Budget to in rupees"/></label>
-    <input type="hidden" name="sort" value="newest"/><button className="button" type="submit"><Search size={18} aria-hidden="true"/>Search properties</button>
+    <input type="hidden" name="sort" value="newest"/><PendingSubmitButton pendingText="Searching…"><Search size={18} aria-hidden="true"/>Search properties</PendingSubmitButton>
   </form>;
 }

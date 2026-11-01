@@ -1,6 +1,7 @@
 "use client";
 
 import {FormEvent,useRef,useState} from "react";
+import {PendingSubmitButton} from "@/src/components/pending-submit-button";
 
 type Props={id:string;reference:string;title:string;deleted?:boolean;allowPermanent?:boolean;compact?:boolean;actionUrl?:string};
 
@@ -32,7 +33,7 @@ export function PropertyDeletionControls({id,reference,title,deleted=false,allow
       <form className="stack-form" action={endpoint} method="post">
         <input type="hidden" name="action" value={action}/>
         <label>Type <strong>{reference}</strong> to confirm exactly<input required name="confirmation" autoComplete="off" spellCheck={false}/></label>
-        <button className={deleted?"button":"danger-button"}>{deleted?"Restore":"Soft Delete"}</button>
+        <PendingSubmitButton className={deleted?"button":"danger-button"} pendingText={deleted?"Restoring…":"Soft deleting…"}>{deleted?"Restore":"Soft Delete"}</PendingSubmitButton>
       </form>
     </dialog>
     {allowPermanent?<><button className="danger-button permanent-delete-button" type="button" onClick={()=>{setConfirmation("");setMessage("");permanentDialog.current?.showModal()}}>Permanently Delete</button><dialog ref={permanentDialog} aria-labelledby={`property-permanent-${id}`}>
@@ -41,11 +42,11 @@ export function PropertyDeletionControls({id,reference,title,deleted=false,allow
       <p><strong>{title}</strong><br/>Reference: <strong>{reference}</strong></p>
       <p>This action is irreversible. The server will refuse it unless the listing is soft-deleted and no enquiries, payment orders, or promotion history depend on it. Posting-usage and audit ledgers are preserved separately.</p>
       {!deleted&&<p className="form-message" role="status">Soft Delete this listing first. You may still submit to see the server safety response.</p>}
-      <form className="stack-form" action={endpoint} method="post" onSubmit={submitPermanent}>
+      <form className="stack-form" action={endpoint} method="post" onSubmit={submitPermanent} aria-busy={busy}>
         <input type="hidden" name="action" value="permanent_delete"/>
         <label>Type <strong>{expected}</strong> exactly<input required name="confirmation" value={confirmation} onChange={event=>setConfirmation(event.target.value)} autoComplete="off" spellCheck={false}/></label>
         {message&&<p className={message.includes("permanently deleted")?"form-message":"form-message error"} role="alert">{message}</p>}
-        <button className="danger-button" disabled={confirmation!==expected||busy}>{busy?"Deleting…":"Permanently Delete"}</button>
+        <button className="danger-button" disabled={confirmation!==expected||busy} aria-busy={busy}>{busy&&<i className="pending-spinner" aria-hidden="true"/>}{busy?"Deleting…":"Permanently Delete"}</button>
       </form>
     </dialog></>:<div className="permanent-delete-denied"><button className="danger-button" type="button" disabled aria-describedby={`permanent-permission-${id}`}>Permanently Delete</button><small id={`permanent-permission-${id}`}>Super Administrator permission required.</small></div>}
   </div>;

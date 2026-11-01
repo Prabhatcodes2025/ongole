@@ -7,6 +7,7 @@ import { useState } from "react";
 import { fallbackPropertyCatalog, furnishingOptions, typesFromCatalog, type PropertyCatalogData } from "@/src/config/property-catalog";
 import {activeFilterEntries} from "@/src/lib/properties/filters";
 import type { PropertyFilters } from "@/src/types/property";
+import {PendingSubmitButton} from "@/src/components/pending-submit-button";
 
 const landTypes=new Set(["open-plot","commercial-open-plot","agricultural-land","farm-land"]);
 export function PropertyFilterForm({filters,catalog=fallbackPropertyCatalog,basePath="/properties",fixedPurpose}:{filters:PropertyFilters;catalog?:PropertyCatalogData;basePath?:string;fixedPurpose?:"sale"|"rent"}){
@@ -23,7 +24,7 @@ export function PropertyFilterForm({filters,catalog=fallbackPropertyCatalog,base
     {!isLand&&<><label>Facing<select name="facing" defaultValue={filters.facing||""}><option value="">Any facing</option>{catalog.facings.map((value)=><option key={value}>{value}</option>)}</select></label><label>Furnishing<select name="furnishing" defaultValue={filters.furnishing||""}><option value="">Any furnishing</option>{furnishingOptions.map((value)=><option key={value}>{value}</option>)}</select></label><label>Ownership<select name="ownership" defaultValue={filters.ownership||""}><option value="">Any ownership</option><option>Freehold</option><option>Leasehold</option><option>Power of Attorney</option></select></label></>}
     <fieldset><legend>Listing status</legend><div className="check-grid"><label><input type="checkbox" name="featured" value="true" defaultChecked={filters.featuredOnly}/>Featured</label><label><input type="checkbox" name="new" value="true" defaultChecked={filters.newOnly}/>New listings</label>{fixedPurpose==="rent"&&<label><input type="checkbox" name="available" value="true" defaultChecked={filters.availableOnly}/>Available now</label>}</div></fieldset>
     <fieldset><legend>Amenities</legend><div className="check-grid">{applicableAmenities.map((amenity)=><label key={amenity}><input type="checkbox" name="amenities" value={amenity} defaultChecked={filters.amenities?.includes(amenity)}/>{amenity}</label>)}</div></fieldset>
-    <input type="hidden" name="sort" value={filters.sort}/><button className="button" type="submit">Apply filters</button><Link className="clear-filters" href={basePath}><RotateCcw size={15}/>Clear all filters</Link>
+    <input type="hidden" name="sort" value={filters.sort}/><PendingSubmitButton pendingText="Applying filters…">Apply filters</PendingSubmitButton><Link className="clear-filters" href={basePath}><RotateCcw size={15}/>Clear all filters</Link>
   </form>;
   return <><button className="mobile-filter-button" type="button" onClick={()=>setOpen(true)} aria-expanded={open} aria-controls="property-filters"><Filter size={18}/>Filters{activeCount>0?` (${activeCount})`:""}</button><aside id="property-filters" className={`filter-sidebar ${open?"is-open":""}`}>{form}</aside>{open&&<button className="filter-backdrop" onClick={()=>setOpen(false)} aria-label="Close filters"/>}</>;
 }

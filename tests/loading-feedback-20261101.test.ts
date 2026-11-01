@@ -1,0 +1,11 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+
+const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
+
+test("route loading boundaries cover public listings, details, dashboard and admin",async()=>{const files=await Promise.all(["../app/loading.tsx","../app/admin/loading.tsx","../app/dashboard/loading.tsx","../app/properties/loading.tsx","../app/properties-for-sale/loading.tsx","../app/properties-for-rent/loading.tsx","../app/property/[slug]/loading.tsx","../app/paying-guest/loading.tsx","../app/paying-guest/[slug]/loading.tsx"].map(read));for(const source of files)assert.match(source,/Loading|Skeleton|loading/i)});
+
+test("navigation feedback uses native link status without timers or global click interception",async()=>{const[link,publicNav,adminNav,dashboard]=await Promise.all([read("../src/components/pending-link.tsx"),read("../src/components/public-navigation.tsx"),read("../src/components/admin-navigation.tsx"),read("../src/components/dashboard/dashboard-shell.tsx")]);assert.match(link,/useLinkStatus/);assert.doesNotMatch(link,/setTimeout|addEventListener|document\./);for(const source of[publicNav,adminNav,dashboard])assert.match(source,/PendingLink/)});
+
+test("important forms expose native or explicit pending state",async()=>{const[button,login,enquiry,posting,review,deletion,bulk,payment,filters,search,sort,css]=await Promise.all([read("../src/components/pending-submit-button.tsx"),read("../app/login/page.tsx"),read("../src/components/enquiry-form.tsx"),read("../src/components/property-posting-workflow.tsx"),read("../app/admin/properties/[id]/page.tsx"),read("../src/components/admin/property-deletion-controls.tsx"),read("../src/components/admin/bulk-action-controls.tsx"),read("../src/components/billing/payment-button.tsx"),read("../src/components/property-filter-form.tsx"),read("../src/components/property-search.tsx"),read("../src/components/sort-control.tsx"),read("../app/globals.css")]);assert.match(button,/useFormStatus/);for(const source of[login,review,deletion,filters,search])assert.match(source,/PendingSubmitButton/);for(const source of[enquiry,posting,bulk,payment,sort])assert.match(source,/aria-busy/);assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/pending-spinner/)});

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import {PendingLink as Link} from "@/src/components/pending-link";
 import {PERMISSIONS} from "@/src/lib/auth/permissions";
 import {createSupabaseServerClient} from "@/src/lib/supabase/server";
 const links=[["/admin","Overview",null],["/admin/users","Users & owners",PERMISSIONS.usersRead],["/admin/properties","Properties",PERMISSIONS.propertiesRead],["/admin/pg","Paying guest",PERMISSIONS.pgRead],["/admin/agents","Agents",PERMISSIONS.agentsRead],["/admin/enquiries","CRM",PERMISSIONS.enquiriesRead],["/admin/billing","Billing",PERMISSIONS.subscriptionsRead],["/admin/promotions","Promotions",PERMISSIONS.promotionsRead],["/admin/analytics","Analytics",PERMISSIONS.analyticsRead],["/admin/advertisements","Advertisements",PERMISSIONS.settingsManage],["/admin/masters","Master data",PERMISSIONS.settingsManage],["/admin/seo","SEO",PERMISSIONS.seoManage],["/admin/reports","Reports",PERMISSIONS.reportsRead],["/admin/audit","Audit logs",PERMISSIONS.auditRead]] as const;
