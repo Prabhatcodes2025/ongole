@@ -558,6 +558,9 @@ input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin
 @keyframes pending-spin{to{transform:rotate(360deg)}}
 @media(max-width:720px){.detail-media-skeleton{min-height:260px}.loading-filter{display:none}.route-loading .listing-content{min-width:0}}
 @media(prefers-reduced-motion:reduce){.pending-spinner{animation:none;border-right-color:currentColor;opacity:.65}.skeleton-line,.loading-filter span,.detail-media-skeleton{animation:none}}
+.admin-users-filter-skeleton{display:grid;grid-template-columns:minmax(180px,1fr) repeat(3,minmax(135px,.55fr)) 100px;gap:10px;margin:18px 0}.admin-users-filter-skeleton>span,.admin-users-table-skeleton span{display:block;border-radius:5px;background:#e7e9e4;animation:pulse 1.5s ease-in-out infinite}.admin-users-filter-skeleton>span{height:44px}.admin-users-table-skeleton{min-width:800px}.admin-users-table-skeleton>div{display:grid;grid-template-columns:1.5fr 1.5fr .8fr .7fr;gap:18px;align-items:center;min-height:72px;border-bottom:1px solid var(--line)}.admin-users-table-skeleton span{height:14px}.admin-user-detail-skeleton .review-actions{min-height:360px}.admin-user-detail-skeleton .skeleton-line:nth-child(even){width:72%}
+@media(max-width:720px){.admin-users-filter-skeleton{grid-template-columns:1fr}.admin-users-filter-skeleton>span:nth-child(n+4){display:none}.admin-users-table-skeleton{min-width:0}.admin-users-table-skeleton>div{grid-template-columns:1fr}.admin-users-table-skeleton span:not(:first-child){display:none}.admin-user-detail-skeleton .review-actions{min-height:260px}}
+@media(prefers-reduced-motion:reduce){.admin-users-filter-skeleton>span,.admin-users-table-skeleton span{animation:none}}
 /* Admin confirmation dialogs */
 .property-delete-controls dialog {
   box-sizing: border-box;
