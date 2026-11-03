@@ -29,7 +29,11 @@ export default async function AdminAnalytics({searchParams}:{searchParams:Promis
   const today=new Date(),monthStart=new Date();monthStart.setDate(monthStart.getDate()-29);
   const defaultTo=today.toISOString().slice(0,10),defaultFrom=monthStart.toISOString().slice(0,10),requestedFrom=isoDate(params.from,defaultFrom),requestedTo=isoDate(params.to,defaultTo);
   const[from,to]=requestedFrom<=requestedTo?[requestedFrom,requestedTo]:[defaultFrom,defaultTo];
-  const requestedPage=Number(params.page),page=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1,pageSize=25,country=locationValue(params.country),region=locationValue(params.region),city=locationValue(params.city),sort=params.sort==="page_views"?"page_views" as const:"visitors" as const,direction=params.direction==="asc"?"asc" as const:"desc" as const;
+  const requestedPage=Number(params.page),page=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1,pageSize=25,country=locationValue(params.country),region=locationValue(params.region),city=locationValue(params.city),sort = (
+  ["country", "region", "city", "visitors", "page_views"].includes(params.sort || "")
+    ? params.sort
+    : "visitors"
+) as "country" | "region" | "city" | "visitors" | "page_views",direction=params.direction==="asc"?"asc" as const:"desc" as const;
   const[{data:rows},{data:visitorResult,error:visitorError},{data:locationResult,error:locationError},{data:launchResult}]=await Promise.all([
     supabase.from("analytics_daily").select("day,entity_type,event_type,event_count").gte("day",from).lte("day",to),
     supabase.rpc("get_visitor_analytics",{date_from:from,date_to:to}),

@@ -27,8 +27,8 @@ begin
   if date_from is null or date_to is null or date_from > date_to or date_to - date_from > 366 then
     raise exception 'invalid_date_range';
   end if;
-  if sort_by not in ('visitors','page_views') or sort_direction not in ('asc','desc') then
-    raise exception 'invalid_sort';
+if sort_by not in ('visitors','page_views','country','region','city')
+   or sort_direction not in ('asc','desc') then    raise exception 'invalid_sort';
   end if;
   if page_number < 1 or page_size < 1 or page_size > 100
     or length(coalesce(country_filter,'')) > 100
@@ -65,15 +65,26 @@ begin
     select country,region,city,count(*) as page_views,count(distinct session_hash) as visitors
     from filtered group by country,region,city
   ), paged as (
-    select * from grouped
-    order by
-      case when sort_by='visitors' and sort_direction='desc' then visitors end desc,
-      case when sort_by='visitors' and sort_direction='asc' then visitors end asc,
-      case when sort_by='page_views' and sort_direction='desc' then page_views end desc,
-      case when sort_by='page_views' and sort_direction='asc' then page_views end asc,
-      country asc,region asc,city asc
-    limit page_size offset (page_number - 1) * page_size
-  )
+  select * from grouped
+  order by
+    case when sort_by='visitors' and sort_direction='desc' then visitors end desc,
+    case when sort_by='visitors' and sort_direction='asc' then visitors end asc,
+
+    case when sort_by='page_views' and sort_direction='desc' then page_views end desc,
+    case when sort_by='page_views' and sort_direction='asc' then page_views end asc,
+
+    case when sort_by='country' and sort_direction='asc' then country end asc,
+    case when sort_by='country' and sort_direction='desc' then country end desc,
+
+    case when sort_by='region' and sort_direction='asc' then region end asc,
+    case when sort_by='region' and sort_direction='desc' then region end desc,
+
+    case when sort_by='city' and sort_direction='asc' then city end asc,
+    case when sort_by='city' and sort_direction='desc' then city end desc,
+
+    country asc, region asc, city asc
+  limit page_size offset (page_number - 1) * page_size
+)
   select jsonb_build_object(
     'total_page_views',(select count(*) from filtered),
     'total_visitors',(select count(distinct session_hash) from filtered),
@@ -81,12 +92,29 @@ begin
     'countries',coalesce((select jsonb_agg(value order by value) from countries),'[]'::jsonb),
     'regions',coalesce((select jsonb_agg(value order by value) from regions),'[]'::jsonb),
     'cities',coalesce((select jsonb_agg(value order by value) from cities),'[]'::jsonb),
-    'rows',coalesce((select jsonb_agg(to_jsonb(paged) order by
+    'rows',coalesce((
+  select jsonb_agg(
+    to_jsonb(paged)
+    order by
       case when sort_by='visitors' and sort_direction='desc' then visitors end desc,
       case when sort_by='visitors' and sort_direction='asc' then visitors end asc,
+
       case when sort_by='page_views' and sort_direction='desc' then page_views end desc,
       case when sort_by='page_views' and sort_direction='asc' then page_views end asc,
-      country asc,region asc,city asc) from paged),'[]'::jsonb)
+
+      case when sort_by='country' and sort_direction='asc' then country end asc,
+      case when sort_by='country' and sort_direction='desc' then country end desc,
+
+      case when sort_by='region' and sort_direction='asc' then region end asc,
+      case when sort_by='region' and sort_direction='desc' then region end desc,
+
+      case when sort_by='city' and sort_direction='asc' then city end asc,
+      case when sort_by='city' and sort_direction='desc' then city end desc,
+
+      country asc, region asc, city asc
+  )
+  from paged
+), '[]'::jsonb)
   ) into result;
   return result;
 end $$;
