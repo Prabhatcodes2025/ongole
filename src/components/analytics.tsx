@@ -71,7 +71,7 @@ export function Analytics({
 
   return (
     <>
-      <PublicPageAnalytics />
+      {allowed && <PublicPageAnalytics />}
 
       <button
         type="button"
@@ -104,8 +104,7 @@ export function Analytics({
           <p>
             <strong>Analytics preferences</strong>
             <span>
-              Optional Google and Meta analytics run only with
-              permission.{" "}
+              Optional first-party, Google and Meta analytics run only with permission.{" "}
               <a href="/cookie-policy">Cookie policy</a>
             </span>
           </p>

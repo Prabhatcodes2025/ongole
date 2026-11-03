@@ -16,5 +16,5 @@ test("public visitor tracking uses the protected existing analytics pipeline",as
 test("visitor summaries remain admin-only and expose date and approximate location counts",async()=>{
   const[migration,page]=await Promise.all([read("../supabase/migrations/202610070001_visitor_analytics.sql"),read("../app/admin/analytics/page.tsx")]);
   for(const marker of ["get_visitor_analytics","has_permission('analytics.read')","count(distinct session_hash)","by_day","by_location","revoke all"])assert.ok(migration.includes(marker),`missing visitor analytics guard ${marker}`);
-  for(const marker of ["Total visitors","Total visits","Visitors by date","Visitors by approximate location","/admin/analytics"])assert.ok(page.includes(marker),`missing analytics UI ${marker}`);
+  for(const marker of ["Total visitors","Total page views","Visitors by date","Visitors by approximate location","/admin/analytics"])assert.ok(page.includes(marker),`missing analytics UI ${marker}`);
 });

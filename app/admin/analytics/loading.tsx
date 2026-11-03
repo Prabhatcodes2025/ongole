@@ -1,0 +1,3 @@
+import {LoadingSkeleton} from "@/src/components/dashboard/dashboard-shell";
+
+export default function AnalyticsLoading(){return <main id="main" className="dashboard-app dashboard-admin route-loading" aria-busy="true"><aside className="dashboard-sidebar" aria-hidden="true"/><div className="dashboard-workspace"><div className="dashboard-content"><div className="dashboard-page-title"><div><p className="eyebrow">Analytics</p><h1>Loading visitor analytics</h1></div></div><p className="form-pending-status" role="status"><i className="pending-spinner" aria-hidden="true"/>Loading location summaries…</p><LoadingSkeleton/></div></div></main>}

@@ -6,6 +6,8 @@ import {checkRateLimit} from "@/src/lib/security/rate-limit";
 import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
 const events=["page_view","listing_view","search_impression","enquiry_submitted","phone_click","whatsapp_click","map_click","form_start","form_submit","client_error","slow_load","share_click","favorite","promotion_impression","promotion_click"] as const;
 const schema=z.object({eventType:z.enum(events),entityType:z.enum(["property","pg","promotion","page"]).optional(),entityId:z.string().uuid().optional(),metadata:z.record(z.string(),z.union([z.string().max(100),z.number(),z.boolean()])).optional()});
+const reservedLocationKeys=new Set(["country","region","city"]);
+function geoHeader(request:NextRequest,name:string,max=100){const raw=request.headers.get(name);if(!raw)return undefined;let value=raw;try{value=decodeURIComponent(raw)}catch{}value=value.replace(/[\u0000-\u001f\u007f]/g,"").trim().slice(0,max);return value||undefined}
 export async function POST(request:NextRequest){
   const rate=await checkRateLimit(`analytics:${requestIp(request)}`,120,60_000);if(!rate.allowed)return new NextResponse(null,{status:204});
   const origin=request.headers.get("origin");if(origin&&origin!==request.nextUrl.origin)return new NextResponse(null,{status:204});
@@ -15,9 +17,9 @@ export async function POST(request:NextRequest){
   if(!entityId&&["property","pg"].includes(parsed.data.entityType||"")&&typeof parsed.data.metadata?.slug==="string"){const{data}=await service.from("properties").select("id").eq("slug",parsed.data.metadata.slug).eq("status","published").is("deleted_at",null).maybeSingle();entityId=data?.id}
   if(["property","pg"].includes(parsed.data.entityType||"")){if(!entityId)return new NextResponse(null,{status:204});const{data}=await service.from("properties").select("id,status,deleted_at").eq("id",entityId).eq("status","published").is("deleted_at",null).maybeSingle();if(!data)return new NextResponse(null,{status:204})}
   const sessionHash=createHash("sha256").update(`${new Date().toISOString().slice(0,10)}:${requestIp(request)}`).digest("hex").slice(0,32);
-  const cityHeader=request.headers.get("x-vercel-ip-city");let city:string|undefined;try{city=cityHeader?decodeURIComponent(cityHeader).slice(0,100):undefined}catch{city=cityHeader?.slice(0,100)}
-  const approximateLocation={country:request.headers.get("x-vercel-ip-country")||undefined,region:request.headers.get("x-vercel-ip-country-region")||undefined,city};
-  const metadata={...(parsed.data.metadata||{}),...Object.fromEntries(Object.entries(approximateLocation).filter(([,value])=>value))};
+  const clientMetadata=Object.fromEntries(Object.entries(parsed.data.metadata||{}).filter(([key])=>!reservedLocationKeys.has(key)));
+  const approximateLocation={country:geoHeader(request,"x-vercel-ip-country",2)?.toUpperCase(),region:geoHeader(request,"x-vercel-ip-country-region"),city:geoHeader(request,"x-vercel-ip-city")};
+  const metadata={...clientMetadata,...Object.fromEntries(Object.entries(approximateLocation).filter(([,value])=>value))};
   await service.from("analytics_events").insert({event_type:parsed.data.eventType,entity_type:parsed.data.entityType||null,entity_id:entityId||null,session_hash:sessionHash,metadata});
   return new NextResponse(null,{status:204});
 }
