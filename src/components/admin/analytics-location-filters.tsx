@@ -4,7 +4,7 @@ import {useRouter} from "next/navigation";
 import {useTransition} from "react";
 import {PendingSubmitButton} from "@/src/components/pending-submit-button";
 
-type Props={from:string;to:string;country:string;region:string;city:string;sort:"visitors"|"page_views";direction:"asc"|"desc";countries:string[];regions:string[];cities:string[]};
+type Props={from:string;to:string;country:string;region:string;city:string;sort:"country"|"region"|"city"|"visitors"|"page_views";direction:"asc"|"desc";countries:string[];regions:string[];cities:string[]};
 
 export function AnalyticsLocationFilters(props:Props){
   const router=useRouter(),[pending,startTransition]=useTransition();
