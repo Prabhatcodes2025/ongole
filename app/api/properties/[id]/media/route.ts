@@ -8,7 +8,7 @@ import {canManagePropertyMedia} from "@/src/lib/properties/media-authorization";
 const MAX_SOURCE_BYTES=15*1024*1024;
 const ALLOWED_INPUT_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
 
-function dashboardUrl(request:NextRequest,propertyId:string,result:string){const pgId=request.nextUrl.searchParams.get("context")==="pg"?request.nextUrl.searchParams.get("pgId"):null;if(pgId&&/^[0-9a-f-]{36}$/i.test(pgId))return new URL(`/dashboard/pg/${pgId}?media=${result}`,request.url);return new URL(`/dashboard/properties/${propertyId}?media=${result}`,request.url)}
+function dashboardUrl(request:NextRequest,propertyId:string,result:string){if(request.nextUrl.searchParams.get("returnTo")==="admin")return new URL(`/admin/properties/${propertyId}/edit?media=${result}`,request.url);const pgId=request.nextUrl.searchParams.get("context")==="pg"?request.nextUrl.searchParams.get("pgId"):null;if(pgId&&/^[0-9a-f-]{36}$/i.test(pgId))return new URL(`/dashboard/pg/${pgId}?media=${result}`,request.url);return new URL(`/dashboard/properties/${propertyId}?media=${result}`,request.url)}
 
 export async function POST(request:NextRequest,{params}:{params:Promise<{id:string}>}){
   const{id}=await params,isPg=request.nextUrl.searchParams.get("context")==="pg";const rate=await checkRateLimit(`upload:${requestIp(request)}`,20,60*60_000);if(!rate.allowed)return NextResponse.json({error:"Upload limit reached. Try again later."},{status:429});

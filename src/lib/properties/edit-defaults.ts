@@ -1,0 +1,17 @@
+export type EditablePropertyRecord={
+  transaction_type:string;title:string;description:string;locality_text:string;city_text:string;
+  district_text:string;state_text:string;price_inr:number|null;area_value:number|null;area_unit:string;details:unknown;
+};
+
+export function propertyEditDefaults(property:EditablePropertyRecord){
+  const detail=property.details&&typeof property.details==="object"&&!Array.isArray(property.details)?property.details as Record<string,unknown>:{};
+  const defaults:Record<string,unknown>={transactionType:property.transaction_type,category:detail.category,propertyType:detail.property_type_slug,title:property.title,description:property.description,locality:property.locality_text,city:property.city_text,district:property.district_text,state:property.state_text,price:property.price_inr,areaValue:property.area_value,areaUnit:property.area_unit,addressLine:detail.address_line,landmark:detail.landmark,availableFrom:detail.available_from,securityDeposit:detail.security_deposit,builtUpArea:detail.built_up_area,carpetArea:detail.carpet_area,plotArea:detail.plot_area,furnishing:detail.furnishing,balconies:detail.balconies,rentPeriod:detail.rent_period,propertyAge:detail.property_age,floor:detail.floor,totalFloors:detail.total_floors,bedrooms:detail.bedrooms,bathrooms:detail.bathrooms,facing:detail.facing,cropType:detail.crop_type,soilType:detail.soil_type,amountBasis:detail.amount_basis,fencing:detail.fencing,electricityConnection:detail.electricity_connection,roadAccess:detail.road_access,parking:detail.parking,powerBackup:detail.power_backup,generator:detail.generator,security:detail.security,cctv:detail.cctv,lift:detail.lift,fireSafety:detail.fire_safety,wasteManagement:detail.waste_management,balcony:detail.balcony,poojaRoom:detail.pooja_room,storeRoom:detail.store_room,servantRoom:detail.servant_room,gasPipeline:detail.gas_pipeline,googleMapsUrl:detail.google_maps_url,youtubeUrl:detail.youtube_url};
+  const contact=detail.contact&&typeof detail.contact==="object"&&!Array.isArray(detail.contact)?detail.contact as Record<string,unknown>:{};
+  Object.assign(defaults,{contactName:contact.name,contactMobile:contact.mobile,contactEmail:contact.email});
+  if(Array.isArray(detail.amenities))for(const amenity of detail.amenities)defaults[`amenity_${String(amenity).toLowerCase().replace(/[^a-z0-9]+/g,"_")}`]=true;
+  const nearby=detail.nearby_places&&typeof detail.nearby_places==="object"&&!Array.isArray(detail.nearby_places)?detail.nearby_places as Record<string,unknown>:{};
+  for(const[key,column]of [["nearbyRailwayStation","railway_station"],["nearbyBank","bank"],["nearbyAtm","atm"],["nearbyCollege","college"],["nearbyHospital","hospital"],["nearbyBusDepot","bus_depot"]] as const){const item=nearby[column]&&typeof nearby[column]==="object"&&!Array.isArray(nearby[column])?nearby[column] as Record<string,unknown>:{};defaults[key]=item.distance;defaults[`${key}Unit`]=String(item.unit||"").toLowerCase()==="km"?"km":"meter"}
+  const named=[nearby.other,...(Array.isArray(nearby.custom)?nearby.custom.slice(0,2):[])];
+  for(const[index,item]of named.entries())if(item&&typeof item==="object"&&!Array.isArray(item)){const entry=item as Record<string,unknown>,suffix=index===0?"":String(index+1);defaults[`nearbyOtherName${suffix}`]=entry.name;defaults[`nearbyOtherDistance${suffix}`]=entry.distance;defaults[`nearbyOtherDistanceUnit${suffix}`]=String(entry.unit||"").toLowerCase()==="km"?"km":"meter"}
+  return defaults;
+}

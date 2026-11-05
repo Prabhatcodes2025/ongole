@@ -22,6 +22,6 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   }else return NextResponse.json({error:"Invalid media action."},{status:400});
   await supabase.rpc("record_audit_event",{event_action:`media.${action}`,event_type:"property_media",event_reference:property.reference_no,event_new:{media_id:mediaId}});
   const pgId=request.nextUrl.searchParams.get("context")==="pg"?request.nextUrl.searchParams.get("pgId"):null;
-  const destination=pgId&&/^[0-9a-f-]{36}$/i.test(pgId)?`/dashboard/pg/${pgId}?media=${action}`:`/dashboard/properties/${id}?media=${action}`;
+  const destination=request.nextUrl.searchParams.get("returnTo")==="admin"?`/admin/properties/${id}/edit?media=${action}`:pgId&&/^[0-9a-f-]{36}$/i.test(pgId)?`/dashboard/pg/${pgId}?media=${action}`:`/dashboard/properties/${id}?media=${action}`;
   return NextResponse.redirect(new URL(destination,request.url),303);
 }
