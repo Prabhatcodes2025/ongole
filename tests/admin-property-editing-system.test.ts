@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import test from "node:test";
 import {propertyEditDefaults} from "../src/lib/properties/edit-defaults";
+import {resolvePropertyEditMode} from "../src/lib/properties/edit-authorization";
 
 const read=(path:string)=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 
@@ -14,7 +15,15 @@ test("dedicated editor and server mutation enforce admin workflow safeguards",()
   const page=read("app/admin/properties/[id]/edit/page.tsx"),route=read("app/api/properties/[id]/route.ts"),review=read("app/admin/properties/[id]/page.tsx");
   assert.match(page,/PERMISSIONS\.propertiesManage/);assert.match(page,/originalUpdatedAt/);assert.match(page,/Back to Review/);assert.match(page,/returnTo=admin/);assert.match(page,/adminIdentityEdit/);
   assert.match(review,/Edit Property Details/);assert.match(review,/\/admin\/properties\/\$\{id\}\/edit/);
-  assert.match(route,/has_permission/);assert.match(route,/properties\.manage/);assert.match(route,/\.eq\("updated_at",value\.originalUpdatedAt\)/);assert.match(route,/changed_fields/);assert.match(route,/\[redacted\]/);assert.doesNotMatch(route,/owner_id:value/);
+  assert.match(page,/name="editContext" value="admin"/);assert.match(route,/has_permission/);assert.match(route,/properties\.manage/);assert.match(route,/editMode==="owner"/);assert.match(route,/\.eq\("updated_at",value\.originalUpdatedAt\)/);assert.match(route,/changed_fields/);assert.match(route,/\[redacted\]/);assert.doesNotMatch(route,/owner_id:value/);
+});
+
+test("verified admin context overrides owner lifecycle locks without weakening owner edits",()=>{
+  assert.equal(resolvePropertyEditMode({isOwner:true,hasManagePermission:true,requestedAdminEdit:true}),"admin","an authorized admin may manage a property tied to the same user id");
+  assert.equal(resolvePropertyEditMode({isOwner:true,hasManagePermission:false,requestedAdminEdit:false}),"owner","ordinary owner editing remains owner-scoped");
+  assert.equal(resolvePropertyEditMode({isOwner:true,hasManagePermission:false,requestedAdminEdit:true}),"denied","a client admin flag grants no authority");
+  assert.equal(resolvePropertyEditMode({isOwner:false,hasManagePermission:true,requestedAdminEdit:true}),"admin","authorized admins may edit customer and agent submissions");
+  assert.equal(resolvePropertyEditMode({isOwner:false,hasManagePermission:false,requestedAdminEdit:true}),"denied","unauthorized users cannot use the admin editor");
 });
 
 test("editor warns about incompatible identity changes and unsaved navigation",()=>{
