@@ -14,10 +14,18 @@ export default async function AdminAgentsPage({ searchParams }: { searchParams: 
   if (!auth.user) redirect("/login?returnTo=/admin/agents");
   const { data: allowed } = await supabase.rpc("has_permission", { required_permission: "agents.read" });
   if (!allowed) redirect("/dashboard");
-  let query = supabase.from("agents").select("id,reference_no,years_experience,office_address,about,working_towns,specializations,status,verified_at,created_at,profiles(full_name,email,mobile)", { count: "exact" }).order("created_at", { ascending: false }).range((page - 1) * size, page * size - 1);
+  let query = supabase.from("agents").select("id,reference_no,years_experience,office_address,about,working_towns,specializations,status,verified_at,created_at,profiles!agents_user_id_fkey(full_name,email,mobile)", { count: "exact" }).order("created_at", { ascending: false }).range((page - 1) * size, page * size - 1);
   if (statuses.includes(params.status || "") && params.status) query = query.eq("status", params.status);
   if (params.q) { const q = params.q.replace(/[%(),]/g, ""); query = query.or(`reference_no.ilike.%${q}%,about.ilike.%${q}%`); }
   const { data: agents, count, error } = await query;
+  if (error) {
+  console.error("[Admin Agents] Failed to load applications", {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+}
   const { data: canManage } = await supabase.rpc("has_permission", { required_permission: "agents.manage" });
   const retained = new URLSearchParams(Object.entries(params).filter(([key, value]) => value && key !== "page").map(([key, value]) => [key, String(value)]));
   const pageHref = (target: number) => { const next = new URLSearchParams(retained); next.set("page", String(target)); return `/admin/agents?${next}`; };
