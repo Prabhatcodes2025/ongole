@@ -17,8 +17,27 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const ownerId=(pg?.properties as unknown as {owner_id?:string}|null)?.owner_id;
   if(!pg||(ownerId!==auth.user.id&&canManage!==true)||(canManage!==true&&!["draft","changes_requested"].includes(status||"")))return NextResponse.json({error:"This PG is locked."},{status:403});
   const {count}=await supabase.from("pg_room_types").select("id",{count:"exact",head:true}).eq("pg_listing_id",id);
-  const {error}=await supabase.from("pg_room_types").insert({...parsed.data,pg_listing_id:id,sort_order:count||0});
-  if(error)return NextResponse.json({error:"The room could not be added."},{status:409});
+  const { error } = await supabase
+  .from("pg_room_types")
+  .insert({
+    ...parsed.data,
+    pg_listing_id: id,
+    sort_order: count || 0,
+  });
+
+if (error) {
+  console.error("[PG Room Add] Database insert failed", {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+
+  return NextResponse.json(
+    { error: "The room could not be added." },
+    { status: 409 }
+  );
+}
   await supabase.rpc("record_audit_event",{event_action:"pg.room_added",event_type:"pg_listing",event_reference:id,event_new:{admin_override:canManage===true}});
   return NextResponse.redirect(new URL(`/dashboard/pg/${id}?notice=room-added`,request.url),303);
 }

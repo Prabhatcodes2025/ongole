@@ -46,6 +46,7 @@ export const pgRoomSchema=z.object({
   capacity:z.coerce.number().int().positive().max(1000),
   available_beds:z.coerce.number().int().nonnegative().max(1000),
   monthly_rent:z.coerce.number().min(100,"Monthly rent must be at least ₹100."),
+  security_deposit:z.coerce.number().finite().nonnegative("Security deposit cannot be negative."),
 }).refine((room)=>room.available_beds<=room.capacity,{message:"Available beds cannot exceed capacity.",path:["available_beds"]});
 
 export function formList(value:unknown){

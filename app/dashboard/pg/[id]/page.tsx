@@ -35,7 +35,27 @@ export default async function ManagePgPage({params,searchParams}:{params:Promise
       <section className="portal-section"><h2>PG information</h2>{editable?<PgForm defaults={defaults}/>:<dl className="review-facts"><div><dt>Category</dt><dd>{pg.category.replaceAll("_"," ")}</dd></div><div><dt>Location</dt><dd>{property.locality_text}, {property.city_text}</dd></div><div><dt>Rent from</dt><dd>₹{Number(pg.rent_per_bed).toLocaleString("en-IN")}</dd></div><div className="wide"><dt>Description</dt><dd>{property.description}</dd></div></dl>}</section>
       <section className="portal-section"><div className="section-heading-row"><h2>Room types</h2><span>{rooms?.length||0}</span></div>
         {rooms?.length?<div className="admin-table"><div className="admin-row admin-head"><span>Room</span><span>Sharing</span><span>Beds</span><span>Rent</span><span/></div>{rooms.map((room)=><div className="admin-row" key={room.id}><span><strong>{room.name}</strong></span><span>{room.sharing_type.replaceAll("_"," ")}</span><span>{room.available_beds}/{room.capacity}</span><span>₹{Number(room.monthly_rent).toLocaleString("en-IN")}</span><span>{editable&&<form action={`/api/pg/${id}/rooms/${room.id}`} method="post"><button className="danger-link" name="action" value="delete">Remove</button></form>}</span></div>)}</div>:<div className="empty-state compact"><p>No room types added.</p></div>}
-        {editable&&<form className="submission-form compact-form room-form" action={`/api/pg/${id}/rooms`} method="post"><label>Room name<input required name="name" placeholder="Standard room"/></label><label>Sharing<select name="sharing_type"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="four_sharing">Four sharing</option></select></label><label>Capacity<input required name="capacity" type="number" min="1"/></label><label>Available beds<input required name="available_beds" type="number" min="0"/></label><label>Monthly rent<input required name="monthly_rent" type="number" min="0"/></label><button className="button secondary">Add room</button></form>}
+        {editable&&<form className="submission-form compact-form room-form" action={`/api/pg/${id}/rooms`} method="post"><label>Room name<input required name="name" placeholder="Standard room"/></label><label>Sharing<select name="sharing_type"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="four_sharing">Four sharing</option></select></label><label>Capacity<input required name="capacity" type="number" min="1"/></label><label>Available beds<input required name="available_beds" type="number" min="0"/></label><label>
+  Monthly rent (₹)
+  <input
+    required
+    name="monthly_rent"
+    type="number"
+    min="100"
+    step="1"
+  />
+</label>
+<label>
+  Security deposit (₹)
+  <input
+    required
+    name="security_deposit"
+    type="number"
+    min="0"
+    step="1"
+    defaultValue="0"
+  />
+</label><button className="button secondary">Add room</button></form>}
       </section>
       <section className="portal-section"><div className="section-heading-row"><h2>Images</h2><span>{media.length}/6</span></div>
         {editable&&<form className="media-upload" action={`/api/properties/${pg.property_id}/media?context=pg&pgId=${id}`} method="post" encType="multipart/form-data"><label>Upload up to 6 images<input required multiple type="file" name="image" accept="image/jpeg,image/png,image/webp"/></label><p>Images are resized, optimized and converted to high-quality WebP without an OngoleProperty watermark.</p><button className="button secondary">Process &amp; upload</button></form>}
