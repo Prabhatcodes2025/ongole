@@ -22,20 +22,75 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   if(typeof raw.description!=="string"||raw.description.trim().length<20)return NextResponse.json({error:"Check the PG details and try again.",fields:{description:["Description must be at least 20 characters."]}},{status:400});
   const [{data:pg},{data:canManage}]=await Promise.all([supabase.from("pg_listings").select("property_id,details,properties!inner(owner_id,status)").eq("id",id).maybeSingle(),supabase.rpc("has_permission",{required_permission:"pg.manage"})]);
   if(!pg)return NextResponse.json({error:"PG listing not found."},{status:404});
-  const property=Array.isArray(pg.properties)?pg.properties[0]:pg.properties;const isAdmin=canManage===true&&property?.owner_id!==auth.user.id;if(property?.owner_id!==auth.user.id&&!isAdmin)return NextResponse.json({error:"PG listing not found."},{status:404});
-  if(action==="delete"){
-    const {error}=await supabase.rpc("owner_soft_delete_property",{target_property:pg.property_id});
+  const property=Array.isArray(pg.properties)?pg.properties[0]:pg.properties;const adminRequested = raw.edit_context === "admin";
+const isAdmin = adminRequested && canManage === true;
+
+if (adminRequested && !isAdmin) {
+  return NextResponse.json(
+    { error: "Admin permission required." },
+    { status: 403 }
+  );
+}if(property?.owner_id!==auth.user.id&&!isAdmin)return NextResponse.json({error:"PG listing not found."},{status:404});
+if (action === "delete") {
+  if (adminRequested) {
+    return NextResponse.json(
+      { error: "Use PG administration deletion controls." },
+      { status: 403 }
+    );
+  }    const {error}=await supabase.rpc("owner_soft_delete_property",{target_property:pg.property_id});
     if(error)return NextResponse.json({error:"This PG cannot be deleted in its current state."},{status:409});
     return NextResponse.redirect(new URL("/dashboard/pg?notice=deleted",request.url),303);
   }
   const checked=Object.entries(raw).filter(([key,value])=>key.startsWith("amenity_")&&typeof value==="string").map(([,value])=>value as string);
   const nearby=nearbyPlacesFromInput(raw);if(Object.keys(nearby.errors).length)return NextResponse.json({error:"Check the nearby places and try again.",fields:nearby.errors},{status:400});
-  const parsed=pgDraftSchema.safeParse({...raw,amenities:[...new Set(checked)],house_rules:formList(raw.house_rules),video_urls:formList(raw.video_urls)});
-  if(!parsed.success)return NextResponse.json({error:"Check the PG details and try again.",fields:parsed.error.flatten().fieldErrors},{status:400});
+  
+const validationInput: Record<string, unknown> = {
+  ...raw,
+  amenities: [...new Set(checked)],
+  house_rules: formList(raw.house_rules),
+  video_urls: formList(raw.video_urls),
+};
+
+// Admin edits do not require fresh owner consent.
+if (isAdmin) {
+  validationInput.consent = "true";
+}
+
+// A draft key is optional when updating an existing PG.
+// Remove it only when the supplied value is empty or invalid.
+if (
+  typeof validationInput.client_draft_key !== "string" ||
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    validationInput.client_draft_key
+  )
+) {
+  delete validationInput.client_draft_key;
+}
+
+const parsed = pgDraftSchema.safeParse(validationInput);
+
+if (!parsed.success) {
+  return NextResponse.json(
+    {
+      error: "Check the PG details and try again.",
+      fields: parsed.error.flatten().fieldErrors,
+    },
+    { status: 400 }
+  );
+}
+
   const {error}=await supabase.rpc("update_pg_draft",{target_pg:id,pg_payload:parsed.data});
   if(error){console.error("PG draft update failed",{pgId:id,userId:auth.user.id,code:error.code});return NextResponse.json({error:"The PG draft could not be updated. Please retry."},{status:409})}
   const currentDetails=pg&&"details" in pg&&pg.details&&typeof pg.details==="object"&&!Array.isArray(pg.details)?pg.details as Record<string,unknown>:{};
-  const consent={accepted:true,accepted_at:new Date().toISOString(),accepted_by:auth.user.id,channels:["sms","whatsapp","email"]};
-  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,nearby_places:nearby.nearby,rent_basis:parsed.data.rent_basis,google_maps_url:safeGoogleMapsUrl(parsed.data.google_maps_url),listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
+const consent = isAdmin
+  ? currentDetails.listing_communication_consent ?? null
+  : raw.consent === "true"
+    ? {
+        accepted: true,
+        accepted_at: new Date().toISOString(),
+        accepted_by: auth.user.id,
+        channels: ["sms", "whatsapp", "email"]
+      }
+    : currentDetails.listing_communication_consent ?? null;  const{error:detailsError}=await supabase.from("pg_listings").update({details:{...currentDetails,landmark:parsed.data.landmark||null,facing:parsed.data.facing||null,lunch_box_available:parsed.data.lunch_box_available,nearby_places:nearby.nearby,rent_basis:parsed.data.rent_basis,google_maps_url:safeGoogleMapsUrl(parsed.data.google_maps_url),listing_communication_consent:consent}}).eq("id",id);if(detailsError)return NextResponse.json({error:"The PG details were saved but its additional details could not be updated."},{status:500});
   return NextResponse.redirect(new URL(isAdmin?`/admin/pg/${id}`:`/dashboard/pg/${id}?notice=updated`,request.url),303);
 }

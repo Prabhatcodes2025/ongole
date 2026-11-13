@@ -723,3 +723,40 @@ input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin
     min-width: 1050px;
   }
 }
+
+/* Keep Privacy away from WhatsApp Chat and Channel */
+.privacy-preferences {
+  position: fixed;
+  left: 16px;
+  right: auto;
+  bottom: 16px;
+  z-index: 79;
+}
+
+/* Open privacy popup on the left */
+.cookie-consent {
+  position: fixed;
+  left: 16px;
+  right: auto;
+  bottom: 60px;
+  width: min(360px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  z-index: 1100;
+}
+
+/* Mobile positioning */
+@media (max-width: 720px) {
+  .privacy-preferences {
+    left: 12px;
+    right: auto;
+    bottom: 70px;
+  }
+
+  .cookie-consent {
+    left: 12px;
+    right: auto;
+    bottom: 115px;
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+  }
+}

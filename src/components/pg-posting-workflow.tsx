@@ -34,8 +34,13 @@ async function clearGuestMedia(){const db=await mediaDatabase();await new Promis
 const amenityLabels:Record<string,string>={WiFi:"Wi-Fi",Food:"Meals"};
 export function pgListFieldDefault(value:unknown){return Array.isArray(value)?value.map(item=>String(item)).join("\n"):typeof value==="string"?value:""}
 
-export function PgFields({defaults}:{defaults?:Record<string,unknown>}){
-  const amenities=Array.isArray(defaults?.amenities)?defaults.amenities as string[]:[];
+export function PgFields({
+  defaults,
+  adminMode = false
+}: {
+  defaults?: Record<string, unknown>;
+  adminMode?: boolean;
+}) {  const amenities=Array.isArray(defaults?.amenities)?defaults.amenities as string[]:[];
   return <>
     <input type="hidden" name="client_draft_key" value={String(defaults?.client_draft_key||"")}/>
     <label className="wide">PG name<input required name="pg_name" minLength={3} maxLength={120} defaultValue={String(defaults?.pg_name||"")}/></label>
@@ -53,8 +58,18 @@ export function PgFields({defaults}:{defaults?:Record<string,unknown>}){
     <label className="wide">House rules (one per line)<textarea name="house_rules" rows={3} placeholder="Example: Gate closes at 10 PM, No smoking inside, Only vegetarian tenants" defaultValue={pgListFieldDefault(defaults?.house_rules)}/></label>
     <label className="wide compact-field">YouTube video URLs only (one per line)<textarea name="video_urls" rows={2} defaultValue={pgListFieldDefault(defaults?.video_urls)}/></label>
     <h2 className="wide">Contact information</h2><label>Contact name<input name="contact_name" defaultValue={String(defaults?.contact_name||"")}/></label><label>Mobile<input name="contact_mobile" inputMode="tel" defaultValue={String(defaults?.contact_mobile||"")}/></label><label>WhatsApp<input name="contact_whatsapp" inputMode="tel" defaultValue={String(defaults?.contact_whatsapp||"")}/></label><label>Email<input name="contact_email" type="email" defaultValue={String(defaults?.contact_email||"")}/></label>
-    <label className="check-label wide consent-field"><input required type="checkbox" name="consent" value="true" defaultChecked={defaults?.consent==="true"}/>I confirm I am authorized to post this listing, and I consent to receive SMS, WhatsApp, and Email communications regarding this listing.</label>
-  </>;
+{!adminMode && (
+  <label className="check-label wide consent-field">
+    <input
+      required
+      type="checkbox"
+      name="consent"
+      value="true"
+      defaultChecked={defaults?.consent === "true"}
+    />
+    I confirm I am authorized to post this listing, and I consent to receive SMS, WhatsApp, and Email communications regarding this listing.
+  </label>
+)}  </>;
 }
 
 export function PublicPgPostingForm(){
@@ -75,4 +90,30 @@ export function DashboardPgDraftForm(){
   return <form ref={formRef} className="submission-form compact-form pg-posting-form" onSubmit={submit}><PgFields defaults={defaults}/>{message&&<div className="form-message error wide" role="alert"><p>{message}</p>{Object.values(errors).map(error=><small className="field-error" key={error}>{error}</small>)}</div>}<button className="button" disabled={busy}>{busy?"Saving…":"Create private PG draft"}</button></form>;
 }
 
-export function PgForm({defaults}:{defaults?:Record<string,unknown>}){return <form className="submission-form compact-form pg-posting-form" action={`/api/pg/${defaults?.id}`} method="post"><input type="hidden" name="action" value="update"/><PgFields defaults={defaults}/><button className="button" type="submit">Save changes</button></form>}
+export function PgForm({
+  defaults,
+  adminMode = false
+}: {
+  defaults?: Record<string, unknown>;
+  adminMode?: boolean;
+}) {
+  return (
+    <form
+      className="submission-form compact-form pg-posting-form"
+      action={`/api/pg/${defaults?.id}`}
+      method="post"
+    >
+      <input type="hidden" name="action" value="update" />
+
+      {adminMode && (
+        <input type="hidden" name="edit_context" value="admin" />
+      )}
+
+      <PgFields defaults={defaults} adminMode={adminMode} />
+
+      <button className="button" type="submit">
+        {adminMode ? "Save Admin Changes" : "Save changes"}
+      </button>
+    </form>
+  );
+}
