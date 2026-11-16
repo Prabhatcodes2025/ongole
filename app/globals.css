@@ -823,3 +823,43 @@ input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin
     grid-template-columns: minmax(0, 1fr) 92px;
   }
 }
+
+/* Fix optional custom nearby locations layout */
+.submission-form .nearby-custom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.submission-form .nearby-custom > label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.submission-form .nearby-custom > label input {
+  width: 100%;
+  min-width: 0;
+}
+
+.submission-form .nearby-custom .nearby-distance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.submission-form .nearby-custom .nearby-distance input,
+.submission-form .nearby-custom .nearby-distance select {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .submission-form .nearby-custom {
+    grid-column: 1 / -1;
+  }
+}
