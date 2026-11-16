@@ -760,3 +760,66 @@ input.dev-jv-price::-webkit-outer-spin-button { -webkit-appearance: none; margin
     max-width: calc(100vw - 24px);
   }
 }
+
+/* Fix nearby location form fields */
+.submission-form .nearby-places-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px 14px;
+  align-items: start;
+}
+
+.submission-form fieldset.nearby-distance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(75px, 92px);
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  align-content: start;
+}
+
+.submission-form fieldset.nearby-distance legend {
+  width: 100%;
+  padding: 0 0 7px;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.submission-form fieldset.nearby-distance input,
+.submission-form fieldset.nearby-distance select {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.submission-form .nearby-custom {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 0.6fr);
+}
+
+.submission-form .nearby-custom > * {
+  min-width: 0;
+}
+
+@media (max-width: 1000px) {
+  .submission-form .nearby-places-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .submission-form .nearby-places-fields {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .submission-form .nearby-custom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .submission-form fieldset.nearby-distance {
+    grid-template-columns: minmax(0, 1fr) 92px;
+  }
+}
