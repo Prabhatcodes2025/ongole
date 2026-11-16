@@ -511,8 +511,8 @@ export default async function ManagePgPage({
                   </label>
 
                   <p>
-                    Images are resized, optimized and converted to
-                    high-quality WebP without an OngoleProperty watermark.
+                        Images are resized to 1200 × 800, converted to
+                        high-quality WebP, thumbnailed and watermarked.
                   </p>
 
                   <button className="button secondary">

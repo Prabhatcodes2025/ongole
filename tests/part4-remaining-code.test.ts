@@ -6,9 +6,9 @@ import {applicablePropertyDetails} from "../src/lib/properties/validation";
 
 const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
-test("Sale Rent stay watermarked while PG uses optimized watermark-free images",async()=>{
+test("Sale, Rent and PG uploads keep standardized watermarked display and thumbnail images",async()=>{
   const source=await read("../app/api/properties/[id]/media/route.ts");
-  for(const marker of ["files.length>6","const limit=6","width:1200","width:400","www.ongoleproperty.com Call 7788998459","context\")===\"pg\"","isPg?baseImage:baseImage.composite","quality:isPg?88:82"])assert.match(source,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  for(const marker of ["files.length > 6","const limit = 6","DISPLAY_WIDTH = 1200","DISPLAY_HEIGHT = 800","THUMB_WIDTH = 600","THUMB_HEIGHT = 400","www.ongoleproperty.com , call : 7788998459","context\") === \"pg\"","composite(["])assert.match(source,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
   assert.match(source,/property-media/);
 });
 

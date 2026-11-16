@@ -59,7 +59,7 @@ test("guest PG flow autosaves versioned data and uploads media only after authen
   const[workflow,create,media]=await Promise.all([read("../src/components/pg-posting-workflow.tsx"),read("../app/api/pg/route.ts"),read("../app/api/properties/[id]/media/route.ts")]);
   for(const marker of ["STORAGE_VERSION","savedAt","MAX_AGE_MS","indexedDB","storeGuestMedia","readGuestMedia","clearDraft"])assert.match(workflow,new RegExp(marker));
   assert.match(workflow,/Continue to Sign In \/ Register/);assert.match(workflow,/\/api\/auth\/context/);assert.match(workflow,/\/api\/properties\/\$\{result\.propertyId\}\/media/);
-  assert.match(create,/auth\.getUser\(\)/);assert.match(media,/email_confirmed_at/);assert.match(media,/eq\("owner_id",auth\.user\.id\)/);assert.doesNotMatch(media,/anon/i);
+  assert.match(create,/auth\.getUser\(\)/);assert.match(media,/email_confirmed_at/);assert.match(media,/eq\("owner_id",\s*auth\.user\.id\)/);assert.doesNotMatch(media,/anon/i);
 });
 
 test("NRI alignment, neutral consent and quick-nav pill contracts remain responsive",async()=>{

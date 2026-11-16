@@ -36,9 +36,9 @@ test("server routes verify permission and genuine PG association",async()=>{
   const[pgRoute,upload,action]=await Promise.all([read("../app/api/pg/route.ts"),read("../app/api/properties/[id]/media/route.ts"),read("../app/api/properties/[id]/media/[mediaId]/route.ts")]);
   assert.match(pgRoute,/rpc\("check_pg_posting_permission"\)/);
   for(const source of[upload,action]){
-    assert.match(source,/required_permission:"properties\.manage"/);
-    assert.match(source,/required_permission:"pg\.manage"/);
-    assert.match(source,/from\("pg_listings"\).*eq\("property_id",id\)/);
+    assert.match(source,/required_permission:\s*"properties\.manage"/);
+    assert.match(source,/required_permission:\s*"pg\.manage"/);
+    assert.match(source,/from\("pg_listings"\)[\s\S]*?eq\("property_id",\s*id\)/);
     assert.match(source,/canManagePropertyMedia/);
   }
 });
