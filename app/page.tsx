@@ -24,6 +24,24 @@ const getActiveAdvertisement=(slot:PublicAdvertisement["slot"])=>within(getActiv
 
 export default async function Home(){const [featured,catalog,scrollingAd,heroAd,flashAd]=await Promise.all([getFeaturedProperties(6),getPublicPropertyCatalog(),getActiveAdvertisement("scrolling"),getActiveAdvertisement("hero"),getActiveAdvertisement("flash")]);const structuredData={"@context":"https://schema.org","@type":["RealEstateAgent","LocalBusiness"],name:"OngoleProperty.com",url:"https://www.ongoleproperty.com",image:"https://www.ongoleproperty.com/images/real-estate-agents-in-ongole-ongoleproperty.webp",telephone:"+91 77889 98459",email:"enquiry@ongoleproperty.com",areaServed:[{"@type":"City",name:"Ongole"},{"@type":"AdministrativeArea",name:"Prakasam District"}],description:homeDescription};return <main id="main"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structuredData).replace(/</g,"\\u003c")}}/>
   {scrollingAd&&<div className="top-ad shell"><AdSlot title={scrollingAd.title} image={scrollingAd.image} alt={scrollingAd.alt} href={scrollingAd.href} className="ad-scroll"/></div>}
+  
+<div
+  role="status"
+  style={{
+    backgroundColor: "#fff3cd",
+    color: "#664d03",
+    borderTop: "2px solid #e0a800",
+    borderBottom: "2px solid #e0a800",
+    padding: "16px 20px",
+    textAlign: "center",
+    fontSize: "clamp(16px, 2vw, 20px)",
+    fontWeight: 800,
+    letterSpacing: "0.3px",
+  }}
+>
+  🚧 This Website Is Under Construction 🚧
+</div>
+
   <HeroSlider catalog={catalog}/>
   {heroAd&&<div className="shell"><AdSlot title={heroAd.title} image={heroAd.image} alt={heroAd.alt} href={heroAd.href} className="ad-hero"/></div>}
   <section className="section home-latest section-tinted"><div className="shell"><SectionHeading eyebrow="Carefully reviewed" title="Featured and latest properties" action={<Link className="arrow-link" href="/properties">View all properties →</Link>}/>{featured.length?<div className="property-grid">{featured.map((property)=><PropertyCard key={property.id} property={property}/>)}</div>:<EmptyState title="No public properties yet" message="Approved listings will appear here as soon as they are published."/>}</div></section>
