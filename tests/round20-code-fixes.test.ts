@@ -19,7 +19,7 @@ test("all PG rent bases and legacy values remain compatible",()=>{
 
 test("Sale and Rent guest media stays local until authenticated upload",async()=>{
   const[source,api]=await Promise.all([read("../src/components/property-posting-workflow.tsx"),read("../app/api/properties/[id]/media/route.ts")]);
-  for(const marker of ["indexedDB","pending-property","storeGuestMedia","readGuestMedia","clearGuestMedia","isAuthenticated","/api/properties/${result.id}/media"])assert.ok(source.includes(marker));
+  for(const marker of ["indexedDB","pending-property","storeGuestMedia","readGuestMedia","clearGuestMedia","isAuthenticated","/api/properties/${propertyId}/media","method:\"POST\"","redirect:\"error\""])assert.ok(source.includes(marker));
   for(const marker of ["auth.getUser()","email_confirmed_at"])assert.ok(api.includes(marker));assert.match(api,/eq\("owner_id",\s*auth\.user\.id\)/);
 });
 

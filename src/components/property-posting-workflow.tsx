@@ -11,6 +11,7 @@ const MAX_AGE_MS=14*24*60*60*1000;
 const MEDIA_DB="ongoleproperty-guest-media",MEDIA_STORE="pending-property";
 type Values=Record<string,string>;
 type ApiFailure={error?:string;message?:string;fields?:Record<string,string|string[]>};
+type MediaUploadResponse={result?:string;redirectTo?:string;error?:string};
 type StoredDraft={version:number;savedAt:number;values:Values};
 
 function valuesFrom(form:HTMLFormElement){
@@ -26,6 +27,16 @@ function mediaDatabase(){return new Promise<IDBDatabase>((resolve,reject)=>{if(!
 async function storeGuestMedia(files:File[]){const db=await mediaDatabase();await new Promise<void>((resolve,reject)=>{const transaction=db.transaction(MEDIA_STORE,"readwrite");transaction.objectStore(MEDIA_STORE).put(files,"files");transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error)});db.close()}
 async function readGuestMedia(){const db=await mediaDatabase();const files=await new Promise<File[]>((resolve,reject)=>{const request=db.transaction(MEDIA_STORE,"readonly").objectStore(MEDIA_STORE).get("files");request.onsuccess=()=>resolve(Array.isArray(request.result)?request.result:[]);request.onerror=()=>reject(request.error)});db.close();return files}
 async function clearGuestMedia(){const db=await mediaDatabase();await new Promise<void>((resolve,reject)=>{const transaction=db.transaction(MEDIA_STORE,"readwrite");transaction.objectStore(MEDIA_STORE).delete("files");transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error)});db.close()}
+async function uploadGuestMedia(propertyId:string,files:File[],fallback:string){
+  if(!files.length)return{destination:fallback,completed:true};
+  const body=new FormData();for(const file of files)body.append("image",file);
+  const response=await fetch(`/api/properties/${propertyId}/media`,{method:"POST",headers:{accept:"application/json"},body,redirect:"error"}).catch(()=>null);
+  if(!response)return{destination:`/dashboard/properties/${propertyId}?media=failed`,completed:false};
+  const payload=await response.json().catch(()=>({})) as MediaUploadResponse;
+  const expectedPrefix=`/dashboard/properties/${propertyId}`;
+  const destination=typeof payload.redirectTo==="string"&&(payload.redirectTo===expectedPrefix||payload.redirectTo.startsWith(`${expectedPrefix}?`))?payload.redirectTo:`${expectedPrefix}?media=${response.ok?"uploaded":"failed"}`;
+  return{destination,completed:response.ok&&payload.result==="uploaded"};
+}
 
 export function PublicPropertyPostingForm({catalog,initialTransaction="sale",isAuthenticated=false}:{catalog:PropertyCatalogData;initialTransaction?:"sale"|"rent";isAuthenticated?:boolean}){
   const formRef=useRef<HTMLFormElement>(null),saveTimer=useRef<number|undefined>(undefined),[defaults,setDefaults]=useState<Values|null>(null),[submitting,setSubmitting]=useState(false),[message,setMessage]=useState(""),[errors,setErrors]=useState<Record<string,string>>({}),[mediaCount,setMediaCount]=useState(0);
@@ -44,7 +55,7 @@ export function PublicPropertyPostingForm({catalog,initialTransaction="sale",isA
       const response=await fetch("/api/properties",{method:"POST",headers:{accept:"application/json"},body});
       const result=await response.json().catch(()=>({})) as ApiFailure&{editUrl?:string;id?:string};
       if(response.status===401){window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`);return}
-      if(response.ok&&result.editUrl){const files=await readGuestMedia().catch(()=>[]);let destination=result.editUrl,mediaCompleted=files.length===0;if(files.length&&result.id){const mediaBody=new FormData();for(const file of files)mediaBody.append("image",file);const upload=await fetch(`/api/properties/${result.id}/media`,{method:"POST",body:mediaBody}).catch(()=>null);if(upload?.url.startsWith(window.location.origin)){const uploadUrl=new URL(upload.url);destination=`${uploadUrl.pathname}${uploadUrl.search}`;mediaCompleted=upload.ok&&!/[?&]media=(?:failed|invalid|limit)/.test(uploadUrl.search)}}sessionStorage.removeItem(STORAGE_KEY);if(mediaCompleted){localStorage.removeItem(STORAGE_KEY);await clearGuestMedia().catch(()=>undefined)}window.location.assign(destination);return}
+      if(response.ok&&result.editUrl){const files=await readGuestMedia().catch(()=>[]),media=result.id?await uploadGuestMedia(result.id,files,result.editUrl):{destination:result.editUrl,completed:files.length===0};if(media.completed){sessionStorage.removeItem(STORAGE_KEY);localStorage.removeItem(STORAGE_KEY);await clearGuestMedia().catch(()=>undefined)}window.location.assign(media.destination);return}
       const fieldErrors=Object.fromEntries(Object.entries(result.fields||{}).map(([key,value])=>[key,Array.isArray(value)?value[0]:value]));setErrors(fieldErrors);setMessage(result.message||result.error||"The property draft could not be saved.");const first=Object.keys(fieldErrors)[0];const control=first?form.elements.namedItem(first):null;if(control instanceof HTMLElement){control.focus();control.scrollIntoView({behavior:"smooth",block:"center"})}
     }catch{setMessage("Your details are saved in this browser. Check your connection and try again.")}finally{setSubmitting(false)}
   }
@@ -63,7 +74,7 @@ export function DashboardPropertyDraftForm({catalog}:{catalog:PropertyCatalogDat
     try{
       const response=await fetch("/api/properties",{method:"POST",headers:{accept:"application/json"},body});const result=await response.json().catch(()=>({})) as ApiFailure&{editUrl?:string;id?:string};
       if(response.status===401){window.location.assign("/login?returnTo=%2Fdashboard%2Fproperties%2Fnew%3Frestore%3D1");return}
-      if(response.ok&&result.editUrl){const files=await readGuestMedia().catch(()=>[]);let destination=result.editUrl,mediaCompleted=files.length===0;if(files.length&&result.id){const mediaBody=new FormData();for(const file of files)mediaBody.append("image",file);const upload=await fetch(`/api/properties/${result.id}/media`,{method:"POST",body:mediaBody}).catch(()=>null);if(upload?.url.startsWith(window.location.origin)){const uploadUrl=new URL(upload.url);destination=`${uploadUrl.pathname}${uploadUrl.search}`;mediaCompleted=upload.ok&&!/[?&]media=(?:failed|invalid|limit)/.test(uploadUrl.search)}}sessionStorage.removeItem(STORAGE_KEY);if(mediaCompleted){localStorage.removeItem(STORAGE_KEY);await clearGuestMedia().catch(()=>undefined)}router.push(destination);return}
+      if(response.ok&&result.editUrl){const files=await readGuestMedia().catch(()=>[]),media=result.id?await uploadGuestMedia(result.id,files,result.editUrl):{destination:result.editUrl,completed:files.length===0};if(media.completed){sessionStorage.removeItem(STORAGE_KEY);localStorage.removeItem(STORAGE_KEY);await clearGuestMedia().catch(()=>undefined)}router.push(media.destination);return}
       const fieldErrors=Object.fromEntries(Object.entries(result.fields||{}).map(([key,value])=>[key,Array.isArray(value)?value[0]:value]));setErrors(fieldErrors);setMessage(result.message||result.error||"The draft could not be saved.");
       const first=Object.keys(fieldErrors)[0];const control=first?form.elements.namedItem(first):null;if(control instanceof HTMLElement){control.focus();control.scrollIntoView({behavior:"smooth",block:"center"})}
     }catch{setMessage("The draft could not be saved. Check your connection and try again.")}finally{setSubmitting(false)}

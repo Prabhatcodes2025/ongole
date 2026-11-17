@@ -52,6 +52,28 @@ function dashboardUrl(
   );
 }
 
+type MediaResult = "uploaded" | "invalid" | "limit" | "failed";
+
+function mediaResponse(
+  request: NextRequest,
+  propertyId: string,
+  result: MediaResult,
+  status = 200
+) {
+  const destination = dashboardUrl(request, propertyId, result);
+  if (request.headers.get("accept")?.includes("application/json")) {
+    return NextResponse.json(
+      {
+        propertyId,
+        result,
+        redirectTo: `${destination.pathname}${destination.search}`,
+      },
+      { status }
+    );
+  }
+  return NextResponse.redirect(destination, 303);
+}
+
 function createWatermark(width: number, height: number): Buffer {
   const margin = Math.max(12, Math.round(width * 0.015));
   const boxWidth = Math.min(850, width - margin * 2);
@@ -133,6 +155,15 @@ export async function POST(
   const { data: auth } = await supabase.auth.getUser();
 
   if (!auth.user) {
+    if (request.headers.get("accept")?.includes("application/json")) {
+      return NextResponse.json(
+        {
+          error: "Authentication required.",
+          redirectTo: `/login?returnTo=${encodeURIComponent(`/dashboard/properties/${id}`)}`,
+        },
+        { status: 401 }
+      );
+    }
     return NextResponse.redirect(
       new URL(`/login?returnTo=/dashboard/properties/${id}`, request.url),
       303
@@ -237,10 +268,7 @@ export async function POST(
         !ALLOWED_INPUT_TYPES.has(file.type)
     )
   ) {
-    return NextResponse.redirect(
-      dashboardUrl(request, id, "invalid"),
-      303
-    );
+    return mediaResponse(request, id, "invalid", 400);
   }
 
   const { count } = await supabase
@@ -252,10 +280,7 @@ export async function POST(
   const limit = 6;
 
   if ((count ?? 0) + files.length > limit) {
-    return NextResponse.redirect(
-      dashboardUrl(request, id, "limit"),
-      303
-    );
+    return mediaResponse(request, id, "limit", 409);
   }
 
   const storedPaths: string[] = [];
@@ -412,10 +437,7 @@ export async function POST(
       },
     });
 
-    return NextResponse.redirect(
-      dashboardUrl(request, id, "uploaded"),
-      303
-    );
+    return mediaResponse(request, id, "uploaded");
   } catch (error) {
     if (storedPaths.length) {
       await supabase.storage
@@ -435,9 +457,6 @@ export async function POST(
       error,
     });
 
-    return NextResponse.redirect(
-      dashboardUrl(request, id, "failed"),
-      303
-    );
+    return mediaResponse(request, id, "failed", 500);
   }
 }

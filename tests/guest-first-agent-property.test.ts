@@ -22,7 +22,7 @@ test("agent application writes require authenticated matching profile and preser
 
 test("sale and rent drafts persist through refresh and keep photos in IndexedDB for authenticated upload",()=>{
  const property=read("../src/components/property-posting-workflow.tsx");
- for(const marker of ["localStorage.setItem(STORAGE_KEY","MAX_AGE_MS","savePropertyDraft(values)","readPropertyDraft()","transactionType","indexedDB","pending-property","readGuestMedia()","/api/properties/${result.id}/media"])assert.ok(property.includes(marker),`missing property restoration contract ${marker}`);
+ for(const marker of ["localStorage.setItem(STORAGE_KEY","MAX_AGE_MS","savePropertyDraft(values)","readPropertyDraft()","transactionType","indexedDB","pending-property","readGuestMedia()","/api/properties/${propertyId}/media"])assert.ok(property.includes(marker),`missing property restoration contract ${marker}`);
  assert.ok(property.includes("initialTransaction"));assert.ok(property.includes("Continue to Sign In / Register"));
 });
 
