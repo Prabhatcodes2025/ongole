@@ -58,3 +58,13 @@ test("media upload uses multipart POST without navigating to the POST-only API",
   assert.match(upload,/NextResponse\.redirect\(destination, 303\)/);
   for(const result of ["uploaded","invalid","limit","failed"])assert.match(upload,new RegExp(`mediaResponse\\(request, id, "${result}"`));
 });
+
+test("property photo selectors explain the two-photo batch guidance",async()=>{
+  const[workflow,detail]=await Promise.all([
+    read("../src/components/property-posting-workflow.tsx"),read("../app/dashboard/properties/[id]/page.tsx"),
+  ]);
+  const note="Note: You can upload a maximum of 2 photos at a time. To add more photos, upload them in separate batches. Maximum 6 photos per property.";
+  for(const source of [workflow,detail])assert.ok(source.includes(note));
+  assert.match(workflow,/type="file"[^>]*\/><small className="form-note">Note: You can upload a maximum of 2 photos at a time\./);
+  assert.match(detail,/type="file"[^>]*\/><\/label><p className="form-note">Note: You can upload a maximum of 2 photos at a time\./);
+});
