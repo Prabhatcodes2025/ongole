@@ -54,14 +54,18 @@ test("locked PG requirements are enforced in validation, uploads and database",a
   assert.equal(pgDraftSchema.safeParse({...base,video_urls:["https://example.com/video"]}).success,false);
   assert.equal(pgDraftSchema.safeParse({...base,video_urls:["https://www.youtube.com/watch?v=dQw4w9WgXcQ"]}).success,true);
 
-  const[upload,mediaAction,owner,publicService,list,detail,migration]=await Promise.all([
-    read("../app/api/properties/[id]/media/route.ts"),read("../app/api/properties/[id]/media/[mediaId]/route.ts"),read("../app/dashboard/pg/[id]/page.tsx"),read("../src/lib/pg/public.ts"),
-    read("../app/paying-guest/page.tsx"),read("../app/paying-guest/[slug]/page.tsx"),read("../supabase/migrations/202608090001_client_public_site_alignment.sql")
+  const[upload,processor,mediaAction,owner,mediaManager,mediaMigration,publicService,list,detail,migration]=await Promise.all([
+    read("../app/api/properties/[id]/media/route.ts"),read("../src/lib/images/property-image.ts"),read("../app/api/properties/[id]/media/[mediaId]/route.ts"),read("../app/dashboard/pg/[id]/page.tsx"),
+    read("../src/components/property-media-manager.tsx"),read("../supabase/migrations/202611240001_property_media_management_repair.sql"),
+    read("../src/lib/pg/public.ts"),read("../app/paying-guest/page.tsx"),read("../app/paying-guest/[slug]/page.tsx"),read("../supabase/migrations/202608090001_client_public_site_alignment.sql")
   ]);
-  for(const marker of ["www.ongoleproperty.com , call : 7788998459","const limit = 6","webp"])assert.match(upload,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
-  assert.match(owner,/name="action"\s+value="cover"[\s\S]*?Make cover/);
-  assert.match(owner,/image\.is_cover\s*\?[\s\S]*?"Cover image"/);
-  for(const marker of ["auth.getUser()","eq(\"owner_id\",auth.user.id)","action===\"cover\"","update({is_cover:true})"])assert.ok(mediaAction.includes(marker));
+  for(const marker of ["const limit = 6","processPropertyImage(source)"])assert.match(upload,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  for(const marker of ["www.ongoleproperty.com , call : 7788998459","webp"])assert.match(processor,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  assert.match(owner,/PropertyMediaManager/);
+  assert.match(mediaManager,/Make cover/);
+  assert.match(mediaManager,/image\.is_cover\?"Cover image"/);
+  for(const marker of ["auth.getUser()","properties.manage","mediaAction","manage_property_media"])assert.ok(mediaAction.includes(marker));
+  assert.match(mediaMigration,/set is_cover=true/);
   assert.match(publicService,/paidOwners/);
   assert.match(publicService,/contactLabel:entitled/);
   for(const source of [list,detail])assert.doesNotMatch(source,/security_deposit|<dt>Security Deposit|<h2>Security Deposit|room sharing|family PG/i);

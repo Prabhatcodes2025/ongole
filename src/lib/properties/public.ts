@@ -3,6 +3,7 @@ import { convertArea } from "@/src/lib/area-conversion";
 import { createPublicSupabaseClient } from "@/src/lib/supabase/public";
 import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
 import {propertyPublicRecordIsSafe} from "@/src/lib/properties/validation";
+import {mediaVariantPath} from "@/src/lib/images/media-variant";
 import type { AreaUnit, PropertyFilters, PropertyListResult, PropertyMedia, PublicProperty } from "@/src/types/property";
 
 const SELECT = "id,reference_no,slug,title,description,transaction_type,price_inr,area_value,area_unit,locality_text,city_text,district_text,state_text,details,is_verified,is_featured,is_pinned,is_premium,contact_visibility,published_at,property_categories(name,slug),property_types(name,slug)";
@@ -25,16 +26,16 @@ async function getPgPropertyIds() {
   return ids;
 }
 
-async function hydrateMedia(rows: Row[]) {
+async function hydrateMedia(rows: Row[],variant:"display"|"thumbnail") {
   const service = createSupabaseServiceClient();
   const result=new Map<string,PropertyMedia[]>();
   if (!service||!rows.length) return result;
   const ids=rows.map((row)=>String(row.id));
-  const { data: mediaRows } = await service.from("property_media").select("id,property_id,storage_path,alt_text,width,height,is_cover,sort_order,processing_status,media_type").in("property_id",ids).eq("processing_status", "ready").eq("media_type", "image").order("is_cover", { ascending:false }).order("sort_order", { ascending:true });
+  const { data: mediaRows } = await service.from("property_media").select("id,property_id,storage_path,variants,alt_text,width,height,is_cover,sort_order,processing_status,media_type").in("property_id",ids).eq("processing_status", "ready").eq("media_type", "image").order("is_cover", { ascending:false }).order("sort_order", { ascending:true });
   const grouped=new Map<string,Row[]>();
   for(const item of (mediaRows||[]) as Row[]){const id=String(item.property_id);const group=grouped.get(id)||[];if(group.length<6){group.push(item);grouped.set(id,group)}}
   const ready=[...grouped.values()].flat();if(!ready.length)return result;
-  const paths=ready.map((item)=>String(item.storage_path));
+  const paths=ready.map((item)=>mediaVariantPath({storage_path:String(item.storage_path),variants:item.variants},variant));
   const { data } = await service.storage.from("property-media").createSignedUrls(paths, 60 * 60);
   ready.forEach((item,index)=>{const url=data?.[index]?.signedUrl;if(!url)return;const id=String(item.property_id);const row=rows.find((candidate)=>String(candidate.id)===id);const group=result.get(id)||[];group.push({id:String(item.id),url,alt:String(item.alt_text||row?.title||"Property image"),width:Number(item.width)||undefined,height:Number(item.height)||undefined,isCover:Boolean(item.is_cover)});result.set(id,group)});return result;
 }
@@ -55,7 +56,7 @@ function mapRow(row: Row, media:PropertyMedia[]=[]): PublicProperty {
   };
 }
 
-async function mapRows(rows:Row[]){const media=await hydrateMedia(rows);return rows.map((row)=>mapRow(row,media.get(String(row.id))||[])).filter((property)=>propertyPublicRecordIsSafe(property.title,property.description||""))}
+async function mapRows(rows:Row[],variant:"display"|"thumbnail"="thumbnail"){const media=await hydrateMedia(rows,variant);return rows.map((row)=>mapRow(row,media.get(String(row.id))||[])).filter((property)=>propertyPublicRecordIsSafe(property.title,property.description||""))}
 
 function filterDemo(properties: PublicProperty[], filters: PropertyFilters) {
   const keyword = filters.keyword?.toLowerCase(); const location = filters.location?.toLowerCase();
@@ -112,7 +113,7 @@ export async function getPublicProperty(slug: string) {
   if(!safeSlug)return null;
   const pgPropertyIds=await getPgPropertyIds();if(!pgPropertyIds)return null;
   const { data } = await supabase.from("properties").select(SELECT).in("status", ["published","expired"]).is("deleted_at", null).or(`slug.eq.${safeSlug},reference_no.eq.${safeSlug}`).maybeSingle();
-  return data&&!pgPropertyIds.has(String(data.id)) ? (await mapRows([data as Row]))[0] : null;
+  return data&&!pgPropertyIds.has(String(data.id)) ? (await mapRows([data as Row],"display"))[0] : null;
 }
 
 export async function getSimilarProperties(property: PublicProperty, limit = 4) {

@@ -7,8 +7,9 @@ import {applicablePropertyDetails} from "../src/lib/properties/validation";
 const read=(path:string)=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("Sale, Rent and PG uploads keep standardized watermarked display and thumbnail images",async()=>{
-  const source=await read("../app/api/properties/[id]/media/route.ts");
-  for(const marker of ["files.length > 6","const limit = 6","DISPLAY_WIDTH = 1200","DISPLAY_HEIGHT = 800","THUMB_WIDTH = 600","THUMB_HEIGHT = 400","www.ongoleproperty.com , call : 7788998459","context\") === \"pg\"","composite(["])assert.match(source,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  const[source,processor]=await Promise.all([read("../app/api/properties/[id]/media/route.ts"),read("../src/lib/images/property-image.ts")]);
+  for(const marker of ["files.length > 6","const limit = 6","context\") === \"pg\"","processPropertyImage(source)"])assert.match(source,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  for(const marker of ["width: 1200, height: 800","width: 600, height: 400","www.ongoleproperty.com , call : 7788998459","composite([","rotate()","position: \"attention\""])assert.match(processor,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
   assert.match(source,/property-media/);
 });
 

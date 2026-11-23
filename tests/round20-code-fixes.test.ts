@@ -30,9 +30,9 @@ test("agent application is retained locally until the account step",async()=>{
 });
 
 test("PG maps rent basis watermark and deterrence are correctly scoped",async()=>{
-  const[form,create,publicPg,page,media,gallery,css]=await Promise.all([read("../src/components/pg-posting-workflow.tsx"),read("../app/api/pg/route.ts"),read("../src/lib/pg/public.ts"),read("../app/paying-guest/[slug]/page.tsx"),read("../app/api/properties/[id]/media/route.ts"),read("../src/components/property-gallery.tsx"),read("../app/globals.css")]);
+  const[form,create,publicPg,page,media,processor,gallery,css]=await Promise.all([read("../src/components/pg-posting-workflow.tsx"),read("../app/api/pg/route.ts"),read("../src/lib/pg/public.ts"),read("../app/paying-guest/[slug]/page.tsx"),read("../app/api/properties/[id]/media/route.ts"),read("../src/lib/images/property-image.ts"),read("../src/components/property-gallery.tsx"),read("../app/globals.css")]);
   assert.ok(form.includes("Google Maps Location Link"));assert.ok(!form.includes("PropertyLocationPicker"));assert.ok(create.includes("safeGoogleMapsUrl"));assert.ok(publicPg.includes("mapsUrl:safeGoogleMapsUrl"));assert.ok(page.includes("View Location on Google Maps"));
-  assert.ok(media.includes("Apply watermark to all property and PG images."));assert.ok(media.includes("www.ongoleproperty.com , call : 7788998459"));assert.ok(gallery.includes("deterDownload"));assert.ok(gallery.includes("onContextMenu"));assert.ok(gallery.includes("draggable={deterDownload?false"));
+  assert.ok(media.includes("processPropertyImage(source)"));assert.ok(processor.includes("www.ongoleproperty.com , call : 7788998459"));assert.ok(gallery.includes("deterDownload"));assert.ok(gallery.includes("onContextMenu"));assert.ok(gallery.includes("draggable={deterDownload?false"));
   assert.ok(css.includes("repeat(2,minmax(0,1fr))"));assert.ok(css.includes("white-space:normal;word-break:normal;overflow-wrap:normal"));
 });
 

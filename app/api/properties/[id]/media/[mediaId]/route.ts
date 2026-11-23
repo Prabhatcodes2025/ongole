@@ -1,27 +1,102 @@
-import { NextRequest,NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/src/lib/supabase/server";
-import { requestData } from "@/src/lib/request";
+import {NextRequest,NextResponse} from "next/server";
+import {logEvent} from "@/src/lib/observability/logger";
 import {canManagePropertyMedia} from "@/src/lib/properties/media-authorization";
+import {propertyMediaStoragePaths} from "@/src/lib/properties/media-storage";
+import {requestData} from "@/src/lib/request";
+import {createSupabaseServerClient} from "@/src/lib/supabase/server";
+import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
 
-export async function POST(request:NextRequest,{params}:{params:Promise<{id:string;mediaId:string}>}){
-  const {id,mediaId}=await params;const origin=request.headers.get("origin");if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:"Invalid request origin."},{status:403});
-  const supabase=await createSupabaseServerClient();const {data:auth}=await supabase.auth.getUser();if(!auth.user)return NextResponse.json({error:"Authentication required."},{status:401});
-  const isPg=request.nextUrl.searchParams.get("context")==="pg";const{data:ownedProperty}=await supabase.from("properties").select("id,reference_no,status,owner_id").eq("id",id).eq("owner_id",auth.user.id).maybeSingle();let property=ownedProperty,canManage=canManagePropertyMedia({isOwner:Boolean(ownedProperty),ownerEditable:Boolean(ownedProperty&&["draft","changes_requested"].includes(ownedProperty.status)),hasPropertiesManage:false,hasPgManage:false,isPgListing:false,requestedPgContext:isPg});if(!property){const[{data:adminProperty},{data:propertiesManage},{data:pgManage},{data:pgListing}]=await Promise.all([supabase.from("properties").select("id,reference_no,status,owner_id").eq("id",id).maybeSingle(),supabase.rpc("has_permission",{required_permission:"properties.manage"}),supabase.rpc("has_permission",{required_permission:"pg.manage"}),supabase.from("pg_listings").select("id").eq("property_id",id).maybeSingle()]);canManage=canManagePropertyMedia({isOwner:false,ownerEditable:false,hasPropertiesManage:propertiesManage===true,hasPgManage:pgManage===true,isPgListing:Boolean(pgListing),requestedPgContext:isPg});property=adminProperty||(pgListing?{id,reference_no:id,status:"",owner_id:""}:null)}if(!property||!canManage)return NextResponse.json({error:"Media is locked."},{status:403});
-  const {data:media}=await supabase.from("property_media").select("id,storage_path,is_cover,sort_order,variants").eq("id",mediaId).eq("property_id",id).maybeSingle();if(!media)return NextResponse.json({error:"Image not found."},{status:404});
-  const payload=await requestData(request);const action=typeof payload.action==="string"?payload.action:"";
-  if(action==="remove"){
-    const variants=media.variants&&typeof media.variants==="object"&&!Array.isArray(media.variants)?media.variants as Record<string,unknown>:{};const thumbnail=variants.thumbnail&&typeof variants.thumbnail==="object"&&!Array.isArray(variants.thumbnail)?variants.thumbnail as Record<string,unknown>:{};const paths=[media.storage_path,typeof thumbnail.path==="string"?thumbnail.path:null].filter((path):path is string=>Boolean(path));
-    const {error:storageError}=await supabase.storage.from("property-media").remove(paths);if(storageError)return NextResponse.json({error:"The image files could not be removed."},{status:500});
-    const {error}=await supabase.from("property_media").delete().eq("id",mediaId);if(error)return NextResponse.json({error:"The media record could not be removed."},{status:500});
-    if(media.is_cover){const {data:next}=await supabase.from("property_media").select("id").eq("property_id",id).order("sort_order").limit(1).maybeSingle();if(next)await supabase.from("property_media").update({is_cover:true}).eq("id",next.id)}
-  }else if(action==="cover"){
-    await supabase.from("property_media").update({is_cover:false}).eq("property_id",id).eq("media_type","image");const {error}=await supabase.from("property_media").update({is_cover:true}).eq("id",mediaId);if(error)return NextResponse.json({error:"The cover image could not be changed."},{status:500});
-  }else if(action==="up"||action==="down"){
-    const direction=action==="up"?-1:1;const query=supabase.from("property_media").select("id,sort_order").eq("property_id",id).eq("media_type","image");const {data:adjacent}=direction<0?await query.lt("sort_order",media.sort_order).order("sort_order",{ascending:false}).limit(1).maybeSingle():await query.gt("sort_order",media.sort_order).order("sort_order").limit(1).maybeSingle();
-    if(adjacent){await supabase.from("property_media").update({sort_order:media.sort_order}).eq("id",adjacent.id);await supabase.from("property_media").update({sort_order:adjacent.sort_order}).eq("id",mediaId)}
-  }else return NextResponse.json({error:"Invalid media action."},{status:400});
-  await supabase.rpc("record_audit_event",{event_action:`media.${action}`,event_type:"property_media",event_reference:property.reference_no,event_new:{media_id:mediaId}});
+type RouteContext={params:Promise<{id:string;mediaId:string}>};
+type MediaAction="up"|"down"|"cover"|"remove";
+
+function destination(request:NextRequest,propertyId:string,result:string){
   const pgId=request.nextUrl.searchParams.get("context")==="pg"?request.nextUrl.searchParams.get("pgId"):null;
-  const destination=request.nextUrl.searchParams.get("returnTo")==="admin"?`/admin/properties/${id}/edit?media=${action}`:pgId&&/^[0-9a-f-]{36}$/i.test(pgId)?`/dashboard/pg/${pgId}?media=${action}`:`/dashboard/properties/${id}?media=${action}`;
-  return NextResponse.redirect(new URL(destination,request.url),303);
+  if(request.nextUrl.searchParams.get("returnTo")==="admin")return `/admin/properties/${propertyId}/edit?media=${result}`;
+  if(pgId&&/^[0-9a-f-]{36}$/i.test(pgId))return `/dashboard/pg/${pgId}?media=${result}`;
+  return `/dashboard/properties/${propertyId}?media=${result}`;
 }
+
+function response(request:NextRequest,propertyId:string,result:string,status:number,payload:Record<string,unknown>={}){
+  const redirectTo=destination(request,propertyId,result);
+  if(request.headers.get("accept")?.includes("application/json"))return NextResponse.json({...payload,result,redirectTo},{status});
+  return NextResponse.redirect(new URL(redirectTo,request.url),303);
+}
+
+async function handle(request:NextRequest,context:RouteContext,methodAction?:MediaAction){
+  const{id,mediaId}=await context.params;
+  const origin=request.headers.get("origin");
+  if(origin&&origin!==request.nextUrl.origin)return response(request,id,"failed",403,{error:"Invalid request origin."});
+
+  const supabase=await createSupabaseServerClient();
+  const{data:auth}=await supabase.auth.getUser();
+  if(!auth.user)return response(request,id,"failed",401,{error:"Authentication required."});
+
+  const isPg=request.nextUrl.searchParams.get("context")==="pg";
+  const[{data:property},{data:propertiesManage},{data:pgManage},{data:pgListing}]=await Promise.all([
+    supabase.from("properties").select("id,reference_no,status,owner_id").eq("id",id).maybeSingle(),
+    supabase.rpc("has_permission",{required_permission:"properties.manage"}),
+    supabase.rpc("has_permission",{required_permission:"pg.manage"}),
+    supabase.from("pg_listings").select("id").eq("property_id",id).maybeSingle(),
+  ]);
+  const isOwner=property?.owner_id===auth.user.id;
+  const canManage=canManagePropertyMedia({
+    isOwner,
+    ownerEditable:Boolean(isOwner&&["draft","changes_requested"].includes(property?.status||"")),
+    hasPropertiesManage:propertiesManage===true,
+    hasPgManage:pgManage===true,
+    isPgListing:Boolean(pgListing),
+    requestedPgContext:isPg,
+  });
+  if((!property&&!pgListing)||!canManage)return response(request,id,"locked",403,{error:"Media is locked."});
+
+  const{data:media,error:mediaError}=await supabase.from("property_media").select("id,storage_path,is_cover,sort_order,variants").eq("id",mediaId).eq("property_id",id).eq("media_type","image").maybeSingle();
+  if(mediaError){
+    logEvent("error","property.media_read_failed",{propertyId:id,mediaId,code:mediaError.code});
+    return response(request,id,"failed",500,{error:"The image could not be loaded."});
+  }
+  if(!media)return response(request,id,"failed",404,{error:"Image not found."});
+
+  const payload=methodAction?{}:await requestData(request);
+  const action=methodAction||(typeof payload.action==="string"?payload.action:"");
+  if(!["up","down","cover","remove"].includes(action))return response(request,id,"failed",400,{error:"Invalid media action."});
+  const mediaAction=action as MediaAction;
+
+  const{data:result,error:actionError}=await supabase.rpc("manage_property_media",{target_property:id,target_media:mediaId,media_action:mediaAction});
+  if(actionError){
+    logEvent("error","property.media_action_failed",{propertyId:id,mediaId,action:mediaAction,code:actionError.code});
+    return response(request,id,"failed",actionError.message.includes("not_authorized")?403:500,{error:"The image could not be updated. Please retry."});
+  }
+
+  const reference=property?.reference_no||id;
+  const{error:auditError}=await supabase.rpc("record_audit_event",{event_action:`media.${mediaAction}`,event_type:"property_media",event_reference:reference,event_new:{media_id:mediaId}});
+  if(auditError)logEvent("warn","property.media_audit_failed",{propertyId:id,mediaId,action:mediaAction,code:auditError.code});
+
+  let cleanupPending=false;
+  if(mediaAction==="remove"){
+    const paths=propertyMediaStoragePaths(media.storage_path,media.variants);
+    if(paths.length){
+      const storageClient=createSupabaseServiceClient()||supabase;
+      const{error:storageError}=await storageClient.storage.from("property-media").remove(paths);
+      if(storageError){
+        cleanupPending=true;
+        logEvent("error","property.media_storage_delete_failed",{propertyId:id,mediaId,pathCount:paths.length,code:storageError.name});
+      }
+    }
+  }
+  return response(request,id,mediaAction,cleanupPending?202:200,{success:true,media:result,cleanupPending});
+}
+
+export async function PATCH(request:NextRequest,context:RouteContext){
+  const payload=await requestData(request);
+  const action=typeof payload.action==="string"?payload.action:"";
+  if(action!=="up"&&action!=="down"&&action!=="cover"){
+    const{id}=await context.params;
+    return response(request,id,"failed",400,{error:"Invalid media action."});
+  }
+  return handle(request,context,action);
+}
+
+export async function DELETE(request:NextRequest,context:RouteContext){return handle(request,context,"remove")}
+
+// Backward compatibility for non-JavaScript clients; current controls use PATCH/DELETE.
+export async function POST(request:NextRequest,context:RouteContext){return handle(request,context)}

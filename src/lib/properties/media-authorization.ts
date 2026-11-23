@@ -6,7 +6,7 @@ export function canManagePropertyMedia(input:{
   isPgListing:boolean;
   requestedPgContext:boolean;
 }){
-  if(input.isOwner)return input.ownerEditable;
   if(input.hasPropertiesManage)return true;
-  return input.requestedPgContext&&input.hasPgManage&&input.isPgListing;
+  if(input.requestedPgContext&&input.hasPgManage&&input.isPgListing)return true;
+  return input.isOwner&&input.ownerEditable;
 }

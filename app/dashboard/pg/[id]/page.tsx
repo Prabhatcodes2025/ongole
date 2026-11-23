@@ -1,11 +1,12 @@
 
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { PgForm } from "@/src/components/pg-posting-workflow";
 import { nearbyPlacesDefaults } from "@/src/lib/properties/validation";
+import { mediaVariantPath } from "@/src/lib/images/media-variant";
+import { PropertyMediaManager } from "@/src/components/property-media-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,8 @@ const notices: Record<string, string> = {
   cover: "Cover image updated.",
   up: "Image moved earlier.",
   down: "Image moved later.",
+  failed: "The image could not be updated. Please try again.",
+  locked: "These images are locked while the listing is under review or published.",
 };
 
 export default async function ManagePgPage({
@@ -52,7 +55,7 @@ export default async function ManagePgPage({
     supabase
       .from("pg_listings")
       .select(
-        "*,properties!inner(id,owner_id,reference_no,title,description,status,locality_text,city_text,district_text,state_text,latitude,longitude,slug,updated_at,deleted_at,property_media(id,storage_path,original_filename,is_cover,sort_order))"
+        "*,properties!inner(id,owner_id,reference_no,title,description,status,locality_text,city_text,district_text,state_text,latitude,longitude,slug,updated_at,deleted_at,property_media(id,storage_path,variants,original_filename,is_cover,sort_order))"
       )
       .eq("id", id)
       .is("properties.deleted_at", null)
@@ -98,7 +101,7 @@ export default async function ManagePgPage({
     ? await supabase.storage
         .from("property-media")
         .createSignedUrls(
-          media.map((item) => item.storage_path),
+          media.map((item) => mediaVariantPath(item, "thumbnail")),
           3600
         )
     : { data: [] };
@@ -187,7 +190,7 @@ export default async function ManagePgPage({
         {notice && (
           <p
             className={`form-message ${
-              query.notice === "consent-required"
+              query.notice === "consent-required" || ["failed","locked"].includes(query.media||"")
                 ? "error"
                 : "success"
             }`}
@@ -521,59 +524,14 @@ export default async function ManagePgPage({
                 </form>
               )}
 
-              {media.length ? (
-                <ul className="media-manager">
-                  {media.map((image, index) => (
-                    <li key={image.id}>
-                      {signed?.[index]?.signedUrl && (
-                        <Image
-                          src={signed[index].signedUrl}
-                          width={150}
-                          height={100}
-                          alt={image.original_filename}
-                        />
-                      )}
-
-                      <div>
-                        <strong>{image.original_filename}</strong>
-                        <span>
-                          {image.is_cover
-                            ? "Cover image"
-                            : `Position ${image.sort_order + 1}`}
-                        </span>
-                      </div>
-
-                      {editable && (
-                        <div className="media-controls">
-                          <form
-                            action={`/api/properties/${pg.property_id}/media/${image.id}?context=pg&pgId=${id}`}
-                            method="post"
-                          >
-                            {!image.is_cover && (
-                              <button name="action" value="cover">
-                                Make cover
-                              </button>
-                            )}
-
-                            <button name="action" value="up">
-                              ↑
-                            </button>
-                            <button name="action" value="down">
-                              ↓
-                            </button>
-                            <button
-                              className="danger-link"
-                              name="action"
-                              value="remove"
-                            >
-                              Remove
-                            </button>
-                          </form>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+              {editable ? (
+                <PropertyMediaManager
+                  items={media.map((image,index)=>({...image,url:signed?.[index]?.signedUrl||""}))}
+                  endpointBase={`/api/properties/${pg.property_id}/media`}
+                  query={`?context=pg&pgId=${id}`}
+                />
+              ) : media.length ? (
+                <ul className="activity-list">{media.map(image=><li key={image.id}><strong>{image.original_filename}</strong><span>{image.is_cover?"Cover image":`Position ${image.sort_order+1}`}</span></li>)}</ul>
               ) : (
                 <div className="empty-state compact">
                   <p>No images uploaded.</p>

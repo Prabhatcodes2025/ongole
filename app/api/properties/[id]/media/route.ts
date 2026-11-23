@@ -5,8 +5,11 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { checkRateLimit } from "@/src/lib/security/rate-limit";
 import { requestIp } from "@/src/lib/request";
 import { canManagePropertyMedia } from "@/src/lib/properties/media-authorization";
-
-const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
+import {
+  processPropertyImage,
+  PROPERTY_IMAGE,
+  PropertyImageError,
+} from "@/src/lib/images/property-image";
 
 const ALLOWED_INPUT_TYPES = new Set([
   "image/jpeg",
@@ -14,13 +17,11 @@ const ALLOWED_INPUT_TYPES = new Set([
   "image/webp",
 ]);
 
-const DISPLAY_WIDTH = 1200;
-const DISPLAY_HEIGHT = 800;
-const THUMB_WIDTH = 600;
-const THUMB_HEIGHT = 400;
-
-const WATERMARK_TEXT =
-  "www.ongoleproperty.com , call : 7788998459";
+const FORMAT_BY_MIME = {
+  "image/jpeg": "jpeg",
+  "image/png": "png",
+  "image/webp": "webp",
+} as const;
 
 function dashboardUrl(
   request: NextRequest,
@@ -72,45 +73,6 @@ function mediaResponse(
     );
   }
   return NextResponse.redirect(destination, 303);
-}
-
-function createWatermark(width: number, height: number): Buffer {
-  const margin = Math.max(12, Math.round(width * 0.015));
-  const boxWidth = Math.min(850, width - margin * 2);
-  const boxHeight = Math.min(64, height - margin * 2);
-
-  const fontSize = Math.max(
-    8,
-    Math.min(21, Math.floor(boxWidth / 40), Math.floor(boxHeight * 0.38))
-  );
-
-  const svg = `
-    <svg
-      width="${boxWidth}"
-      height="${boxHeight}"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect
-        width="100%"
-        height="100%"
-        rx="8"
-        fill="#111827"
-        fill-opacity="0.65"
-      />
-      <text
-        x="50%"
-        y="50%"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        font-family="Arial, sans-serif"
-        font-size="${fontSize}"
-        font-weight="700"
-        fill="#ffffff"
-      >${WATERMARK_TEXT}</text>
-    </svg>
-  `;
-
-  return Buffer.from(svg);
 }
 
 export async function POST(
@@ -201,7 +163,9 @@ export async function POST(
     requestedPgContext: isPg,
   });
 
-  if (!property) {
+  // Do not let ownership short-circuit staff permissions. An administrator may
+  // also own a listing and must still be evaluated under properties.manage.
+  if (!property || !canManage) {
     const [
       { data: adminProperty },
       { data: propertiesManage },
@@ -264,7 +228,7 @@ export async function POST(
     files.length > 6 ||
     files.some(
       (file) =>
-        file.size > MAX_SOURCE_BYTES ||
+        file.size > PROPERTY_IMAGE.maxSourceBytes ||
         !ALLOWED_INPUT_TYPES.has(file.type)
     )
   ) {
@@ -287,66 +251,14 @@ export async function POST(
   const storedIds: string[] = [];
 
   try {
-    const { default: sharp } = await import("sharp");
-
     for (const [index, file] of files.entries()) {
       const source = Buffer.from(await file.arrayBuffer());
-
-      // Normalize orientation and crop to website dimensions.
-      const baseImage = sharp(source, {
-        failOn: "warning",
-        limitInputPixels: 40_000_000,
-      })
-        .rotate()
-        .resize({
-          width: DISPLAY_WIDTH,
-          height: DISPLAY_HEIGHT,
-          fit: "cover",
-          position: "attention",
-        });
-
-      const normalized = await baseImage
-        .toBuffer({ resolveWithObject: true });
-
-      if (!normalized.info.width || !normalized.info.height) {
-        throw new Error("Image dimensions unavailable");
+      const image = await processPropertyImage(source);
+      if (image.source.format !== FORMAT_BY_MIME[file.type as keyof typeof FORMAT_BY_MIME]) {
+        throw new PropertyImageError("Declared image type does not match decoded content.");
       }
-
-      // Apply watermark to all property and PG images.
-      const watermark = createWatermark(
-        normalized.info.width,
-        normalized.info.height
-      );
-
-      const processed = await sharp(normalized.data)
-        .composite([
-          {
-            input: watermark,
-            gravity: "southeast",
-          },
-        ])
-        .webp({
-          quality: 85,
-          effort: 5,
-        })
-        .toBuffer();
-
-      const output = await sharp(processed).metadata();
-
-      // Create standardized thumbnail.
-      const thumbnail = await sharp(processed)
-        .resize({
-          width: THUMB_WIDTH,
-          height: THUMB_HEIGHT,
-          fit: "cover",
-        })
-        .webp({
-          quality: 80,
-          effort: 5,
-        })
-        .toBuffer();
-
-      const thumbnailOutput = await sharp(thumbnail).metadata();
+      const processed = image.display.data;
+      const thumbnail = image.thumbnail.data;
 
       const mediaId = crypto.randomUUID();
 
@@ -396,8 +308,8 @@ export async function POST(
           original_filename: file.name.slice(0, 255),
           mime_type: "image/webp",
           byte_size: processed.byteLength,
-          width: output.width,
-          height: output.height,
+          width: image.display.width,
+          height: image.display.height,
           processing_status: "ready",
           is_cover:
             !isPg && (count ?? 0) === 0 && index === 0,
@@ -405,16 +317,17 @@ export async function POST(
           variants: {
             display: {
               path,
-              width: output.width,
-              height: output.height,
+              width: image.display.width,
+              height: image.display.height,
               format: "webp",
+              byte_size: image.display.byteSize,
             },
             thumbnail: {
               path: thumbnailPath,
-              width: thumbnailOutput.width,
-              height: thumbnailOutput.height,
+              width: image.thumbnail.width,
+              height: image.thumbnail.height,
               format: "webp",
-              byte_size: thumbnail.byteLength,
+              byte_size: image.thumbnail.byteSize,
             },
           },
         });
@@ -457,6 +370,8 @@ export async function POST(
       error,
     });
 
-    return mediaResponse(request, id, "failed", 500);
+    return error instanceof PropertyImageError
+      ? mediaResponse(request, id, "invalid", 400)
+      : mediaResponse(request, id, "failed", 500);
   }
 }

@@ -4,6 +4,7 @@ import {createSupabaseServiceClient} from "@/src/lib/supabase/service";
 import {propertyPublicRecordIsSafe} from "@/src/lib/properties/validation";
 import {safeGoogleMapsUrl} from "@/src/lib/google-maps";
 import {normalizePgRentBasis,type PgRentBasis} from "@/src/types/pg";
+import {mediaVariantPath} from "@/src/lib/images/media-variant";
 
 type Row=Record<string,unknown>;
 export type PublicPg={
@@ -19,14 +20,14 @@ function nested(value:unknown){return Array.isArray(value)?(value[0] as Row|unde
 function strings(value:unknown){return Array.isArray(value)?value.filter((item):item is string=>typeof item==="string"):[]}
 function nearbyItems(value:unknown){const places=value&&typeof value==="object"&&!Array.isArray(value)?value as Row:{};const labels:Record<string,string>={railway_station:"Railway Station",bank:"Bank",atm:"ATM",college:"College",hospital:"Hospital",bus_depot:"RTC Depot"};const result:{name:string;distance:number;unit:string}[]=[];for(const[key,raw]of Object.entries(places)){const items=key==="custom"&&Array.isArray(raw)?raw:[raw];for(const entry of items){if(!entry||typeof entry!=="object"||Array.isArray(entry))continue;const item=entry as Row,distance=Number(item.distance);if(Number.isFinite(distance))result.push({name:String(item.name||labels[key]||key.replaceAll("_"," ")),distance,unit:String(item.unit||"Meter")})}}return result.sort((a,b)=>a.distance-b.distance)}
 
-async function mapRows(rows:Row[]):Promise<PublicPg[]>{
+async function mapRows(rows:Row[],variant:"display"|"thumbnail"="thumbnail"):Promise<PublicPg[]>{
   const service=createSupabaseServiceClient();if(!service)return[];
   const propertyIds=rows.map((row)=>String(row.property_id));
   const owners=[...new Set(rows.map((row)=>String(nested(row.properties)?.owner_id||"")).filter(Boolean))],now=new Date().toISOString();
   const [{data:subscriptions},{data:profiles}]=owners.length?await Promise.all([service.from("subscriptions").select("user_id,plans!inner(price)").in("user_id",owners).eq("status","active").lte("starts_at",now).gt("ends_at",now),service.from("profiles").select("id,mobile").in("id",owners)]):[{data:[]},{data:[]}];
   const paidOwners=new Set(((subscriptions||[]) as Row[]).filter((item)=>Number(nested(item.plans)?.price||0)>0).map((item)=>String(item.user_id))),ownerPhones=new Map(((profiles||[]) as Row[]).map((item)=>[String(item.id),String(item.mobile||"")]));
-  const {data:media}=propertyIds.length?await service.from("property_media").select("id,property_id,storage_path,alt_text,is_cover,sort_order").in("property_id",propertyIds).eq("processing_status","ready").eq("media_type","image").order("is_cover",{ascending:false}).order("sort_order"):{data:[]};
-  const mediaRows=(media||[]) as Row[];const {data:signed}=mediaRows.length?await service.storage.from("property-media").createSignedUrls(mediaRows.map((item)=>String(item.storage_path)),3600):{data:[]};
+  const {data:media}=propertyIds.length?await service.from("property_media").select("id,property_id,storage_path,variants,alt_text,is_cover,sort_order").in("property_id",propertyIds).eq("processing_status","ready").eq("media_type","image").order("is_cover",{ascending:false}).order("sort_order"):{data:[]};
+  const mediaRows=(media||[]) as Row[];const {data:signed}=mediaRows.length?await service.storage.from("property-media").createSignedUrls(mediaRows.map((item)=>mediaVariantPath({storage_path:String(item.storage_path),variants:item.variants},variant)),3600):{data:[]};
   return rows.map((row)=>{
     const property=nested(row.properties)||{},details=nested(row.details)||{};const rooms=Array.isArray(row.pg_room_types)?row.pg_room_types as Row[]:[];const ownerId=String(property.owner_id||""),entitled=property.status==="published"&&(Boolean(property.is_featured)||paidOwners.has(ownerId))&&["public","eligible_members"].includes(String(property.contact_visibility||"company"));const officialPhone=siteConfig.phone.replace(/\D/g,"").slice(-10),officialWhatsapp=siteConfig.whatsapp.replace(/\D/g,"").slice(-10),ownerPhone=String(row.contact_mobile||ownerPhones.get(ownerId)||""),ownerWhatsapp=String(row.contact_whatsapp||ownerPhone);
     return{id:String(row.id),propertyId:String(row.property_id),reference:String(property.reference_no),slug:String(property.slug),name:String(row.pg_name),category:String(row.category),description:String(property.description||""),address:String(row.address_line||""),landmark:String(details.landmark||""),locality:String(property.locality_text),city:String(property.city_text),district:String(property.district_text),state:String(property.state_text),latitude:property.latitude==null?null:Number(property.latitude),longitude:property.longitude==null?null:Number(property.longitude),rent:Number(row.rent_per_bed||0),rentBasis:normalizePgRentBasis(details.rent_basis),mapsUrl:safeGoogleMapsUrl(details.google_maps_url),capacity:row.capacity==null?null:Number(row.capacity),foodType:String(row.food_type||""),facing:String(details.facing||""),lunchBoxAvailable:details.lunch_box_available===true,nearby:nearbyItems(details.nearby_places),amenities:strings(row.amenities),rules:strings(row.house_rules),videos:strings(row.video_urls),verified:Boolean(property.is_verified),featured:Boolean(property.is_featured),pinned:Boolean(property.is_pinned),publishedAt:typeof property.published_at==="string"?property.published_at:null,rooms:rooms.map((room)=>({id:String(room.id),name:String(room.name),capacity:Number(room.capacity),availableBeds:Number(room.available_beds),rent:Number(room.monthly_rent)})),contactLabel:entitled&&ownerPhone?"Property owner":"OngoleProperty.com",contactPhone:entitled&&ownerPhone?ownerPhone:officialPhone,contactWhatsapp:entitled&&ownerWhatsapp?ownerWhatsapp:officialWhatsapp,media:mediaRows.map((item,index)=>({item,url:signed?.[index]?.signedUrl||""})).filter(({item,url})=>String(item.property_id)===String(row.property_id)&&url).slice(0,6).map(({item,url})=>({id:String(item.id),url,alt:String(item.alt_text||row.pg_name)}))};
@@ -68,7 +69,7 @@ export async function getPublicPg(slug:string){
   const service=createSupabaseServiceClient();if(!service)return null;
   const safe=slug.replace(/[^a-zA-Z0-9-]/g,"");if(!safe)return null;
   const {data}=await service.from("pg_listings").select(SELECT).in("properties.status",["published","expired"]).is("properties.deleted_at",null).in("category",["mens","womens","co_living"]).eq("properties.slug",safe).maybeSingle();
-  return data?(await mapRows([data as unknown as Row]))[0]||null:null;
+  return data?(await mapRows([data as unknown as Row],"display"))[0]||null:null;
 }
 
 export async function getSimilarPgs(pg:PublicPg,limit=3){

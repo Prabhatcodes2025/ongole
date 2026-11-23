@@ -13,12 +13,12 @@ export default async function UserDetails({params,searchParams}:{params:Promise<
   const feedback=await searchParams;
   const[{data:read},{data:manage},{data:rolesManage}]=await Promise.all([supabase.rpc("has_permission",{required_permission:"users.read"}),supabase.rpc("has_permission",{required_permission:"users.manage"}),supabase.rpc("has_permission",{required_permission:"roles.manage"})]);if(!read)redirect("/admin");
   const[{data:user},{data:properties},{data:grants},{data:uses},{data:allRoles}]=await Promise.all([supabase.from("profiles").select("*").eq("id",id).maybeSingle(),supabase.from("properties").select("id,reference_no,title,status,transaction_type,created_at").eq("owner_id",id).order("created_at",{ascending:false}).limit(100),supabase.from("property_posting_grants").select("id",{count:"exact"}).eq("user_id",id),supabase.from("property_posting_uses").select("property_id",{count:"exact"}).eq("user_id",id),rolesManage?supabase.from("roles").select("code,name,description").order("name"):{data:[]}]);if(!user)notFound();
-const { data: userRoles, error: rolesError } = rolesManage
+const { data: userRoles } = rolesManage
   ? await supabase
       .from("user_roles")
       .select("roles(code)")
       .eq("user_id", id)
-  : { data: [], error: null };
+  : { data: [] };
 
 const assigned = new Set(
   (userRoles || [])

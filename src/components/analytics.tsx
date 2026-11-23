@@ -2,6 +2,7 @@
 "use client";
 
 import Script from "next/script";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PublicPageAnalytics } from "@/src/components/public-page-analytics";
 
@@ -26,6 +27,8 @@ export function Analytics({
       const saved = window.localStorage.getItem(CONSENT_KEY);
 
       if (saved === "granted" || saved === "essential") {
+        // Hydrate the browser-only preference once after mount.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setConsent(saved);
       }
     } catch {
@@ -105,7 +108,7 @@ export function Analytics({
             <strong>Analytics preferences</strong>
             <span>
               Optional first-party, Google and Meta analytics run only with permission.{" "}
-              <a href="/cookie-policy">Cookie policy</a>
+              <Link href="/cookie-policy">Cookie policy</Link>
             </span>
           </p>
 

@@ -28,9 +28,10 @@ test("email and Google authentication retain safe property-posting return paths"
 });
 
 test("owner photo management is visible and the final action submits for review",async()=>{
-  const[detail,list,workflow,upload]=await Promise.all([
+  const[detail,list,workflow,upload,processor]=await Promise.all([
     read("../app/dashboard/properties/[id]/page.tsx"),read("../app/dashboard/properties/page.tsx"),
     read("../src/components/property-posting-workflow.tsx"),read("../app/api/properties/[id]/media/route.ts"),
+    read("../src/lib/images/property-image.ts"),
   ]);
   assert.match(detail,/Upload Property Photos/);
   assert.match(detail,/media=(?:failed\|invalid\|limit)|invalid:"Choose 1 to 6 valid[\s\S]*/);
@@ -39,7 +40,8 @@ test("owner photo management is visible and the final action submits for review"
   assert.match(list,/from\("property_media"\)/);
   assert.match(list,/createSignedUrls/);
   assert.match(list,/dashboard-property-thumb/);
-  for(const marker of ["DISPLAY_WIDTH = 1200","DISPLAY_HEIGHT = 800","THUMB_WIDTH = 600","THUMB_HEIGHT = 400","www.ongoleproperty.com , call : 7788998459","processing_status: \"ready\"","storedPaths","storedIds"])assert.ok(upload.includes(marker),marker);
+  for(const marker of ["processPropertyImage(source)","processing_status: \"ready\"","storedPaths","storedIds"])assert.ok(upload.includes(marker),marker);
+  for(const marker of ["width: 1200, height: 800","width: 600, height: 400","www.ongoleproperty.com , call : 7788998459","position: \"attention\"","PROPERTY_WATERMARK_TEXT"])assert.ok(processor.includes(marker),marker);
   assert.match(upload,/context: isPg \? "pg" : "property"/);
 });
 
